@@ -1,0 +1,8 @@
+<resources>
+    <string name="title_activity_main">MainActivity</string>
+    <string name="title_activity_splash">SplashActivity</string>
+    <string name="title_activity_home">HomeActivity</string>
+    <string name="title_activity_login">LoginActivity</string>
+    <string name="title_activity_start">StartActivity</string>
+    <string name="title_activity_global_application">GlobalApplication</string>
+</resources>
