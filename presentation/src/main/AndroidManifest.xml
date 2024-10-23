@@ -3,14 +3,9 @@
 
     <application>
         <activity
-            android:name=".GlobalApplication"
-            android:exported="false"
-            android:label="@string/title_activity_global_application"
-            android:theme="@style/Theme.SowoonGallery" />
-        <activity
             android:name=".view.StartActivity"
             android:exported="false"
-            android:label="@string/title_activity_start"asdfdaf
+            android:label="@string/title_activity_start"
             android:theme="@style/Theme.Sowoon" />
         <activity
             android:name=".view.LoginActivity"

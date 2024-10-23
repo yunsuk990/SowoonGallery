@@ -50,6 +50,7 @@ import com.example.presentation.view.ProfileScreen
 import com.example.presentation.view.StartActivity
 import com.example.presentation.view.ui.theme.SowoonTheme
 import com.google.android.material.bottomnavigation.BottomNavigationView
+import com.google.firebase.FirebaseApp
 
 class MainActivity : ComponentActivity() {
     @OptIn(ExperimentalMaterial3Api::class)
@@ -105,7 +106,7 @@ fun TopAppBar(scrollBehavior: TopAppBarScrollBehavior){
         } },
         actions = { Column(Modifier.padding(end = 5.dp)) {
             IconButton(
-                onClick = { context.startActivity(Intent(context, StartActivity::class.java))}
+                onClick = { context.startActivity(Intent(context, StartActivity::class.java).setFlags(Intent.FLAG_ACTIVITY_NO_HISTORY))}
             ){
                 Icon(Icons.Filled.Person, contentDescription = null, Modifier.size(30.dp))
             }

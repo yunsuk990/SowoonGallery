@@ -1,16 +1,12 @@
 package com.example.presentation.view
 
-import android.Manifest
 import android.app.Activity
-import android.content.Context
-import android.content.pm.PackageManager
 import android.os.Bundle
-import android.telephony.SmsManager
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.viewModels
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
@@ -24,6 +20,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowLeft
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -36,6 +33,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
@@ -45,15 +43,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.core.app.ActivityCompat
 import com.example.presentation.view.ui.theme.SowoonTheme
 import com.example.presentation.viewModel.LoginViewModel
-import com.google.firebase.Firebase
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.auth.PhoneAuthOptions
 import com.google.firebase.auth.PhoneAuthProvider
-import com.google.firebase.auth.auth
-import java.util.concurrent.TimeUnit
 
 class LoginActivity : ComponentActivity() {
     //val viewModel by viewModels<LoginViewModel>()
@@ -67,7 +59,7 @@ class LoginActivity : ComponentActivity() {
                         .fillMaxSize()
                         .background(Color.White),
                 ) {
-                    MainScreen(LoginViewModel(application), this)
+                    MainScreen(LoginViewModel(this), this)
                 }
             }
         }
@@ -90,77 +82,99 @@ private fun MainScreen(
     var isButtonEnabled by rememberSaveable { mutableStateOf(false) }
     var isVerifyButtonEnabled by rememberSaveable { mutableStateOf(false) }
 
+    var isLoading by viewModel.signInRespond
+
     //requestSmsPermission(context)
 
-    Column(
-        modifier = Modifier
-            .background(Color.White)
-            .padding(top = 20.dp)
-    ) {
-        IconButton(onClick = {  }) {
-            Icon(
-                Icons.Filled.KeyboardArrowLeft,
-                contentDescription = "back",
-                modifier = Modifier.size(35.dp)
-            )
-        }
-
-        Spacer(modifier = Modifier.height(10.dp))
-        
-        if(phoneNumberVisible){
-            Text(
-                text = "안녕하세요!\n휴대폰 번호로 로그인해주세요.",
-                fontWeight = FontWeight.Bold,
-                lineHeight = 30.sp,
-                fontSize = 20.sp,
-                modifier = Modifier
-                    .padding(start = 15.dp)
-                    .alpha(if (phoneNumberVisible) 1f else 0f),
-            )
-        }
-
-        Spacer(modifier = Modifier.height(15.dp))
-
-        outlineTextField(
-            labelText = "휴대폰 번호(- 없이 숫자만 입력)",
-            text = phoneNumber,
-            onValueChange = { newText ->
-                phoneNumber = newText
-                isButtonEnabled = newText.length == 11
+    Box(
+        modifier = Modifier.fillMaxSize()
+    ){
+        Column(
+            modifier = Modifier
+                .background(Color.White)
+                .padding(top = 20.dp)
+                .align(Alignment.TopStart)
+        ) {
+            IconButton(onClick = {
+                activity.finish()
+            }) {
+                Icon(
+                    Icons.Filled.KeyboardArrowLeft,
+                    contentDescription = "back",
+                    modifier = Modifier.size(35.dp)
+                )
             }
-        )
 
-        outLinedButton(
-            buttonText = "인증문자 받기",
-            isEnabled = isButtonEnabled,
-            onClick = {
-                phoneNumberVisible = false
-                viewModel.verfiyPhoneNumber(Firebase.auth, phoneNumber, activity)
-            }
-        )
-
-        if(!phoneNumberVisible){
             Spacer(modifier = Modifier.height(10.dp))
-            outlineTextField(
-                labelText = "인증번호 입력",
-                text = verifyNumber,
-                onValueChange = {newText ->
-                    verifyNumber = newText
-                    isVerifyButtonEnabled = newText.length >= 4
 
-            })
+            if(phoneNumberVisible){
+                Text(
+                    text = "안녕하세요!\n휴대폰 번호로 로그인해주세요.",
+                    fontWeight = FontWeight.Bold,
+                    lineHeight = 30.sp,
+                    fontSize = 20.sp,
+                    modifier = Modifier
+                        .padding(start = 15.dp)
+                        .alpha(if (phoneNumberVisible) 1f else 0f),
+                )
+            }
+
+            Spacer(modifier = Modifier.height(15.dp))
+
+            outlineTextField(
+                labelText = "휴대폰 번호(- 없이 숫자만 입력)",
+                text = phoneNumber,
+                onValueChange = { newText ->
+                    phoneNumber = newText
+                    isButtonEnabled = newText.length >= 10
+                }
+            )
 
             outLinedButton(
-                buttonText = "인증번호 확인",
-                isEnabled = isVerifyButtonEnabled,
+                buttonText = if(phoneNumberVisible) "인증문자 받기" else "인증번호 재전송",
+                isEnabled = isButtonEnabled,
                 onClick = {
-                    //인증번호 확인
-
+                    Log.d("sms_phone", phoneNumber)
+                    if(phoneNumberVisible){
+                        viewModel.verfiyPhoneNumber("+82 $phoneNumber")
+                    }else{
+                        viewModel.resendVerifyPhoneNumber("+82 $phoneNumber")
+                    }
+                    phoneNumberVisible = false
                 }
+            )
+
+            if(!phoneNumberVisible){
+                Spacer(modifier = Modifier.height(10.dp))
+                outlineTextField(
+                    labelText = "인증번호 입력",
+                    text = verifyNumber,
+                    onValueChange = {newText ->
+                        verifyNumber = newText
+                        isVerifyButtonEnabled = newText.length >= 4
+
+                    })
+
+                outLinedButton(
+                    buttonText = "인증번호 확인",
+                    isEnabled = isVerifyButtonEnabled,
+                    onClick = {
+                        //인증번호 확인
+                        val credential = PhoneAuthProvider.getCredential(
+                            viewModel.storedVerificationId,
+                            verifyNumber
+                        )
+                        viewModel.signInWithPhoneAuthCredential(credential)
+                    }
+                )
+            }
+        }
+        if(isLoading){
+            CircularProgressIndicator(
+                modifier = Modifier.align(Alignment.Center)
             )
         }
     }
-
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -200,15 +214,3 @@ fun outLinedButton(buttonText: String, isEnabled: Boolean, onClick: () -> Unit){
         Text(text = buttonText, color = if(isEnabled) Color.Black else Color.White, fontSize = 16.sp, modifier = Modifier.padding(0.dp))
     }
 }
-
-fun requestSmsPermission(context: Context) {
-    if (ActivityCompat.checkSelfPermission(
-            context, Manifest.permission.RECEIVE_SMS,
-        ) != PackageManager.PERMISSION_GRANTED
-    ) {
-        ActivityCompat.requestPermissions(
-            context as Activity, arrayOf(Manifest.permission.RECEIVE_SMS, Manifest.permission.SEND_SMS), 1
-        )
-    }
-}
-

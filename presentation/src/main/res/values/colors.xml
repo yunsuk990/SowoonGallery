@@ -10,5 +10,6 @@
     <color name="chatroom">#FFFFFFFF</color>
     <color name="transparent">#00ff0000</color>
     <color name="lightwhite">#F1F1F1</color>
+    <color name="lightgray">#DCDCDE</color>
     <color name="red">#FF0000</color>
 </resources>
