@@ -2,7 +2,9 @@ package com.example.presentation.view
 
 import android.app.Activity
 import android.os.Bundle
+import android.telephony.PhoneNumberUtils
 import android.util.Log
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
@@ -30,6 +32,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -37,18 +40,17 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.presentation.model.AuthState
 import com.example.presentation.view.ui.theme.SowoonTheme
 import com.example.presentation.viewModel.LoginViewModel
 import com.google.firebase.auth.PhoneAuthProvider
 
 class LoginActivity : ComponentActivity() {
-    //val viewModel by viewModels<LoginViewModel>()
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
@@ -64,27 +66,23 @@ class LoginActivity : ComponentActivity() {
             }
         }
     }
-
-    override fun onStart() {
-        super.onStart()
-    }
 }
-
 @Composable
 private fun MainScreen(
     viewModel: LoginViewModel,
     activity: Activity
 ){
-    val context = LocalContext.current
+    //핸드폰 번호 입력 옵저블
     var phoneNumberVisible by rememberSaveable { mutableStateOf(true) }
+
+    //핸드폰 번호
     var phoneNumber by rememberSaveable { mutableStateOf("") }
+
+    //인증번호
     var verifyNumber by rememberSaveable { mutableStateOf("") }
-    var isButtonEnabled by rememberSaveable { mutableStateOf(false) }
-    var isVerifyButtonEnabled by rememberSaveable { mutableStateOf(false) }
 
-    var isLoading by viewModel.signInRespond
-
-    //requestSmsPermission(context)
+    // 최종가입 성공 유무
+    val authState by viewModel.authState.observeAsState()
 
     Box(
         modifier = Modifier.fillMaxSize()
@@ -95,86 +93,137 @@ private fun MainScreen(
                 .padding(top = 20.dp)
                 .align(Alignment.TopStart)
         ) {
-            IconButton(onClick = {
-                activity.finish()
-            }) {
-                Icon(
-                    Icons.Filled.KeyboardArrowLeft,
-                    contentDescription = "back",
-                    modifier = Modifier.size(35.dp)
-                )
+            IconButton(onClick = { activity.finish() }) {
+                Icon(Icons.Filled.KeyboardArrowLeft, contentDescription = "back", modifier = Modifier.size(35.dp))
             }
 
             Spacer(modifier = Modifier.height(10.dp))
 
             if(phoneNumberVisible){
-                Text(
-                    text = "안녕하세요!\n휴대폰 번호로 로그인해주세요.",
-                    fontWeight = FontWeight.Bold,
-                    lineHeight = 30.sp,
-                    fontSize = 20.sp,
-                    modifier = Modifier
-                        .padding(start = 15.dp)
-                        .alpha(if (phoneNumberVisible) 1f else 0f),
+                Text(text = "안녕하세요!\n휴대폰 번호로 로그인해주세요.", fontWeight = FontWeight.Bold, lineHeight = 30.sp, fontSize = 20.sp, modifier = Modifier
+                    .padding(start = 15.dp)
                 )
             }
 
             Spacer(modifier = Modifier.height(15.dp))
 
-            outlineTextField(
-                labelText = "휴대폰 번호(- 없이 숫자만 입력)",
-                text = phoneNumber,
-                onValueChange = { newText ->
-                    phoneNumber = newText
-                    isButtonEnabled = newText.length >= 10
-                }
-            )
+            PhoneNumberInput(phoneNumber){ newNumber -> phoneNumber = newNumber}
 
-            outLinedButton(
-                buttonText = if(phoneNumberVisible) "인증문자 받기" else "인증번호 재전송",
-                isEnabled = isButtonEnabled,
-                onClick = {
-                    Log.d("sms_phone", phoneNumber)
-                    if(phoneNumberVisible){
-                        viewModel.verfiyPhoneNumber("+82 $phoneNumber")
-                    }else{
-                        viewModel.resendVerifyPhoneNumber("+82 $phoneNumber")
-                    }
-                    phoneNumberVisible = false
-                }
-            )
+            PhoneVerificationButton(phoneNumberVisible, phoneNumber, viewModel){ phoneNumberVisible = false}
 
             if(!phoneNumberVisible){
+                Log.d("Verification", "true")
                 Spacer(modifier = Modifier.height(10.dp))
-                outlineTextField(
-                    labelText = "인증번호 입력",
-                    text = verifyNumber,
-                    onValueChange = {newText ->
-                        verifyNumber = newText
-                        isVerifyButtonEnabled = newText.length >= 4
-
-                    })
-
-                outLinedButton(
-                    buttonText = "인증번호 확인",
-                    isEnabled = isVerifyButtonEnabled,
-                    onClick = {
-                        //인증번호 확인
-                        val credential = PhoneAuthProvider.getCredential(
-                            viewModel.storedVerificationId,
-                            verifyNumber
-                        )
-                        viewModel.signInWithPhoneAuthCredential(credential)
-                    }
-                )
+                VerificationInput(verifyNumber){ newCode -> verifyNumber = newCode }
+                VerifyButton(viewModel,verifyNumber)
             }
+
+            HandleAuthState(activity, authState, viewModel)
         }
-        if(isLoading){
-            CircularProgressIndicator(
-                modifier = Modifier.align(Alignment.Center)
-            )
+        if (authState is AuthState.Loading) { CircularProgressIndicator(modifier = Modifier.align(Alignment.Center)) }
+    }
+}
+
+@Composable
+fun HandleAuthState(activity: Activity, authState: AuthState?, viewModel: LoginViewModel) {
+    when(authState){
+        AuthState.Authenticated -> {
+            Log.d("AuthState", "Authenticated")
+            Toast.makeText(activity, "가입 완료", Toast.LENGTH_SHORT).show()
+            activity.finish()
+        }
+        is AuthState.NewUser -> {
+            Log.d("AuthState", "NewUser")
+            val uid = authState.uid
+            registerUI(viewModel = viewModel, uid)
+        }
+        AuthState.ExistUser -> {
+            Log.d("AuthState", "ExistUser")
+            Toast.makeText(activity, "로그인 완료", Toast.LENGTH_SHORT).show()
+            activity.finish()
+        }
+        is AuthState.Error -> {
+            Log.d("AuthState", "error")
+            val message = authState.message
+            Toast.makeText(activity, message, Toast.LENGTH_SHORT).show()
+            viewModel.resetAuthState()
+        }
+        else -> {
+
         }
     }
+}
+
+@Composable
+fun VerifyButton(viewModel: LoginViewModel, verifyNumber: String) {
+    outLinedButton(
+        buttonText = "인증번호 확인",
+        isEnabled = true,
+        onClick = {
+            //인증번호 확인
+            var a = verifyNumber
+            val credential = PhoneAuthProvider.getCredential(viewModel.storedVerificationId, a).apply {
+                Log.d("credential", "called")
+            }
+            viewModel.signInWithPhoneAuthCredential(credential)
+        }
+    )
+}
+
+@Composable
+fun VerificationInput(verifyNumber: String, onValueChange: (String) -> Unit) {
+    outlineTextField(
+        labelText = "인증번호 입력",
+        text = verifyNumber,
+        onValueChange = onValueChange
+    )
+}
+
+@Composable
+fun PhoneVerificationButton(
+    phoneNumberVisible: Boolean,
+    phoneNumber: String,
+    viewModel: LoginViewModel,
+    onHide: () -> Unit
+) {
+    outLinedButton(
+        buttonText = if(phoneNumberVisible) "인증문자 받기" else "인증번호 재전송", isEnabled = phoneNumber.length >= 10,
+        onClick = {
+            Log.d("sms_phone", PhoneNumberUtils.formatNumber("+82${phoneNumber.removeRange(0,1)}", "KR").toString())
+            Log.d("phoneNumberVisible",phoneNumberVisible.toString())
+            if(phoneNumberVisible){
+                viewModel.verfiyPhoneNumber("+82 ${phoneNumber.removeRange(0,1)}")
+            }else{
+                viewModel.resendVerifyPhoneNumber("+82 ${phoneNumber.removeRange(0,1)}")
+            }
+            onHide()
+        }
+    )
+}
+
+
+@Composable
+fun PhoneNumberInput(phoneNumber: String, onValueChange: (String) -> Unit) {
+    outlineTextField(
+        labelText = "휴대폰 번호(- 없이 숫자만 입력)",
+        text = phoneNumber,
+        onValueChange = { newText ->
+            if (newText.length <= 11) {
+                onValueChange(newText)
+            }
+        }
+    )
+}
+
+@Composable()
+fun registerUI(viewModel: LoginViewModel, uid: String){
+    var userName by rememberSaveable { mutableStateOf("") }
+    var userOld by rememberSaveable { mutableStateOf("") }
+    outlineTextField(labelText = "이름", text = userName, onValueChange = { name -> userName = name})
+    outlineTextField(labelText = "나이", text = userOld, onValueChange = { old -> userOld = old})
+    outLinedButton(buttonText = "가입하기", isEnabled = userName.isNotEmpty() && userOld.isNotEmpty(), onClick = {
+        viewModel.saveUserInfoRTD(uid, userName, userOld)
+    })
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -182,11 +231,7 @@ private fun MainScreen(
 fun outlineTextField(labelText: String, text: String, onValueChange : (String) -> Unit){
     OutlinedTextField(
         value = text,
-        onValueChange = { newText ->
-            if(newText.length <= 11){
-                onValueChange(newText)
-            }
-        },
+        onValueChange = onValueChange,
         label = { Text(text = labelText) },
         textStyle = TextStyle(fontSize = 20.sp),
         modifier = Modifier

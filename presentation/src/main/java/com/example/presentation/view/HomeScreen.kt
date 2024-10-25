@@ -32,7 +32,7 @@ import androidx.navigation.NavHostController
 import com.example.presentation.R
 
 @Composable
-fun HomeScreen(navController: NavHostController){
+fun HomeScreen(){
     Column(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {

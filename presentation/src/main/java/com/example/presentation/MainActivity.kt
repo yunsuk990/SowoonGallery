@@ -118,9 +118,9 @@ fun TopAppBar(scrollBehavior: TopAppBarScrollBehavior){
 @Composable
 fun MyAppNavHost(navController: NavHostController, modifier: Modifier = Modifier){
     NavHost(navController = navController, startDestination = Screen.Home.route, modifier = modifier){
-        composable(Screen.Home.route) { HomeScreen(navController) }
+        composable(Screen.Home.route) { HomeScreen() }
 //        composable(Screen.Favorites.route) { FavoritesScreen(navController) }
-        composable(Screen.Profile.route) { ProfileScreen(navController, "yunsuk") }
+        composable(Screen.Profile.route) { ProfileScreen() }
 //        composable(
 //            route = "details/{itemId}",
 //            arguments = listOf(navArgument("itemId") { type = NavType.IntType })
