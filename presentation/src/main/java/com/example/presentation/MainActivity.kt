@@ -5,6 +5,7 @@ import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.viewModels
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -12,18 +13,14 @@ import androidx.compose.material.BottomNavigation
 import androidx.compose.material.BottomNavigationItem
 import androidx.compose.material.IconButton
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.CenterAlignedTopAppBar
-import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.TopAppBarScrollBehavior
 import androidx.compose.material3.rememberTopAppBarState
@@ -32,12 +29,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
-import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.navigation.NavController
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -49,26 +43,16 @@ import com.example.presentation.view.HomeScreen
 import com.example.presentation.view.ProfileScreen
 import com.example.presentation.view.StartActivity
 import com.example.presentation.view.ui.theme.SowoonTheme
-import com.google.android.material.bottomnavigation.BottomNavigationView
-import com.google.firebase.FirebaseApp
+import com.example.presentation.viewModel.MainViewModel
 
 class MainActivity : ComponentActivity() {
-    @OptIn(ExperimentalMaterial3Api::class)
+
+    private val viewModel: MainViewModel by viewModels()
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
             SowoonTheme {
-                val navController = rememberNavController()
-                val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior(rememberTopAppBarState())
-
-                // A surface container using the 'background' color from the theme
-                Scaffold(
-                    topBar = { TopAppBar(scrollBehavior)},
-                    bottomBar = { BottomAppBar(navController) },
-                    modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection)
-                ) { innerPadding ->
-                    MyAppNavHost(navController = navController, modifier = Modifier.padding(innerPadding) )
-                }
+                MainScreen(viewModel = viewModel)
             }
         }
     }
@@ -76,58 +60,23 @@ class MainActivity : ComponentActivity() {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-@Preview
-fun Test(){
+fun MainScreen(viewModel: MainViewModel){
     val navController = rememberNavController()
-    val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior(rememberTopAppBarState())
 
     Scaffold(
-        topBar = { TopAppBar(scrollBehavior)},
-        bottomBar = { BottomAppBar(navController) }
+        bottomBar = { BottomAppBar(navController) },
     ) { innerPadding ->
-        MyAppNavHost(navController = navController, modifier = Modifier.padding(innerPadding) )
+        MyAppNavHost(navController = navController, modifier = Modifier.padding(innerPadding), viewModel )
     }
-}
 
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun TopAppBar(scrollBehavior: TopAppBarScrollBehavior){
-    val context = LocalContext.current
-    CenterAlignedTopAppBar(
-        title = { Text(text = "Sowoon", textAlign = TextAlign.Center)},
-        colors = TopAppBarDefaults.smallTopAppBarColors(
-            containerColor = Color.White,
-            titleContentColor = Color.Black,
-            navigationIconContentColor = Color.Black,
-            actionIconContentColor = Color.Black
-        ),
-        navigationIcon = { Column(modifier = Modifier.padding(start = 5.dp)) {
-            Icon(Icons.Filled.List, contentDescription = null, Modifier.size(30.dp))
-        } },
-        actions = { Column(Modifier.padding(end = 5.dp)) {
-            IconButton(
-                onClick = { context.startActivity(Intent(context, StartActivity::class.java).setFlags(Intent.FLAG_ACTIVITY_NO_HISTORY))}
-            ){
-                Icon(Icons.Filled.Person, contentDescription = null, Modifier.size(30.dp))
-            }
-        } },
-        scrollBehavior = scrollBehavior
-    )
+
 }
 
 @Composable
-fun MyAppNavHost(navController: NavHostController, modifier: Modifier = Modifier){
+fun MyAppNavHost(navController: NavHostController, modifier: Modifier = Modifier, viewModel: MainViewModel){
     NavHost(navController = navController, startDestination = Screen.Home.route, modifier = modifier){
-        composable(Screen.Home.route) { HomeScreen() }
-//        composable(Screen.Favorites.route) { FavoritesScreen(navController) }
+        composable(Screen.Home.route) { HomeScreen(viewModel) }
         composable(Screen.Profile.route) { ProfileScreen() }
-//        composable(
-//            route = "details/{itemId}",
-//            arguments = listOf(navArgument("itemId") { type = NavType.IntType })
-//        ) { backStackEntry ->
-//            val itemId = backStackEntry.arguments?.getInt("itemId") ?: 0
-//            DetailsScreen(navController, itemId)
-//        }
     }
 }
 
@@ -157,5 +106,12 @@ fun BottomAppBar(navController: NavHostController) {
                 //label = {Text(text =  screen.route )}
             )
         }
+    }
+}
+
+@Composable
+fun logOutButton(viewModel: MainViewModel){
+    OutlinedButton(onClick = { viewModel.logOut()} ){
+        Text(text = "로그아웃")
     }
 }

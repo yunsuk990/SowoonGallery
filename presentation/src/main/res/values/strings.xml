@@ -5,4 +5,5 @@
     <string name="title_activity_login">LoginActivity</string>
     <string name="title_activity_start">StartActivity</string>
     <string name="title_activity_global_application">GlobalApplication</string>
+    <string name="title_activity_artwork">ArtworkActivity</string>
 </resources>
