@@ -1,5 +1,6 @@
 package com.example.presentation.viewModel
 
+import android.app.Activity
 import android.util.Log
 import android.widget.Toast
 import androidx.compose.runtime.MutableState
@@ -7,6 +8,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
+import com.example.domain.model.DomainUser
+import com.example.domain.usecase.CheckUserRtdbUseCase
+import com.example.domain.usecase.SaveUserInfoUseCase
+import com.example.domain.usecase.SignInWithPhoneUseCase
 import com.example.presentation.model.AuthState
 import com.example.presentation.model.User
 import com.example.presentation.view.LoginActivity
@@ -26,12 +31,18 @@ import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
 import com.google.firebase.database.database
+import dagger.hilt.android.lifecycle.HiltViewModel
 import java.util.concurrent.TimeUnit
+import javax.inject.Inject
 
-class LoginViewModel(var application: LoginActivity): ViewModel() {
+@HiltViewModel
+class LoginViewModel @Inject constructor(
+    private val saveUserInfoUseCase: SaveUserInfoUseCase,
+    private val checkUserRtdbUseCase: CheckUserRtdbUseCase,
+    private val signInWithPhoneUseCase: SignInWithPhoneUseCase
+): ViewModel() {
 
     private val auth: FirebaseAuth = Firebase.auth
-    private val database: FirebaseDatabase = Firebase.database
 
     var storedVerificationId = ""
     var resendToken: PhoneAuthProvider.ForceResendingToken? = null
@@ -40,11 +51,11 @@ class LoginViewModel(var application: LoginActivity): ViewModel() {
     private val _authState = MutableLiveData<AuthState>()
     val authState: LiveData<AuthState> = _authState
 
+
     //DB 가입 처리
     fun saveUserInfoRTD(uid: String, name: String, age: String){
         _authState.value = AuthState.Loading
-        val userRef = database.getReference("users")
-        userRef.child(uid).setValue(User(name, age.toInt()))
+        saveUserInfoUseCase.execute(DomainUser(uid,name,age.toInt()))
             .addOnSuccessListener {
                 _authState.value = AuthState.Authenticated
             }
@@ -53,33 +64,9 @@ class LoginViewModel(var application: LoginActivity): ViewModel() {
             }
     }
 
-    fun signInWithPhoneAuthCredential(credential: PhoneAuthCredential) {
-        _authState.value = AuthState.Loading
-        auth.signInWithCredential(credential)
-            .addOnCompleteListener(application) { task ->
-                if (task.isSuccessful) {
-                    val user = task.result?.user
-                    Log.d("sms", "signInWithCredential:success + $user")
-                    //사용자 가입 여부
-                    if(user!=null){
-                        checkUserRTD(user?.uid!!)
-                    }
-                } else {
-                    Log.w("sms", "signInWithCredential:failure", task.exception)
-//                    if (task.exception is FirebaseAuthInvalidCredentialsException) {
-//
-//                    }
-                    _authState.value = AuthState.Error("인증코드 오류")
-                }
-            }.addOnFailureListener {
-                _authState.value = AuthState.Error(it.toString())
-            }
-    }
-
-
     //가입된 사용자인지 확인
     fun checkUserRTD(uid: String){
-        database.getReference("users").child(uid).get().addOnSuccessListener {snapshot ->
+        checkUserRtdbUseCase.execute(uid).addOnSuccessListener { snapshot ->
             //사용자 존재
             if(snapshot.exists()){
                 Log.d("checkUserRTD", "SUCCESS")
@@ -92,24 +79,45 @@ class LoginViewModel(var application: LoginActivity): ViewModel() {
         }
     }
 
+    fun signInWithPhoneAuthCredential(credential: PhoneAuthCredential) {
+        _authState.value = AuthState.Loading
+        signInWithPhoneUseCase.excute(credential)
+            .addOnCompleteListener { task ->
+                if (task.isSuccessful) {
+                    val user = task.result?.user
+                    Log.d("sms", "signInWithCredential:success + $user")
+                    if(user!=null){
+                        checkUserRTD(user?.uid!!)
+                    }
+                } else {
+                    _authState.value = AuthState.Error("인증코드 오류")
+                }
+            }
+            .addOnFailureListener {
+                _authState.value = AuthState.Error(it.toString())
+            }
+
+    }
+
+
 
     // 전화번호 인증코드 요청
-    fun verfiyPhoneNumber(phoneNumber: String){
+    fun verfiyPhoneNumber(phoneNumber: String, activity: Activity){
         val options = PhoneAuthOptions.newBuilder(auth)
             .setPhoneNumber(phoneNumber) // Phone number to verify
             .setTimeout(90L, TimeUnit.SECONDS) // Timeout and unit
-            .setActivity(application) // Activity (for callback binding)
+            .setActivity(activity) // Activity (for callback binding)
             .setCallbacks(callbacks) // OnVerificationStateChangedCallbacks
             .build()
         PhoneAuthProvider.verifyPhoneNumber(options)
     }
 
     // 전화번호 인증코드 요청
-    fun resendVerifyPhoneNumber(phoneNumber: String){
+    fun resendVerifyPhoneNumber(phoneNumber: String,  activity: Activity){
         val options = PhoneAuthOptions.newBuilder(auth)
             .setPhoneNumber(phoneNumber) // Phone number to verify
             .setTimeout(90L, TimeUnit.SECONDS) // Timeout and unit
-            .setActivity(application) // Activity (for callback binding)
+            .setActivity(activity) // Activity (for callback binding)
             .setCallbacks(callbacks) // OnVerificationStateChangedCallbacks
         if(resendToken!= null){
             options.setForceResendingToken(resendToken!!)
@@ -122,7 +130,7 @@ class LoginViewModel(var application: LoginActivity): ViewModel() {
         //번호인증 혹은 기타 다른 인증이 끝난 상태
         override fun onVerificationCompleted(credential: PhoneAuthCredential) {
             Log.d("sms", "onVerificationCompleted:$credential")
-            Toast.makeText(application, "인증코드가 전송되었습니다. 90초 이내에 입력해주세요.", Toast.LENGTH_SHORT).show()
+            //Toast.makeText(application, "인증코드가 전송되었습니다. 90초 이내에 입력해주세요.", Toast.LENGTH_SHORT).show()
 //            storedCredential = credential
             //signInWithPhoneAuthCredential(credential)
         }
@@ -138,7 +146,7 @@ class LoginViewModel(var application: LoginActivity): ViewModel() {
             } else if (e is FirebaseAuthMissingActivityForRecaptchaException) {
                 // reCAPTCHA verification attempted with null Activity
             }
-            Toast.makeText(application, "전화번호가 잘못되었습니다.", Toast.LENGTH_SHORT).show()
+            //Toast.makeText(application, "전화번호가 잘못되었습니다.", Toast.LENGTH_SHORT).show()
             // Show a message and update the UI
         }
 
