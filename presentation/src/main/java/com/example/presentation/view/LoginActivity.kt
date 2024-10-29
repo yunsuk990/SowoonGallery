@@ -7,6 +7,7 @@ import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.viewModels
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -40,6 +41,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -49,8 +51,12 @@ import com.example.presentation.model.AuthState
 import com.example.presentation.view.ui.theme.SowoonTheme
 import com.example.presentation.viewModel.LoginViewModel
 import com.google.firebase.auth.PhoneAuthProvider
+import dagger.hilt.android.AndroidEntryPoint
 
+@AndroidEntryPoint
 class LoginActivity : ComponentActivity() {
+
+    private val viewModel: LoginViewModel by viewModels()
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
@@ -61,7 +67,7 @@ class LoginActivity : ComponentActivity() {
                         .fillMaxSize()
                         .background(Color.White),
                 ) {
-                    MainScreen(LoginViewModel(this), this)
+                    MainScreen(viewModel, this)
                 }
             }
         }
@@ -109,13 +115,13 @@ private fun MainScreen(
 
             PhoneNumberInput(phoneNumber){ newNumber -> phoneNumber = newNumber}
 
-            PhoneVerificationButton(phoneNumberVisible, phoneNumber, viewModel){ phoneNumberVisible = false}
+            PhoneVerificationButton(activity,phoneNumberVisible, phoneNumber, viewModel){ phoneNumberVisible = false}
 
             if(!phoneNumberVisible){
                 Log.d("Verification", "true")
                 Spacer(modifier = Modifier.height(10.dp))
                 VerificationInput(verifyNumber){ newCode -> verifyNumber = newCode }
-                VerifyButton(viewModel,verifyNumber)
+                VerifyButton(viewModel,verifyNumber, activity)
             }
 
             HandleAuthState(activity, authState, viewModel)
@@ -155,7 +161,7 @@ fun HandleAuthState(activity: Activity, authState: AuthState?, viewModel: LoginV
 }
 
 @Composable
-fun VerifyButton(viewModel: LoginViewModel, verifyNumber: String) {
+fun VerifyButton(viewModel: LoginViewModel, verifyNumber: String, activity: Activity) {
     outLinedButton(
         buttonText = "인증번호 확인",
         isEnabled = true,
@@ -181,6 +187,7 @@ fun VerificationInput(verifyNumber: String, onValueChange: (String) -> Unit) {
 
 @Composable
 fun PhoneVerificationButton(
+    activity: Activity,
     phoneNumberVisible: Boolean,
     phoneNumber: String,
     viewModel: LoginViewModel,
@@ -192,9 +199,9 @@ fun PhoneVerificationButton(
             Log.d("sms_phone", PhoneNumberUtils.formatNumber("+82${phoneNumber.removeRange(0,1)}", "KR").toString())
             Log.d("phoneNumberVisible",phoneNumberVisible.toString())
             if(phoneNumberVisible){
-                viewModel.verfiyPhoneNumber("+82 ${phoneNumber.removeRange(0,1)}")
+                viewModel.verfiyPhoneNumber("+82 ${phoneNumber.removeRange(0,1)}", activity)
             }else{
-                viewModel.resendVerifyPhoneNumber("+82 ${phoneNumber.removeRange(0,1)}")
+                viewModel.resendVerifyPhoneNumber("+82 ${phoneNumber.removeRange(0,1)}", activity)
             }
             onHide()
         }

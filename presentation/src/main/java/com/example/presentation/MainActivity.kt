@@ -44,7 +44,9 @@ import com.example.presentation.view.ProfileScreen
 import com.example.presentation.view.StartActivity
 import com.example.presentation.view.ui.theme.SowoonTheme
 import com.example.presentation.viewModel.MainViewModel
+import dagger.hilt.android.AndroidEntryPoint
 
+@AndroidEntryPoint
 class MainActivity : ComponentActivity() {
 
     private val viewModel: MainViewModel by viewModels()
