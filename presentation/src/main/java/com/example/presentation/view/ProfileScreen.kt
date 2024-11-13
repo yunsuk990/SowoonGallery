@@ -1,41 +1,27 @@
 package com.example.presentation.view
 
 import android.content.Intent
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.itemsIndexed
-import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
-import androidx.compose.foundation.lazy.staggeredgrid.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.IconButton
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.List
-import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CenterAlignedTopAppBar
+import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
@@ -43,6 +29,7 @@ import androidx.compose.material3.TopAppBarScrollBehavior
 import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -57,18 +44,22 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil3.compose.AsyncImage
+import com.example.domain.model.DomainArtwork
 import com.example.presentation.R
 import com.example.presentation.model.Artwork
+import com.example.presentation.viewModel.MainViewModel
 import com.google.gson.Gson
 
 @OptIn(ExperimentalMaterial3Api::class)
-@Preview(showSystemUi = true)
 @Composable
-fun ProfileScreen(){
+fun ProfileScreen(viewModel: MainViewModel) {
     var selectedIndex by rememberSaveable { mutableStateOf(0) }
-    var list = arrayListOf("Home", "Work", "Travel", "Fitness", "Books", "Music", "Games")
+    var list = arrayListOf("전체", "한국화", "수채화", "아크릴화")
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior(rememberTopAppBarState())
-    var artworks = testItem()
+    val artworkList by viewModel.artworkLiveData.observeAsState()
+    Log.d("artworkList", artworkList?.size.toString())
+    var context = LocalContext.current
 
     Column(
         modifier = Modifier
@@ -81,7 +72,11 @@ fun ProfileScreen(){
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             content = {
                 itemsIndexed(list){ index, title ->
-                    categoryButton(buttonText = title, isSelected = index == selectedIndex) { selectedIndex = index }
+                    categoryButton(buttonText = title, isSelected = index == selectedIndex) {
+                        //firebase 데이터 가져오기
+                        viewModel.getArworksList(if(title == "전체") null else title)
+                        selectedIndex = index
+                    }
                 }
             }
         )
@@ -89,8 +84,17 @@ fun ProfileScreen(){
         LazyVerticalStaggeredGrid(
             columns = StaggeredGridCells.Fixed(2),
             content = {
-                items(artworks.size) {
-                    artworkCard(artwork = artworks.get(it))
+                artworkList?.let { list ->
+                    Log.d("LazyVerticalStaggeredGrid", list.size.toString())
+                    if(list.isNotEmpty()){
+                        items(artworkList!!.size) {
+                            artworkCard(artwork = artworkList!![it]){
+                                context.startActivity(Intent(context, ArtworkActivity::class.java).apply {
+                                    putExtra("artwork", Gson().toJson(artworkList!![it]))
+                                })
+                            }
+                        }
+                    }
                 }
             },
             contentPadding = PaddingValues(8.dp),
@@ -102,23 +106,16 @@ fun ProfileScreen(){
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun artworkCard(artwork: Artwork){
-    val context = LocalContext.current
-    Card(
-        modifier = Modifier.wrapContentHeight().wrapContentWidth(),
-        onClick = {
-            context.startActivity(Intent(context, ArtworkActivity::class.java).apply {
-                putExtra("artwork", artwork)
-            })
-        }
-        ){
-        Image(
-            painter = painterResource(id = artwork.image),
-            contentDescription = null,
-            contentScale = ContentScale.FillHeight,
-            modifier = Modifier.clip(RoundedCornerShape(15.dp))
+fun artworkCard(artwork: DomainArtwork, onClick: () -> Unit){
+    AsyncImage(
+        model = artwork.url,
+        modifier = Modifier
+            .wrapContentHeight()
+            .wrapContentWidth()
+            .clip(RoundedCornerShape(5.dp))
+            .clickable{ onClick() },
+        contentDescription = "이미지"
         )
-    }
 }
 
 @Composable
@@ -135,7 +132,7 @@ fun categoryButton(buttonText: String, isSelected: Boolean, onClick: () -> Unit)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ProfileTopBar(scrollBehavior: TopAppBarScrollBehavior){
+fun ProfileTopBar(scrollBehavior: TopAppBarScrollBehavior) {
     CenterAlignedTopAppBar(
         title = { Text(text = "작품", textAlign = TextAlign.Center) },
         colors = TopAppBarDefaults.smallTopAppBarColors(
@@ -146,40 +143,7 @@ fun ProfileTopBar(scrollBehavior: TopAppBarScrollBehavior){
         ),
         navigationIcon = {},
         actions = {},
-        scrollBehavior = scrollBehavior
+        scrollBehavior = scrollBehavior,
     )
+    Divider(thickness = 0.5.dp, color = Color.LightGray)
 }
-
-fun testItem(): ArrayList<Artwork> {
-    return arrayListOf<Artwork>(
-        Artwork("한국", image = R.drawable.sowoon_bg),
-        Artwork("한국",image = R.drawable.logo),
-        Artwork("한국",image = R.drawable.sowoon_bg ),
-        Artwork("한국",image = R.drawable.logo_final),
-        Artwork("한국", image = R.drawable.sowoon_bg),
-        Artwork("한국",image = R.drawable.logo),
-        Artwork("한국",image = R.drawable.sowoon_bg ),
-        Artwork("한국",image = R.drawable.logo_final)
-        ,
-        Artwork("한국", image = R.drawable.sowoon_bg),
-        Artwork("한국",image = R.drawable.logo),
-        Artwork("한국",image = R.drawable.sowoon_bg ),
-        Artwork("한국",image = R.drawable.logo_final)
-        ,
-        Artwork("한국", image = R.drawable.sowoon_bg),
-        Artwork("한국",image = R.drawable.logo),
-        Artwork("한국",image = R.drawable.sowoon_bg ),
-        Artwork("한국",image = R.drawable.logo_final)
-        ,
-        Artwork("한국", image = R.drawable.sowoon_bg),
-        Artwork("한국",image = R.drawable.logo),
-        Artwork("한국",image = R.drawable.sowoon_bg ),
-        Artwork("한국",image = R.drawable.logo_final),
-        Artwork("한국", image = R.drawable.sowoon_bg),
-        Artwork("한국",image = R.drawable.logo),
-        Artwork("한국",image = R.drawable.sowoon_bg ),
-        Artwork("한국",image = R.drawable.logo_final)
-
-    )
-}
-
