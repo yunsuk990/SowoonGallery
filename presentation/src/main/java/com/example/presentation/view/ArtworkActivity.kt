@@ -2,6 +2,7 @@ package com.example.presentation.view
 
 import android.app.Activity
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
@@ -22,6 +23,7 @@ import androidx.compose.material.Icon
 import androidx.compose.material.IconButton
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -30,7 +32,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
@@ -63,6 +64,12 @@ class ArtworkActivity : ComponentActivity() {
         val argument = intent.getStringExtra("artwork")
         val artwork: DomainArtwork = Gson().fromJson(argument, DomainArtwork::class.java)
 
+        // artwork.key가 변경될 때마다 실행됩니다.
+        viewModel.getFavoriteArtwork(artworkUid = artwork.key!!)
+        viewModel.getLikedArtwork(artworkUid = artwork.key!!)
+        viewModel.getLikedCountArtwork(artwork.key!!, artwork.category!!)
+
+
         setContent {
             SowoonGalleryTheme {
                 Surface(
@@ -80,18 +87,15 @@ class ArtworkActivity : ComponentActivity() {
 @Composable
 fun ArtworkScreen(artwork: DomainArtwork, viewModel: ArtworkViewModel){
     val scrollstate = rememberScrollState()
-    val artworkLikedState by viewModel.artworkLikedState.observeAsState()
-
-    LaunchedEffect(key1 = artwork.key) {
-        // artwork.key가 변경될 때마다 실행됩니다.
-        viewModel.getFavoriteArtwork(artworkUid = artwork.key!!)
-    }
+    val artworkFavoriteState by viewModel.artworkFavoriteState.observeAsState(initial = false)
+    val artworkLikedState by viewModel.artworkLikedState.observeAsState(initial = false)
+    val artworkLikedCountState by viewModel.artworkLikedCountState.observeAsState(initial = false)
 
     Box(modifier = Modifier.fillMaxSize()){
         ArtworkTopBar(
             modifier = Modifier.zIndex(1f),
-            artworkLikedState
-        )
+            artworkFavoriteState,
+        ) { viewModel.setFavoriteArtwork(artworkFavoriteState, artwork.key!!, artwork.category!!) }
         Column(
             modifier = Modifier
                 .verticalScroll(scrollstate)
@@ -117,14 +121,16 @@ fun ArtworkScreen(artwork: DomainArtwork, viewModel: ArtworkViewModel){
             Modifier
                 .fillMaxWidth()
                 .background(Color.LightGray)
-                .align(Alignment.BottomCenter)
-        )
+                .align(Alignment.BottomCenter),
+            artworkLikedState,
+            artworkLikedCountState
+        ){ viewModel.setLikedArtwork(artworkLikedState, artwork.key!!, artwork.category!!) }
     }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ArtworkTopBar(modifier: Modifier, artworkLikedState: Boolean?){
+fun ArtworkTopBar(modifier: Modifier, favoriteState: Boolean, favoriteBtnOnClick: () -> Unit){
     var context = LocalContext.current
 
     CenterAlignedTopAppBar(
@@ -141,10 +147,8 @@ fun ArtworkTopBar(modifier: Modifier, artworkLikedState: Boolean?){
             Icon(Icons.Filled.ArrowBack, contentDescription = null)
         }},
         actions = {
-            IconButton(onClick = {
-
-            }) {
-                if(artworkLikedState == true){
+            IconButton(onClick = { favoriteBtnOnClick() }) {
+                if(favoriteState){
                     Icon(painterResource(R.drawable.bookmark_filled), contentDescription = "저장", modifier = Modifier.size(30.dp))
                 }else{
                     Icon(painterResource(R.drawable.bookmark_border), contentDescription = "저장", modifier = Modifier.size(30.dp))
@@ -156,22 +160,30 @@ fun ArtworkTopBar(modifier: Modifier, artworkLikedState: Boolean?){
 }
 
 @Composable
-fun userActionButton(modifier: Modifier) {
+fun userActionButton(
+    modifier: Modifier,
+    likedState: Boolean,
+    artworkLikedCountState: Any,
+    likedBtnOnClick: () -> Unit
+) {
     Row(
         modifier = modifier,
         verticalAlignment = Alignment.CenterVertically
     ){
-        IconButton(onClick = {
-
-        }, modifier = Modifier
+        IconButton(onClick = { likedBtnOnClick() }, modifier = Modifier
             .background(colorResource(id = R.color.test))
             .padding(7.dp)) {
             Column(
                 verticalArrangement = Arrangement.Center,
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Icon(Icons.Filled.FavoriteBorder, contentDescription = "좋아요", modifier = Modifier.size(30.dp))
-                Text(text = "1")
+                Log.d("userActionButton", likedState.toString())
+                if(!likedState) {
+                    Icon(Icons.Filled.FavoriteBorder, contentDescription = "좋아요", modifier = Modifier.size(30.dp))
+                } else {
+                    Icon(Icons.Filled.Favorite, contentDescription = "좋아요", modifier = Modifier.size(30.dp))
+                }
+                Text(text = artworkLikedCountState.toString())
             }
         }
 
