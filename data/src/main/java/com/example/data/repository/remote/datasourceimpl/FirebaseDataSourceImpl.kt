@@ -10,6 +10,7 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.PhoneAuthCredential
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.database.ValueEventListener
 import com.google.firebase.storage.FirebaseStorage
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
@@ -17,7 +18,7 @@ import javax.inject.Inject
 class FirebaseDataSourceImpl @Inject constructor(
     private val firebaseAuth: FirebaseAuth,
     private val firebaseRtdb: FirebaseDatabase,
-    private val firestore: FirebaseStorage
+        private val firestore: FirebaseStorage
 ): FirebaseDataSource {
     override suspend fun getArtworkLists(category: String?): List<DomainArtwork> {
         val ref = if(category != null){
@@ -68,11 +69,40 @@ class FirebaseDataSourceImpl @Inject constructor(
         return firebaseAuth.signInWithCredential(credential)
     }
 
-    override fun setFavoriteArtwork(): Task<Void> {
-        return firebaseRtdb.getReference("users").setValue(null)
+    override fun setFavoriteArtwork(
+        uid: String,
+        artworkUid: String,
+        isFavorite: Boolean,
+        category: String
+    ): Task<Void> {
+        return if(!isFavorite){
+            firebaseRtdb.getReference("users").child(uid).child("favoriteArtworks").child(artworkUid).removeValue()
+            firebaseRtdb.getReference("images").child(category).child(artworkUid).child("favoriteUser").child(uid).removeValue()
+        }else{
+            firebaseRtdb.getReference("users").child(uid).child("favoriteArtworks").child(artworkUid).setValue(isFavorite)
+            firebaseRtdb.getReference("images").child(category).child(artworkUid).child("favoriteUser").child(uid).setValue(isFavorite)
+        }
     }
 
     override fun getFavoriteArtwork(uid: String, artworkUid: String): Task<DataSnapshot> {
+        return firebaseRtdb.getReference("users").child(uid).child("favoriteArtworks").child(artworkUid).get()
+    }
+
+    override fun setLikedArtwork(uid: String, artworkUid: String, isLiked: Boolean, category: String): Task<Void> {
+        return if(!isLiked){
+            firebaseRtdb.getReference("users").child(uid).child("likedArtworks").child(artworkUid).removeValue()
+            firebaseRtdb.getReference("images").child(category).child(artworkUid).child("likedArtworks").child(uid).removeValue()
+        }else{
+            firebaseRtdb.getReference("users").child(uid).child("likedArtworks").child(artworkUid).setValue(isLiked)
+            firebaseRtdb.getReference("images").child(category).child(artworkUid).child("likedArtworks").child(uid).setValue(isLiked)
+        }
+    }
+
+    override fun getLikedArtwork(uid: String, artworkUid: String): Task<DataSnapshot> {
         return firebaseRtdb.getReference("users").child(uid).child("likedArtworks").child(artworkUid).get()
+    }
+
+    override fun getLikedCountArtwork(artworkUid: String, category: String, listener: ValueEventListener) {
+        firebaseRtdb.getReference("images").child(category).child(artworkUid).child("likedArtworks").addValueEventListener(listener)
     }
 }

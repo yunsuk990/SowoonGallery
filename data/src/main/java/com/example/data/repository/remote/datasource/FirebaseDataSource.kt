@@ -6,6 +6,7 @@ import com.google.android.gms.tasks.Task
 import com.google.firebase.auth.AuthResult
 import com.google.firebase.auth.PhoneAuthCredential
 import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.ValueEventListener
 
 interface FirebaseDataSource {
 
@@ -21,8 +22,16 @@ interface FirebaseDataSource {
     //sms 인증처리
     fun signInWithPhoneAuthCredential(credential: PhoneAuthCredential): Task<AuthResult>
 
-    fun setFavoriteArtwork(): Task<Void>
     fun getFavoriteArtwork(uid: String, artworkUid: String): Task<DataSnapshot>
+
+    fun setFavoriteArtwork(uid: String, artworkUid: String, isFavorite: Boolean, category: String): Task<Void>
+
+    fun setLikedArtwork(uid: String, artworkUid: String, isLiked: Boolean, category: String): Task<Void>
+
+    fun getLikedArtwork(uid: String, artworkUid: String): Task<DataSnapshot>
+
+    fun getLikedCountArtwork(artworkUid: String, category: String, listener: ValueEventListener)
+
 
     //전적 가져오기
     //fun getScore(): Task<QuerySnapshot>
