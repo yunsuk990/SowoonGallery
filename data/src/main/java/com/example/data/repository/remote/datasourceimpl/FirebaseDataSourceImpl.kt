@@ -12,6 +12,9 @@ import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
 import com.google.firebase.storage.FirebaseStorage
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 
@@ -20,6 +23,9 @@ class FirebaseDataSourceImpl @Inject constructor(
     private val firebaseRtdb: FirebaseDatabase,
         private val firestore: FirebaseStorage
 ): FirebaseDataSource {
+
+    private val usersRef = firebaseRtdb.getReference("users")
+    private val imagesRef = firebaseRtdb.getReference("images")
     override suspend fun getArtworkLists(category: String?): List<DomainArtwork> {
         val ref = if(category != null){
             firebaseRtdb.getReference("images").child(category)
@@ -79,7 +85,7 @@ class FirebaseDataSourceImpl @Inject constructor(
             firebaseRtdb.getReference("users").child(uid).child("favoriteArtworks").child(artworkUid).removeValue()
             firebaseRtdb.getReference("images").child(category).child(artworkUid).child("favoriteUser").child(uid).removeValue()
         }else{
-            firebaseRtdb.getReference("users").child(uid).child("favoriteArtworks").child(artworkUid).setValue(isFavorite)
+            firebaseRtdb.getReference("users").child(uid).child("favoriteArtworks").child(artworkUid).setValue(category)
             firebaseRtdb.getReference("images").child(category).child(artworkUid).child("favoriteUser").child(uid).setValue(isFavorite)
         }
     }
@@ -93,7 +99,7 @@ class FirebaseDataSourceImpl @Inject constructor(
             firebaseRtdb.getReference("users").child(uid).child("likedArtworks").child(artworkUid).removeValue()
             firebaseRtdb.getReference("images").child(category).child(artworkUid).child("likedArtworks").child(uid).removeValue()
         }else{
-            firebaseRtdb.getReference("users").child(uid).child("likedArtworks").child(artworkUid).setValue(isLiked)
+            firebaseRtdb.getReference("users").child(uid).child("likedArtworks").child(artworkUid).setValue(category)
             firebaseRtdb.getReference("images").child(category).child(artworkUid).child("likedArtworks").child(uid).setValue(isLiked)
         }
     }
@@ -105,4 +111,73 @@ class FirebaseDataSourceImpl @Inject constructor(
     override fun getLikedCountArtwork(artworkUid: String, category: String, listener: ValueEventListener) {
         firebaseRtdb.getReference("images").child(category).child(artworkUid).child("likedArtworks").addValueEventListener(listener)
     }
+
+    // Firebase Auth에서 사용자 삭제
+    override suspend fun deleteAccount(uid: String): Boolean {
+        return try {
+            firebaseAuth.currentUser?.delete()?.await()
+            true
+        }catch (e: Exception){
+            false
+        }
+
+
+    }
+
+    // 사용자 데이터 삭제
+    override suspend fun deleteUserRtdb(uid: String): Boolean {
+        return try {
+            val result = usersRef.child(uid).removeValue().await()
+            result != null
+        }catch (e: Exception){
+            false
+        }
+    }
+
+    //사용자가 좋아요한 작품에서 삭제
+    override suspend fun removeUserFromLikedArtworks(uid: String): Boolean {
+        return try {
+            val likedArtworkSnapshot = usersRef.child(uid).child("likedArtworks").get().await()
+            val likedArtworkIds = likedArtworkSnapshot.children.mapNotNull { it.key }
+            likedArtworkIds.forEach { artworkId ->
+                imagesRef.child(artworkId).child("likedUsers").child(uid).removeValue().await()
+            }
+            firebaseAuth.signOut()
+            true
+        }catch (e: Exception){
+            false
+        }
+    }
+
+    override suspend fun getFavoritesArtwork(uid: String): Flow<List<DomainArtwork>> = flow {
+        val favoriteArtworkSnapshot = usersRef.child(uid).child("favoriteArtworks").get().await()
+        val artworkData = mutableListOf<DomainArtwork>()
+        if(favoriteArtworkSnapshot.exists()){
+            for(artworkSnapshot in favoriteArtworkSnapshot.children){
+                val id = artworkSnapshot.key
+                val category = artworkSnapshot.value as String
+                val artwork = imagesRef.child(category).child(id!!).get().await()
+                val domainArtwork = artwork.getValue(DomainArtwork::class.java)!!
+                domainArtwork.key = id
+                artworkData.add(domainArtwork)
+            }
+        }
+        emit(artworkData)
+    }
+
+    override suspend fun getLikedArtworks(uid: String): Flow<List<DomainArtwork>> = flow {
+        val likedArtworkSnapshot = usersRef.child(uid).child("likedArtworks").get().await()
+        val artworkData = mutableListOf<DomainArtwork>()
+        for(artworkSnapshot in likedArtworkSnapshot.children){
+            val id = artworkSnapshot.key
+            val category = artworkSnapshot.value as String
+            val artwork = imagesRef.child(category).child(id!!).get().await()
+            val domainArtwork = artwork.getValue(DomainArtwork::class.java)!!
+            domainArtwork.key = id
+            artworkData.add(domainArtwork)
+        }
+        emit(artworkData)
+    }
+
+
 }
