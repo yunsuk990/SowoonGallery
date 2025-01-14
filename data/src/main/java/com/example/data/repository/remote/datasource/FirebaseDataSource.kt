@@ -7,6 +7,7 @@ import com.google.firebase.auth.AuthResult
 import com.google.firebase.auth.PhoneAuthCredential
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.ValueEventListener
+import kotlinx.coroutines.flow.Flow
 
 interface FirebaseDataSource {
 
@@ -31,6 +32,16 @@ interface FirebaseDataSource {
     fun getLikedArtwork(uid: String, artworkUid: String): Task<DataSnapshot>
 
     fun getLikedCountArtwork(artworkUid: String, category: String, listener: ValueEventListener)
+
+    suspend fun deleteAccount(uid: String): Boolean
+
+    suspend fun deleteUserRtdb(uid: String): Boolean
+
+    suspend fun removeUserFromLikedArtworks(uid: String): Boolean
+
+    suspend fun getFavoritesArtwork(uid: String): Flow<List<DomainArtwork>>
+
+    suspend fun getLikedArtworks(uid: String): Flow<List<DomainArtwork>>
 
 
     //전적 가져오기
