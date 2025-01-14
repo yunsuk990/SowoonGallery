@@ -6,7 +6,7 @@
             android:name=".view.ArtworkActivity"
             android:exported="false"
             android:label="@string/title_activity_artwork"
-            android:theme="@style/Theme.SowoonGallery" />
+            android:theme="@style/Theme.Sowoon" />
         <activity
             android:name=".view.StartActivity"
             android:exported="false"
