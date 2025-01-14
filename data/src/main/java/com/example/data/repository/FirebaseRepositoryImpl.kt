@@ -10,6 +10,7 @@ import com.google.firebase.auth.AuthResult
 import com.google.firebase.auth.PhoneAuthCredential
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.ValueEventListener
+import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 
 class FirebaseRepositoryImpl @Inject constructor(
@@ -18,6 +19,12 @@ class FirebaseRepositoryImpl @Inject constructor(
     override suspend fun getArtworkLists(category: String?): List<DomainArtwork> {
         return firebaseDataSource.getArtworkLists(category)
     }
+
+    override suspend fun getFavoriteArtworks(uid: String): Flow<List<DomainArtwork>> {
+        return firebaseDataSource.getFavoritesArtwork(uid)
+    }
+
+    override suspend fun getLikedArtworks(uid: String): Flow<List<DomainArtwork>> = firebaseDataSource.getLikedArtworks(uid)
 
     override fun saveUserInfo(user: DomainUser) = firebaseDataSource.saveUserInfo(user.uid, MainMapper.userMapper(user))
 
@@ -36,5 +43,14 @@ class FirebaseRepositoryImpl @Inject constructor(
 
     override fun getLikedArtwork(uid: String, artworkUid: String): Task<DataSnapshot> = firebaseDataSource.getLikedArtwork(uid,artworkUid)
     override fun getLikedCountArtwork(artworkUid: String, category: String, listener: ValueEventListener) = firebaseDataSource.getLikedCountArtwork(artworkUid, category, listener)
-
+    override suspend fun deleteUserAccount(uid: String): Boolean {
+        val artworkDeleted = firebaseDataSource.removeUserFromLikedArtworks(uid)
+        if(artworkDeleted){
+            val userDeleted = firebaseDataSource.deleteUserRtdb(uid)
+            if(userDeleted){
+                return firebaseDataSource.deleteAccount(uid)
+            }
+        }
+        return false
+    }
 }

@@ -7,10 +7,9 @@ import com.google.firebase.auth.AuthResult
 import com.google.firebase.auth.PhoneAuthCredential
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.ValueEventListener
+import kotlinx.coroutines.flow.Flow
 
 interface FirebaseRepository {
-
-    suspend fun getArtworkLists(category: String?): List<DomainArtwork>
 
     fun saveUserInfo(user: DomainUser): Task<Void>
 
@@ -27,5 +26,13 @@ interface FirebaseRepository {
     fun getLikedArtwork(uid: String, artworkUid: String): Task<DataSnapshot>
 
     fun getLikedCountArtwork(artworkUid: String, category: String, listener: ValueEventListener)
+
+    suspend fun deleteUserAccount(uid: String): Boolean
+
+    suspend fun getArtworkLists(category: String?): List<DomainArtwork>
+
+    suspend fun getFavoriteArtworks(uid: String): Flow<List<DomainArtwork>>
+
+    suspend fun getLikedArtworks(uid: String): Flow<List<DomainArtwork>>
 
 }
