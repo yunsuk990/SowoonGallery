@@ -2,9 +2,6 @@ package com.example.presentation.viewModel
 
 import android.app.Activity
 import android.util.Log
-import android.widget.Toast
-import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
@@ -13,24 +10,16 @@ import com.example.domain.usecase.CheckUserRtdbUseCase
 import com.example.domain.usecase.SaveUserInfoUseCase
 import com.example.domain.usecase.SignInWithPhoneUseCase
 import com.example.presentation.model.AuthState
-import com.example.presentation.model.User
-import com.example.presentation.view.LoginActivity
 import com.google.firebase.Firebase
 import com.google.firebase.FirebaseException
 import com.google.firebase.FirebaseTooManyRequestsException
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException
 import com.google.firebase.auth.FirebaseAuthMissingActivityForRecaptchaException
-import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.PhoneAuthCredential
 import com.google.firebase.auth.PhoneAuthOptions
 import com.google.firebase.auth.PhoneAuthProvider
 import com.google.firebase.auth.auth
-import com.google.firebase.database.DataSnapshot
-import com.google.firebase.database.DatabaseError
-import com.google.firebase.database.FirebaseDatabase
-import com.google.firebase.database.ValueEventListener
-import com.google.firebase.database.database
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
@@ -163,6 +152,4 @@ class LoginViewModel @Inject constructor(
     fun resetAuthState() {
         _authState.value = null // 또는 기본 상태로 초기화
     }
-
-
 }
