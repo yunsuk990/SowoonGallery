@@ -7,20 +7,27 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.Icon
 import androidx.compose.material.IconButton
+import androidx.compose.material.TabRow
+import androidx.compose.material.TabRowDefaults
+import androidx.compose.material.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Favorite
@@ -28,12 +35,16 @@ import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -41,8 +52,10 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
@@ -89,9 +102,11 @@ fun ArtworkScreen(artwork: DomainArtwork, viewModel: ArtworkViewModel){
     val scrollstate = rememberScrollState()
     val artworkFavoriteState by viewModel.artworkFavoriteState.observeAsState(initial = false)
     val artworkLikedState by viewModel.artworkLikedState.observeAsState(initial = false)
-    val artworkLikedCountState by viewModel.artworkLikedCountState.observeAsState(initial = false)
+    val artworkLikedCountState by viewModel.artworkLikedCountState.observeAsState("")
 
-    Box(modifier = Modifier.fillMaxSize()){
+    Box(modifier = Modifier
+        .fillMaxSize()
+        .background(Color.White)){
         ArtworkTopBar(
             modifier = Modifier.zIndex(1f),
             artworkFavoriteState,
@@ -104,7 +119,10 @@ fun ArtworkScreen(artwork: DomainArtwork, viewModel: ArtworkViewModel){
             AsyncImage(
                 model = artwork.url,
                 contentDescription = "이미지",
-                contentScale = ContentScale.Fit
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .aspectRatio(9 / 10f),
+                contentScale = ContentScale.Crop
             )
             Column(
                 modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 20.dp),
@@ -114,9 +132,14 @@ fun ArtworkScreen(artwork: DomainArtwork, viewModel: ArtworkViewModel){
                 Spacer(modifier = Modifier.height(15.dp))
                 Text(text = artwork.madeIn.toString(), fontSize = 16.sp)
                 Spacer(modifier = Modifier.height(5.dp))
+                Text(text = artwork.material.toString(), fontSize = 16.sp)
+                Spacer(modifier = Modifier.height(5.dp))
                 Text(text = artwork.size!!, fontSize = 16.sp)
             }
+            Spacer(modifier = Modifier.height(50.dp))
+            artworkMenu()
         }
+
         userActionButton(
             Modifier
                 .fillMaxWidth()
@@ -193,6 +216,54 @@ fun userActionButton(
             Text(text = "구매상담", fontSize = 16.sp, color = Color.Black)
         }
 
+    }
+}
+@Preview(showBackground = true, backgroundColor = 0xffffffff)
+@Composable
+fun artworkMenu(){
+    var selectedTabIdx by remember { mutableStateOf(0) }
+    val tabTitles = listOf("작품리뷰", "비슷한 작품 ")
+    Column {
+        TabRow(
+            selectedTabIndex = selectedTabIdx,
+            backgroundColor = Color.White,
+            indicator = {position ->
+                TabRowDefaults.Indicator(
+                    Modifier.tabIndicatorOffset(position[selectedTabIdx]),
+                    color = Color.Gray // 밑줄 색상 변경
+                )
+            },
+        ) {
+            tabTitles.forEachIndexed { index, title ->
+                Tab(
+                    selected = selectedTabIdx == index,
+                    onClick = { selectedTabIdx = index },
+                    text = { Text(title, fontWeight = FontWeight.Bold, color = if(selectedTabIdx==index) Color.Black else Color.Gray) }
+                )
+            }
+        }
+        when(selectedTabIdx){
+            0 -> menuReview()
+            1 -> differentArtworks()
+        }
+    }
+}
+
+@Composable
+fun menuReview(){
+    Column(modifier = Modifier
+        .padding(10.dp)
+        .height(150.dp)) {
+        Text(text = "작품 리뷰")
+    }
+}
+
+@Composable
+fun differentArtworks(){
+    Column(modifier = Modifier
+        .padding(10.dp)
+        .height(150.dp)) {
+        Text("Profile Screen")
     }
 }
 
