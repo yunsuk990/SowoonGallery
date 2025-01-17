@@ -63,6 +63,7 @@ import coil3.compose.AsyncImage
 import com.example.domain.model.DomainArtwork
 import com.example.presentation.R
 import com.example.presentation.ui.theme.SowoonGalleryTheme
+import com.example.presentation.view.ui.theme.SowoonTheme
 import com.example.presentation.viewModel.ArtworkViewModel
 import com.google.gson.Gson
 import dagger.hilt.android.AndroidEntryPoint
@@ -84,7 +85,7 @@ class ArtworkActivity : ComponentActivity() {
 
 
         setContent {
-            SowoonGalleryTheme {
+            SowoonTheme {
                 Surface(
                     modifier = Modifier
                         .fillMaxSize()
