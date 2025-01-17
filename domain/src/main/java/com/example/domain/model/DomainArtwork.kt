@@ -8,5 +8,7 @@ data class DomainArtwork(
     var upload_at: String? = null,
     var category: String? = null,
     var madeIn: String? = null,
-    var url: String? = null
+    var url: String? = null,
+    var favoriteUserCount: Int = 0,
+    var likedArtworksCount: Int = 0
 )
