@@ -1,10 +1,7 @@
 package com.example.presentation.viewModel
 
 import android.util.Log
-import androidx.compose.animation.core.snap
 import androidx.compose.runtime.mutableStateOf
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.domain.model.DomainArtwork
@@ -12,13 +9,14 @@ import com.example.domain.usecase.DeleteAccountUseCase
 import com.example.domain.usecase.GetArtworksUseCase
 import com.example.domain.usecase.GetFavoriteArtworksUseCase
 import com.example.domain.usecase.GetLikedArtworksUseCase
-import com.example.presentation.utils.CustomDialog
+import com.example.presentation.model.ArtworkSort
 import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.auth
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -38,25 +36,43 @@ class MainViewModel @Inject constructor(
         isLoggedInState.value = auth.currentUser != null
     }
 
-    private var _artworkLiveData =  MutableLiveData<List<DomainArtwork>>()
-    var artworkLiveData: LiveData<List<DomainArtwork>> =  _artworkLiveData
+    private var _artworkLiveData = MutableStateFlow<List<DomainArtwork>>(emptyList())
+    val artworkLiveData: StateFlow<List<DomainArtwork>> = _artworkLiveData.asStateFlow()
 
-    private var _artworkFavoriteLiveData =  MutableStateFlow<List<DomainArtwork>>(emptyList())
-    var artworkFavoriteLiveData: StateFlow<List<DomainArtwork>> =  _artworkFavoriteLiveData
+    private var _artworkFavoriteLiveData = MutableStateFlow<List<DomainArtwork>>(emptyList())
+    var artworkFavoriteLiveData: StateFlow<List<DomainArtwork>> = _artworkFavoriteLiveData
 
-    private var _artworkLikedLiveData =  MutableStateFlow<List<DomainArtwork>>(emptyList())
-    var artworkLikedLiveData: StateFlow<List<DomainArtwork>> =  _artworkLikedLiveData
+    private var _artworkLikedLiveData = MutableStateFlow<List<DomainArtwork>>(emptyList())
+    var artworkLikedLiveData: StateFlow<List<DomainArtwork>> = _artworkLikedLiveData
 
     init {
         isLoggedInState.value = auth.currentUser != null
         auth.addAuthStateListener(authStateListener)
-        viewModelScope.launch {
-            _artworkLiveData.value = getArtworksUseCase.execute(null)
+
+        // 카테고리 작품들 가져오기
+        loadArtworks("전체")
+    }
+
+    // 카테고리 작품들 가져오기
+    fun loadArtworks(category: String) = viewModelScope.launch {
+        getArtworksUseCase.execute(category).collect { artworkList ->
+            Log.d("loadArtworks", artworkList.toString())
+            _artworkLiveData.value = artworkList
         }
     }
 
+    //작품 정렬
+    fun sortArtworks(sortBy: ArtworkSort, category: String){
+        Log.d("sortArtworks", _artworkLiveData.value.toString())
+        when(sortBy){
+            ArtworkSort.NONE -> loadArtworks(category)
+            ArtworkSort.BOOKMARK -> _artworkLiveData.value = _artworkLiveData.value.sortedByDescending { it.favoriteUser.size }
+            ArtworkSort.DATE -> _artworkLiveData.value = _artworkLiveData.value.sortedBy { it.upload_at }
+            ArtworkSort.LIKE -> _artworkLiveData.value = _artworkLiveData.value.sortedByDescending { it.likedArtworks.size }
+        }
+        Log.d("sortArtworks", _artworkLiveData.value.toString())
+    }
 
-    fun getArworksList(category: String?) = viewModelScope.launch { _artworkLiveData.value = getArtworksUseCase.execute(category) }
 
     fun getFavoriteArtworksList() {
         if(auth.currentUser == null) return

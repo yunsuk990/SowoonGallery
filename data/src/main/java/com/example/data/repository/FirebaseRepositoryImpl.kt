@@ -16,8 +16,13 @@ import javax.inject.Inject
 class FirebaseRepositoryImpl @Inject constructor(
     private val firebaseDataSource: FirebaseDataSource
 ): FirebaseRepository {
-    override suspend fun getArtworkLists(category: String?): List<DomainArtwork> {
-        return firebaseDataSource.getArtworkLists(category)
+
+    override suspend fun getArtworkLists(category: String): List<DomainArtwork> {
+        return if(category == "전체"){
+            firebaseDataSource.getAllArtworks()
+        }else{
+            firebaseDataSource.getArtworksByCategory(category)
+        }
     }
 
     override suspend fun getFavoriteArtworks(uid: String): Flow<List<DomainArtwork>> {
@@ -45,9 +50,9 @@ class FirebaseRepositoryImpl @Inject constructor(
     override fun getLikedCountArtwork(artworkUid: String, category: String, listener: ValueEventListener) = firebaseDataSource.getLikedCountArtwork(artworkUid, category, listener)
     override suspend fun deleteUserAccount(uid: String): Boolean {
         val artworkDeleted = firebaseDataSource.removeUserFromLikedArtworks(uid)
-        if(artworkDeleted){
+        if (artworkDeleted) {
             val userDeleted = firebaseDataSource.deleteUserRtdb(uid)
-            if(userDeleted){
+            if (userDeleted) {
                 return firebaseDataSource.deleteAccount(uid)
             }
         }

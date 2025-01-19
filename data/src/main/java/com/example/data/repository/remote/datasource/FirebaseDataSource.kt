@@ -12,7 +12,12 @@ import kotlinx.coroutines.flow.Flow
 interface FirebaseDataSource {
 
     //작품 전체 가져오기
-    suspend fun getArtworkLists(category: String?): List<DomainArtwork>
+    suspend fun getAllArtworks(): List<DomainArtwork>
+
+    //카테고리별 작품 가져오기
+    suspend fun getArtworksByCategory(category: String): List<DomainArtwork>
+
+
 
     //사용자 가입 처리
     fun saveUserInfo(uid: String, user: DataUser): Task<Void>

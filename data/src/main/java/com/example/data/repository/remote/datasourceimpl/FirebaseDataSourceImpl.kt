@@ -1,6 +1,5 @@
 package com.example.data.repository.remote.datasourceimpl
 
-import android.util.Log
 import com.example.data.model.DataUser
 import com.example.data.repository.remote.datasource.FirebaseDataSource
 import com.example.domain.model.DomainArtwork
@@ -12,9 +11,10 @@ import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
 import com.google.firebase.storage.FirebaseStorage
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 
@@ -26,55 +26,42 @@ class FirebaseDataSourceImpl @Inject constructor(
 
     private val usersRef = firebaseRtdb.getReference("users")
     private val imagesRef = firebaseRtdb.getReference("images")
-    override suspend fun getArtworkLists(category: String?): List<DomainArtwork> {
-        val ref = if(category != null){
-            firebaseRtdb.getReference("images").child(category)
-        }else{
-            firebaseRtdb.getReference("images")
-        }
-        val snapshot = ref.get().await()
 
+    //작품 전체 가져오기
+    override suspend fun getAllArtworks(): List<DomainArtwork> {
         val itemList = mutableListOf<DomainArtwork>()
-
-        if(category != null){
-            snapshot?.children?.forEach{ artworkSnapshot ->
-                Log.d("GetArtworksUseCase_null", artworkSnapshot.key.toString())
-                Log.d("GetArtworksUseCase_null!", artworkSnapshot.value.toString())
+        val snapshot = imagesRef.get().await()
+        snapshot?.children?.forEach{categorySnapshot ->
+            categorySnapshot.children.forEach { artworkSnapshot ->
                 val artwork = artworkSnapshot.getValue(DomainArtwork::class.java)
                 artwork!!.key = artworkSnapshot.key
-                Log.d("arwork_null_artwork", artwork.toString())
-                if(artwork != null){
-                    itemList.add(artwork)
-                }
-            }
-        }else{
-            // 카테고리가 없을 때
-            snapshot?.children?.forEach { categorySnapshot ->
-                categorySnapshot.children.forEach { artworkSnapshot ->
-                    val artwork = artworkSnapshot.getValue(DomainArtwork::class.java)
-                    artwork!!.key = artworkSnapshot.key
-                    if (artwork != null) {
-                        Log.d("GetArtworksUseCase_null", artwork.toString())
-                        itemList.add(artwork)
-                    }
-                }
+                itemList.add(artwork)
             }
         }
         return itemList
     }
 
-    override fun saveUserInfo(uid: String, user: DataUser): Task<Void> {
-        return firebaseRtdb.getReference("users").child(uid).setValue(user)
+    //카테고리별 작품 가져오기
+    override suspend fun getArtworksByCategory(category: String): List<DomainArtwork> {
+        val itemList = mutableListOf<DomainArtwork>()
+        val snapshot = imagesRef.child(category).get().await()
+        snapshot?.children?.forEach{ artworkSnapshot ->
+            val artwork = artworkSnapshot.getValue(DomainArtwork::class.java)
+            artwork!!.key = artworkSnapshot.key
+            itemList.add(artwork)
+        }
+        return itemList
     }
 
-    override fun checkUserRtdbUseCase(uid: String): Task<DataSnapshot> {
-        return firebaseRtdb.getReference("users").child(uid).get()
-    }
+    // 사용자 정보를 db에 저장
+    override fun saveUserInfo(uid: String, user: DataUser): Task<Void> = usersRef.child(uid).setValue(user)
 
-    override fun signInWithPhoneAuthCredential(credential: PhoneAuthCredential): Task<AuthResult> {
-        return firebaseAuth.signInWithCredential(credential)
-    }
+    // 등록된 사용자인지 확인
+    override fun checkUserRtdbUseCase(uid: String): Task<DataSnapshot> = usersRef.child(uid).get()
 
+    override fun signInWithPhoneAuthCredential(credential: PhoneAuthCredential): Task<AuthResult> = firebaseAuth.signInWithCredential(credential)
+
+    // 작품 북마크 설정
     override fun setFavoriteArtwork(
         uid: String,
         artworkUid: String,
@@ -82,34 +69,33 @@ class FirebaseDataSourceImpl @Inject constructor(
         category: String
     ): Task<Void> {
         return if(!isFavorite){
-            firebaseRtdb.getReference("users").child(uid).child("favoriteArtworks").child(artworkUid).removeValue()
-            firebaseRtdb.getReference("images").child(category).child(artworkUid).child("favoriteUser").child(uid).removeValue()
+            usersRef.child(uid).child("favoriteArtworks").child(artworkUid).removeValue()
+            imagesRef.child(category).child(artworkUid).child("favoriteUser").child(uid).removeValue()
         }else{
-            firebaseRtdb.getReference("users").child(uid).child("favoriteArtworks").child(artworkUid).setValue(category)
-            firebaseRtdb.getReference("images").child(category).child(artworkUid).child("favoriteUser").child(uid).setValue(isFavorite)
+            usersRef.child(uid).child("favoriteArtworks").child(artworkUid).setValue(category)
+            imagesRef.child(category).child(artworkUid).child("favoriteUser").child(uid).setValue(isFavorite)
         }
     }
 
-    override fun getFavoriteArtwork(uid: String, artworkUid: String): Task<DataSnapshot> {
-        return firebaseRtdb.getReference("users").child(uid).child("favoriteArtworks").child(artworkUid).get()
-    }
+    // 사용자가 저장한 작품들 가져오기
+    override fun getFavoriteArtwork(uid: String, artworkUid: String): Task<DataSnapshot> = usersRef.child(uid).child("favoriteArtworks").child(artworkUid).get()
 
+    // 사용자 작품 좋아요 설정
     override fun setLikedArtwork(uid: String, artworkUid: String, isLiked: Boolean, category: String): Task<Void> {
         return if(!isLiked){
-            firebaseRtdb.getReference("users").child(uid).child("likedArtworks").child(artworkUid).removeValue()
-            firebaseRtdb.getReference("images").child(category).child(artworkUid).child("likedArtworks").child(uid).removeValue()
+            usersRef.child(uid).child("likedArtworks").child(artworkUid).removeValue()
+            imagesRef.child(category).child(artworkUid).child("likedArtworks").child(uid).removeValue()
         }else{
-            firebaseRtdb.getReference("users").child(uid).child("likedArtworks").child(artworkUid).setValue(category)
-            firebaseRtdb.getReference("images").child(category).child(artworkUid).child("likedArtworks").child(uid).setValue(isLiked)
+            usersRef.child(uid).child("likedArtworks").child(artworkUid).setValue(category)
+            imagesRef.child(category).child(artworkUid).child("likedArtworks").child(uid).setValue(isLiked)
         }
     }
 
-    override fun getLikedArtwork(uid: String, artworkUid: String): Task<DataSnapshot> {
-        return firebaseRtdb.getReference("users").child(uid).child("likedArtworks").child(artworkUid).get()
-    }
+    // 사용자가 좋아요한 작품들 가져오기
+    override fun getLikedArtwork(uid: String, artworkUid: String): Task<DataSnapshot> = usersRef.child(uid).child("likedArtworks").child(artworkUid).get()
 
     override fun getLikedCountArtwork(artworkUid: String, category: String, listener: ValueEventListener) {
-        firebaseRtdb.getReference("images").child(category).child(artworkUid).child("likedArtworks").addValueEventListener(listener)
+        imagesRef.child(category).child(artworkUid).child("likedArtworks").addValueEventListener(listener)
     }
 
     // Firebase Auth에서 사용자 삭제
@@ -117,11 +103,9 @@ class FirebaseDataSourceImpl @Inject constructor(
         return try {
             firebaseAuth.currentUser?.delete()?.await()
             true
-        }catch (e: Exception){
+        }catch (e: Exception) {
             false
         }
-
-
     }
 
     // 사용자 데이터 삭제
@@ -163,7 +147,7 @@ class FirebaseDataSourceImpl @Inject constructor(
             }
         }
         emit(artworkData)
-    }
+    }.flowOn(Dispatchers.IO)
 
     override suspend fun getLikedArtworks(uid: String): Flow<List<DomainArtwork>> = flow {
         val likedArtworkSnapshot = usersRef.child(uid).child("likedArtworks").get().await()

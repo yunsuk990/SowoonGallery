@@ -29,7 +29,7 @@ interface FirebaseRepository {
 
     suspend fun deleteUserAccount(uid: String): Boolean
 
-    suspend fun getArtworkLists(category: String?): List<DomainArtwork>
+    suspend fun getArtworkLists(category: String): List<DomainArtwork>
 
     suspend fun getFavoriteArtworks(uid: String): Flow<List<DomainArtwork>>
 
