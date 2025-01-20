@@ -5,6 +5,7 @@ import android.content.Intent
 import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -66,6 +67,7 @@ import com.example.presentation.R
 import com.example.presentation.model.Screen
 import com.example.presentation.utils.ArtInfo
 import com.example.presentation.utils.CustomDialog
+import com.example.presentation.utils.FullScreenArtwork
 import com.example.presentation.viewModel.MainViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -78,6 +80,7 @@ fun HomeScreen(viewModel: MainViewModel, navController: NavHostController) {
     val pagerState = rememberPagerState(pageCount = { 3 })
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed) // 메뉴의 초기 상태를 '닫힘'으로 설정
     val scope = rememberCoroutineScope() // 코루틴을 통해 메뉴 열림/닫힘을 제어
+    var imageTranslate by remember { mutableStateOf(false) }
     var context = LocalContext.current
 
 
@@ -100,9 +103,18 @@ fun HomeScreen(viewModel: MainViewModel, navController: NavHostController) {
                 Image(
                     painter = painterResource(id = R.drawable.sowoon_bg),
                     contentDescription = null,
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable {
+                            imageTranslate = true
+                        },
                     contentScale = ContentScale.FillWidth
                 )
+                if(imageTranslate){
+                    FullScreenArtwork(imageUrl = R.drawable.sowoon_bg) {
+                        imageTranslate = false
+                    }
+                }
             }
             Row(
                 modifier = Modifier
@@ -337,15 +349,5 @@ fun outLinedButton(text: String, onClick: () -> Unit){
         modifier = Modifier.fillMaxWidth()
     ){
         Text(text = text)
-    }
-}
-@Preview(showBackground = true, backgroundColor = 0xffffff)
-@Composable
-fun test(){
-    Row {
-        OutlinedButton(onClick = {} ){
-            Icon(Icons.Outlined.Lock, contentDescription = "홈")
-            Text(text = "로그아웃")
-        }
     }
 }

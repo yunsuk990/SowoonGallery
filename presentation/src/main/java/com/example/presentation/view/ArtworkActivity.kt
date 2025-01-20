@@ -1,6 +1,7 @@
 package com.example.presentation.view
 
 import android.app.Activity
+import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
@@ -8,12 +9,16 @@ import androidx.activity.compose.setContent
 import androidx.activity.viewModels
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTransformGestures
+import androidx.compose.foundation.gestures.rememberTransformableState
+import androidx.compose.foundation.gestures.transformable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -30,6 +35,7 @@ import androidx.compose.material.TabRowDefaults
 import androidx.compose.material.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material3.CenterAlignedTopAppBar
@@ -47,9 +53,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontStyle
@@ -58,11 +68,14 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.zIndex
 import coil3.compose.AsyncImage
 import com.example.domain.model.DomainArtwork
 import com.example.presentation.R
 import com.example.presentation.ui.theme.SowoonGalleryTheme
+import com.example.presentation.utils.FullScreenArtwork
 import com.example.presentation.view.ui.theme.SowoonTheme
 import com.example.presentation.viewModel.ArtworkViewModel
 import com.google.gson.Gson
@@ -104,10 +117,12 @@ fun ArtworkScreen(artwork: DomainArtwork, viewModel: ArtworkViewModel){
     val artworkFavoriteState by viewModel.artworkFavoriteState.observeAsState(initial = false)
     val artworkLikedState by viewModel.artworkLikedState.observeAsState(initial = false)
     val artworkLikedCountState by viewModel.artworkLikedCountState.observeAsState("")
+    var isZoomDialogOpen by remember { mutableStateOf(false) }
 
     Box(modifier = Modifier
         .fillMaxSize()
-        .background(Color.White)){
+        .background(Color.White),
+    ){
         ArtworkTopBar(
             modifier = Modifier.zIndex(1f),
             artworkFavoriteState,
@@ -122,13 +137,11 @@ fun ArtworkScreen(artwork: DomainArtwork, viewModel: ArtworkViewModel){
                 contentDescription = "이미지",
                 modifier = Modifier
                     .fillMaxWidth()
-                    .aspectRatio(9 / 10f),
+                    .aspectRatio(9 / 10f)
+                    .clickable { isZoomDialogOpen = true },
                 contentScale = ContentScale.Crop
             )
-            Column(
-                modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 20.dp),
-
-                ) {
+            Column(modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 20.dp)) {
                 Text(text = artwork.name!!, fontSize = 20.sp, fontWeight = FontWeight.Bold)
                 Spacer(modifier = Modifier.height(15.dp))
                 Text(text = artwork.madeIn.toString(), fontSize = 16.sp)
@@ -139,6 +152,12 @@ fun ArtworkScreen(artwork: DomainArtwork, viewModel: ArtworkViewModel){
             }
             Spacer(modifier = Modifier.height(50.dp))
             artworkMenu()
+            if (isZoomDialogOpen) {
+                FullScreenArtwork(
+                    imageUrl = artwork.url!!,
+                    onClose = { isZoomDialogOpen = false }
+                )
+            }
         }
 
         userActionButton(
@@ -188,8 +207,9 @@ fun userActionButton(
     modifier: Modifier,
     likedState: Boolean,
     artworkLikedCountState: Any,
-    likedBtnOnClick: () -> Unit
+    likedBtnOnClick: () -> Unit,
 ) {
+    val context = LocalContext.current
     Row(
         modifier = modifier,
         verticalAlignment = Alignment.CenterVertically
@@ -213,8 +233,10 @@ fun userActionButton(
 
         TextButton(
             modifier = Modifier.weight(1f),
-            onClick = {}) {
-            Text(text = "구매상담", fontSize = 16.sp, color = Color.Black)
+            onClick = {
+                context.startActivity(Intent(context, ArtworkPriceActivity::class.java))
+            }) {
+            Text(text = "가격 제시", fontSize = 16.sp, color = Color.Black)
         }
 
     }
@@ -260,11 +282,14 @@ fun menuReview(){
 }
 
 @Composable
-fun differentArtworks(){
-    Column(modifier = Modifier
-        .padding(10.dp)
-        .height(150.dp)) {
+fun differentArtworks() {
+    Column(
+        modifier = Modifier
+            .padding(10.dp)
+            .height(150.dp)
+    ) {
         Text("Profile Screen")
     }
 }
+
 

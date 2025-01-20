@@ -2,6 +2,7 @@ package com.example.presentation.utils
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -13,6 +14,10 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material.Surface
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
@@ -32,6 +37,7 @@ fun ArtInfo(alpha: Float) {
 //        targetValue = if (isVisible) 1f else 0f, // alpha 값 전환
 //        animationSpec = tween(durationMillis = 1000) // 애니메이션 속도 설정
 //    )
+    var imageTranslate by remember { mutableStateOf(false) }
     Column(
         modifier = Modifier
             .padding(top = 15.dp)
@@ -39,22 +45,41 @@ fun ArtInfo(alpha: Float) {
         Row {
             Image(painter = painterResource(id = R.drawable.artist_profile), contentScale = ContentScale.FillWidth, contentDescription = "작가사진", modifier = Modifier
                 .size(180.dp)
-                .alpha(alpha))
+                .alpha(alpha)
+                .clickable {
+                    imageTranslate = true
+                }
+            )
+            if(imageTranslate){
+                FullScreenArtwork(imageUrl = R.drawable.artist_profile) {
+                    imageTranslate = false
+                }
+            }
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(start = 8.dp),
                 verticalArrangement = Arrangement.SpaceBetween // 텍스트 간 간격 조정
             ) {
-                Text(text = "素暈   정은숙", fontSize = 18.sp, modifier = Modifier.fillMaxWidth().alpha(alpha), textAlign = TextAlign.Center)
+                Text(text = "素暈   정은숙", fontSize = 18.sp, modifier = Modifier
+                    .fillMaxWidth()
+                    .alpha(alpha), textAlign = TextAlign.Center)
                 Spacer(modifier = Modifier.height(8.dp))
-                Text(text = "홍익대학교 미술대학 졸업(1987년)", fontSize = 12.sp,  modifier = Modifier.fillMaxWidth().alpha(alpha), textAlign = TextAlign.Center)
+                Text(text = "홍익대학교 미술대학 졸업(1987년)", fontSize = 12.sp,  modifier = Modifier
+                    .fillMaxWidth()
+                    .alpha(alpha), textAlign = TextAlign.Center)
                 Spacer(modifier = Modifier.height(12.dp))
-                Text(text = "수상경력", fontSize = 15.sp, fontWeight = FontWeight.Bold, modifier = Modifier.fillMaxWidth().alpha(alpha), textAlign = TextAlign.Start)
+                Text(text = "수상경력", fontSize = 15.sp, fontWeight = FontWeight.Bold, modifier = Modifier
+                    .fillMaxWidth()
+                    .alpha(alpha), textAlign = TextAlign.Start)
                 Spacer(modifier = Modifier.height(5.dp))
-                Text(text = "대한민국미술대전, 경기미술대전, 남농 미술대전, 목우회 등", fontSize = 12.sp, modifier = Modifier.fillMaxWidth().alpha(alpha), textAlign = TextAlign.Start)
+                Text(text = "대한민국미술대전, 경기미술대전, 남농 미술대전, 목우회 등", fontSize = 12.sp, modifier = Modifier
+                    .fillMaxWidth()
+                    .alpha(alpha), textAlign = TextAlign.Start)
                 Spacer(modifier = Modifier.height(8.dp))
-                Text(text = "소울갤러리 대표\n한국미협, 동양수묵연구원, 파인아트클럽, 아태미협회원", fontSize = 12.sp, modifier = Modifier.fillMaxWidth().alpha(alpha), textAlign = TextAlign.Start)
+                Text(text = "소울갤러리 대표\n한국미협, 동양수묵연구원, 파인아트클럽, 아태미협회원", fontSize = 12.sp, modifier = Modifier
+                    .fillMaxWidth()
+                    .alpha(alpha), textAlign = TextAlign.Start)
             }
         }
         Column(
