@@ -3,6 +3,11 @@
 
     <application>
         <activity
+            android:name=".view.ArtworkPriceActivity"
+            android:exported="false"
+            android:label="@string/title_activity_artwork_price"
+            android:theme="@style/Theme.SowoonGallery" />
+        <activity
             android:name=".view.ArtworkActivity"
             android:exported="false"
             android:label="@string/title_activity_artwork"
