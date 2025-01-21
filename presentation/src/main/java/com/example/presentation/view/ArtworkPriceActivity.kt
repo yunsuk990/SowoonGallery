@@ -1,10 +1,13 @@
 package com.example.presentation.view
 
 import android.app.Activity
+import android.os.Build
 import android.os.Bundle
 import android.util.Log
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -16,6 +19,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
@@ -33,8 +37,10 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -51,6 +57,8 @@ import androidx.compose.ui.unit.sp
 import com.example.presentation.ui.theme.lightWhite
 import com.example.presentation.utils.chart
 import com.example.presentation.view.ui.theme.SowoonTheme
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 
 class ArtworkPriceActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -155,13 +163,20 @@ fun priceInputDialog(priceTextField: String, onDismissRequest: () -> Unit, onInp
     )
 }
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Preview(showSystemUi = true)
 @Composable
 fun ArtworkPriceScreen(){
-    var xData = remember { mutableStateListOf<Float>(1f,2f,3f) }
-    var yData = remember { mutableStateListOf<Float>(1f,2f,3f) }
+    // x축 (날짜)와 y축 (가격) 데이터를 관리
+    var xData by remember { mutableStateOf(mutableListOf<String>("01-01","01-02")) }
+    var yData by remember { mutableStateOf(mutableListOf<Float>(10f,20f)) }
+
+    val dateIndexMap = remember { mutableStateMapOf<Float, String>() } // x축 매핑
+
     var priceTextField by remember { mutableStateOf("") }
     var priceInputBtn by remember { mutableStateOf(false) }
+
+    val context = LocalContext.current
 
     Column {
         ArtworkPriceTopBar()
@@ -170,10 +185,11 @@ fun ArtworkPriceScreen(){
             .background(Color.White),
         ){
             Column {
-                chart(xData = xData, yData = yData, dataLabel = "그래프", modifier = Modifier
+                chart(xData = xData, yData = yData, dataLabel = "가격현황", modifier = Modifier
                     .fillMaxWidth()
                     .height(350.dp)
-                    .padding(all = 8.dp)
+                    .padding(all = 8.dp),
+                    dateIndexMap
                 )
             }
 
@@ -193,10 +209,17 @@ fun ArtworkPriceScreen(){
                 priceInputDialog(priceTextField, {priceInputBtn = false}, { priceTextField = it}, onAddData = {
                     val x = priceTextField.toFloatOrNull()
                     if(x != null){
-                        xData.add(x)
-                        yData.add(x)
-                        Log.d("xData",  xData.toString() +":"+yData.toString())
+                        val currentDate = LocalDate.now()
+                        val formatter = DateTimeFormatter.ofPattern("MM-dd") // 원하는 날짜 형식
+                        val formattedDate = currentDate.format(formatter)
+                        dateIndexMap[xData.size - 1f] = formattedDate // 인덱스 매핑
+                        xData.add(formattedDate)
+                        yData.add(priceTextField.toFloat())
+                        Log.d("Xdata", "$xData:$yData")
                         priceTextField = ""
+                        priceInputBtn = false
+                    }else{
+                        Toast.makeText(context, "가격을 기입해주세요.", Toast.LENGTH_SHORT).show()
                     }
                 } )
             }

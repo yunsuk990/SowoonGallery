@@ -213,19 +213,30 @@ fun userActionButton(
     Row(
         modifier = modifier,
         verticalAlignment = Alignment.CenterVertically
-    ){
-        IconButton(onClick = { likedBtnOnClick() }, modifier = Modifier
-            .background(colorResource(id = R.color.test))
-            .padding(7.dp)) {
+    ) {
+        IconButton(
+            onClick = { likedBtnOnClick() },
+            modifier = Modifier
+                .background(colorResource(id = R.color.test))
+
+        ) {
             Column(
                 verticalArrangement = Arrangement.Center,
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Log.d("userActionButton", likedState.toString())
-                if(!likedState) {
-                    Icon(Icons.Filled.FavoriteBorder, contentDescription = "좋아요", modifier = Modifier.size(30.dp))
+                if (!likedState) {
+                    Icon(
+                        Icons.Filled.FavoriteBorder,
+                        contentDescription = "좋아요",
+                        modifier = Modifier.size(30.dp)
+                    )
                 } else {
-                    Icon(Icons.Filled.Favorite, contentDescription = "좋아요", modifier = Modifier.size(30.dp))
+                    Icon(
+                        Icons.Filled.Favorite,
+                        contentDescription = "좋아요",
+                        modifier = Modifier.size(30.dp)
+                    )
                 }
                 Text(text = artworkLikedCountState.toString())
             }
@@ -241,7 +252,7 @@ fun userActionButton(
 
     }
 }
-@Preview(showBackground = true, backgroundColor = 0xffffffff)
+
 @Composable
 fun artworkMenu(){
     var selectedTabIdx by remember { mutableStateOf(0) }
@@ -291,5 +302,3 @@ fun differentArtworks() {
         Text("Profile Screen")
     }
 }
-
-
