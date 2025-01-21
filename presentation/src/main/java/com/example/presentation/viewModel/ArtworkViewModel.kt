@@ -4,15 +4,18 @@ import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.example.domain.usecase.GetFavoriteArtworkUseCase
 import com.example.domain.usecase.GetLikedArtworkUseCase
 import com.example.domain.usecase.GetLikedCountArtworkUsecase
 import com.example.domain.usecase.SetFavoriteArtworkUseCase
 import com.example.domain.usecase.SetLikedArtworkUseCase
+import com.example.domain.usecase.SetPriceForArtworkUseCase
 import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.auth
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
@@ -21,7 +24,8 @@ class ArtworkViewModel @Inject constructor(
     private val setFavoriteArtworkUseCase: SetFavoriteArtworkUseCase,
     private val getLikedArtworkUseCase: GetLikedArtworkUseCase,
     private val setLikedArtworkUseCase: SetLikedArtworkUseCase,
-    private val getLikedCountArtworkUsecase: GetLikedCountArtworkUsecase
+    private val getLikedCountArtworkUsecase: GetLikedCountArtworkUsecase,
+    private val setPriceForArtworkUseCase: SetPriceForArtworkUseCase
 ): ViewModel() {
 
     private val auth: FirebaseAuth = Firebase.auth
@@ -35,9 +39,21 @@ class ArtworkViewModel @Inject constructor(
     private val _artworkLikedCountState = MutableLiveData<Int>()
     var artworkLikedCountState: LiveData<Int> = _artworkLikedCountState
 
+    // 가격 저장
+    private val _priceSaveResult = MutableLiveData<Result<Boolean>>()
+    val priceSaveResult: LiveData<Result<Boolean>> get() = _priceSaveResult
+
+
     fun getFavoriteArtwork(artworkUid: String){
         getFavoriteArtworkUseCase.execute(auth.uid!!, artworkUid){ isFavorite ->
             _artworkFavoriteState.value = isFavorite
+        }
+    }
+
+    fun setPriceForArtwork(category: String, artworkId: String, price: Float, userId: String,) {
+        viewModelScope.launch {
+            val result = setPriceForArtworkUseCase.execute(category, artworkId, price, userId)
+            _priceSaveResult.value = result
         }
     }
 

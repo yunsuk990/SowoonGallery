@@ -9,6 +9,7 @@ data class DomainArtwork(
     var category: String? = null,
     var madeIn: String? = null,
     var url: String? = null,
-    var favoriteUser: Map<String, Boolean> = HashMap(),
-    var likedArtworks: Map<String, Boolean> = HashMap()
+    var favoriteUser: Map<String, Boolean> = emptyMap(),
+    var likedArtworks: Map<String, Boolean> = emptyMap(),
+    var prices: Map<String, Price> = emptyMap()
 )

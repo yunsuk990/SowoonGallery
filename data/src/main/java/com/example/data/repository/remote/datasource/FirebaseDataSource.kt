@@ -17,6 +17,8 @@ interface FirebaseDataSource {
     //카테고리별 작품 가져오기
     suspend fun getArtworksByCategory(category: String): List<DomainArtwork>
 
+    fun savePriceForArtwork(category: String, artworkId: String, price: Float, userId: String): Task<Void>
+
 
 
     //사용자 가입 처리

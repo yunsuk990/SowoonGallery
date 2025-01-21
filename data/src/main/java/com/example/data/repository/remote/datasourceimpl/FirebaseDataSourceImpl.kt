@@ -1,8 +1,11 @@
 package com.example.data.repository.remote.datasourceimpl
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import com.example.data.model.DataUser
 import com.example.data.repository.remote.datasource.FirebaseDataSource
 import com.example.domain.model.DomainArtwork
+import com.example.domain.model.Price
 import com.google.android.gms.tasks.Task
 import com.google.firebase.auth.AuthResult
 import com.google.firebase.auth.FirebaseAuth
@@ -16,6 +19,8 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.tasks.await
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 import javax.inject.Inject
 
 class FirebaseDataSourceImpl @Inject constructor(
@@ -51,6 +56,20 @@ class FirebaseDataSourceImpl @Inject constructor(
             itemList.add(artwork)
         }
         return itemList
+    }
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    override fun savePriceForArtwork(
+        category: String,
+        artworkId: String,
+        price: Float,
+        userId: String,
+    ): Task<Void> {
+        val currentDate = LocalDate.now()
+        val formatter = DateTimeFormatter.ofPattern("MM-dd")
+        val formattedDate = currentDate.format(formatter)
+        val priceData = Price(price, userId)
+        return imagesRef.child(category).child(artworkId).child("prices").child(formattedDate).setValue(priceData)
     }
 
     // 사용자 정보를 db에 저장

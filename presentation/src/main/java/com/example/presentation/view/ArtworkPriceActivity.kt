@@ -7,6 +7,7 @@ import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.viewModels
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -19,7 +20,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
@@ -37,9 +37,8 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -54,15 +53,27 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.domain.model.DomainArtwork
 import com.example.presentation.ui.theme.lightWhite
 import com.example.presentation.utils.chart
 import com.example.presentation.view.ui.theme.SowoonTheme
+import com.example.presentation.viewModel.ArtworkViewModel
+import com.google.gson.Gson
+import dagger.hilt.android.AndroidEntryPoint
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
+@AndroidEntryPoint
 class ArtworkPriceActivity : ComponentActivity() {
+    private val viewModel: ArtworkViewModel by viewModels()
+
+    @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        val argument = intent.getStringExtra("artwork")
+        val artwork: DomainArtwork = Gson().fromJson(argument, DomainArtwork::class.java)
+
         setContent {
             SowoonTheme {
                 // A surface container using the 'background' color from the theme
@@ -70,7 +81,7 @@ class ArtworkPriceActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    ArtworkPriceScreen()
+                    ArtworkPriceScreen(viewModel, artwork)
                 }
             }
         }
@@ -164,9 +175,11 @@ fun priceInputDialog(priceTextField: String, onDismissRequest: () -> Unit, onInp
 }
 
 @RequiresApi(Build.VERSION_CODES.O)
-@Preview(showSystemUi = true)
 @Composable
-fun ArtworkPriceScreen(){
+fun ArtworkPriceScreen(viewModel: ArtworkViewModel, artwork: DomainArtwork) {
+
+    val priceSaveResult by viewModel.priceSaveResult.observeAsState()
+
     // x축 (날짜)와 y축 (가격) 데이터를 관리
     var xData by remember { mutableStateOf(mutableListOf<String>("01-01","01-02")) }
     var yData by remember { mutableStateOf(mutableListOf<Float>(10f,20f)) }
@@ -216,6 +229,12 @@ fun ArtworkPriceScreen(){
                         xData.add(formattedDate)
                         yData.add(priceTextField.toFloat())
                         Log.d("Xdata", "$xData:$yData")
+                        viewModel.setPriceForArtwork(
+                            category = artwork.category!!,
+                            artworkId = artwork.key!!,
+                            price = priceTextField.toFloat(),
+                            userId = "cs77j1NLa0S9u76rB8qY7n8IDFG2"
+                        )
                         priceTextField = ""
                         priceInputBtn = false
                     }else{
@@ -223,6 +242,19 @@ fun ArtworkPriceScreen(){
                     }
                 } )
             }
+            priceSaveResult?.let { result ->
+                Log.d("priceSaveResult", result.toString())
+                when (result.isSuccess) {
+                    true -> {
+                        Toast.makeText(context,"가격이 성공적으로 저장되었습니다.", Toast.LENGTH_SHORT).show()
+                    }
+                    false -> {
+                        Toast.makeText(context,"가격 저장에 실패했습니다. 다시 시도해주세요.", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
+
+
         }
     }
 }

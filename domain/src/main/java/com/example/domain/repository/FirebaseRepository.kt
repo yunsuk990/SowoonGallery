@@ -27,6 +27,13 @@ interface FirebaseRepository {
 
     fun getLikedCountArtwork(artworkUid: String, category: String, listener: ValueEventListener)
 
+    fun savePriceForArtwork(
+        category: String,
+        artworkId: String,
+        price: Float,
+        userId: String,
+    ): Task<Void>
+
     suspend fun deleteUserAccount(uid: String): Boolean
 
     suspend fun getArtworkLists(category: String): List<DomainArtwork>

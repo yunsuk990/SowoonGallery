@@ -48,6 +48,13 @@ class FirebaseRepositoryImpl @Inject constructor(
 
     override fun getLikedArtwork(uid: String, artworkUid: String): Task<DataSnapshot> = firebaseDataSource.getLikedArtwork(uid,artworkUid)
     override fun getLikedCountArtwork(artworkUid: String, category: String, listener: ValueEventListener) = firebaseDataSource.getLikedCountArtwork(artworkUid, category, listener)
+    override fun savePriceForArtwork(
+        category: String,
+        artworkId: String,
+        price: Float,
+        userId: String,
+    ): Task<Void> = firebaseDataSource.savePriceForArtwork(category,artworkId,price,userId)
+
     override suspend fun deleteUserAccount(uid: String): Boolean {
         val artworkDeleted = firebaseDataSource.removeUserFromLikedArtworks(uid)
         if (artworkDeleted) {
