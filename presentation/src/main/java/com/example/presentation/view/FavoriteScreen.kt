@@ -40,7 +40,7 @@ fun BookMarkScreen(viewModel: MainViewModel, navController: NavController) {
     }
     Column {
         BookMarkScreenTopBar(scrollBehavior = scrollBehavior)
-        BookMarkContent(favoriteItem, context)
+        BookMarkContent(favoriteItem, context, viewModel)
     }
 
 }
@@ -63,7 +63,7 @@ fun BookMarkScreenTopBar(scrollBehavior: TopAppBarScrollBehavior) {
     Divider(thickness = 0.5.dp, color = Color.LightGray)
 }
 @Composable
-fun BookMarkContent(bookMarkItem: List<DomainArtwork>?, context: Context) {
+fun BookMarkContent(bookMarkItem: List<DomainArtwork>?, context: Context, viewModel: MainViewModel) {
     Column {
         LazyVerticalGrid(
             columns = GridCells.Fixed(2),
@@ -73,7 +73,7 @@ fun BookMarkContent(bookMarkItem: List<DomainArtwork>?, context: Context) {
             content = {
                 bookMarkItem?.let { item ->
                 items(bookMarkItem.size){
-                    artworkCard(artwork = bookMarkItem!![it]){
+                    artworkCard(artwork = bookMarkItem!![it], viewModel){
                         context.startActivity(Intent(context, ArtworkActivity::class.java).apply {
                             putExtra("artwork", Gson().toJson(bookMarkItem!![it]))
                         })
