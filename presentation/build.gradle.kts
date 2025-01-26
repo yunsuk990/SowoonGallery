@@ -68,6 +68,7 @@ dependencies {
     implementation("io.coil-kt.coil3:coil-compose:3.0.0-rc02")
     implementation("io.coil-kt.coil3:coil-network-okhttp:3.0.0-rc02")
     implementation(platform("androidx.compose:compose-bom:2023.03.00"))
+    implementation("com.google.accompanist:accompanist-systemuicontroller:0.36.0")
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.2.1")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.6.1")

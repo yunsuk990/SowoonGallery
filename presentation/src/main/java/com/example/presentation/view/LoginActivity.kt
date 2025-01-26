@@ -9,6 +9,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
 import androidx.compose.foundation.background
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -50,6 +51,7 @@ import androidx.compose.ui.unit.sp
 import com.example.presentation.model.AuthState
 import com.example.presentation.view.ui.theme.SowoonTheme
 import com.example.presentation.viewModel.LoginViewModel
+import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.google.firebase.auth.PhoneAuthProvider
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -60,6 +62,11 @@ class LoginActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
+            val systemUiController = rememberSystemUiController()
+            systemUiController.setStatusBarColor(
+                color = Color.White,
+                darkIcons = !isSystemInDarkTheme()
+            )
             SowoonTheme {
                 // A surface container using the 'background' color from the theme
                 Surface(
@@ -67,6 +74,7 @@ class LoginActivity : ComponentActivity() {
                         .fillMaxSize()
                         .background(Color.White),
                 ) {
+
                     MainScreen(viewModel, this)
                 }
             }
