@@ -30,13 +30,13 @@ import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.List
-import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.Divider
 import androidx.compose.material3.DrawerState
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.NavigationDrawerItem
@@ -58,8 +58,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
@@ -155,7 +155,7 @@ fun calculateAlpha(scrollValue: Int): Float {
 fun HomeTopBar(scrollBehavior: TopAppBarScrollBehavior, isLoggedIn: Boolean, onNavigationOnClick: () -> Unit){
     val context = LocalContext.current
     CenterAlignedTopAppBar(
-        title = { Text(text = "Sowoon", textAlign = TextAlign.Center) },
+        title = { Text(text = "Sowoon", textAlign = TextAlign.Center, style = MaterialTheme.typography.titleMedium) },
         colors = TopAppBarDefaults.smallTopAppBarColors(
             containerColor = Color.White,
             titleContentColor = Color.Black,
