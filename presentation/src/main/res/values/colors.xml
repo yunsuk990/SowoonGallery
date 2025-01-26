@@ -13,4 +13,6 @@
     <color name="lightgray">#DCDCDE</color>
     <color name="red">#FF0000</color>
     <color name="test">#F4F6FF</color>
+    <color name="date_text">#EDF0F8</color>
+
 </resources>
