@@ -40,7 +40,7 @@ fun LikedScreen(viewModel: MainViewModel, navController: NavController) {
     }
     Column {
         LikedTopBar(scrollBehavior = scrollBehavior)
-        likedContent(likedItem, context)
+        likedContent(likedItem, viewModel, context)
     }
 
 }
@@ -63,7 +63,7 @@ fun LikedTopBar(scrollBehavior: TopAppBarScrollBehavior) {
     Divider(thickness = 0.5.dp, color = Color.LightGray)
 }
 @Composable
-fun likedContent(likedItem: List<DomainArtwork>?, context: Context) {
+fun likedContent(likedItem: List<DomainArtwork>?, viewModel: MainViewModel,  context: Context) {
     Column {
         LazyVerticalGrid(
             columns = GridCells.Fixed(2),
@@ -73,7 +73,7 @@ fun likedContent(likedItem: List<DomainArtwork>?, context: Context) {
             content = {
                 likedItem?.let { item ->
                 items(likedItem.size){
-                    artworkCard(artwork = likedItem!![it]){
+                    artworkCard(artwork = likedItem!![it], viewModel){
                         context.startActivity(Intent(context, ArtworkActivity::class.java).apply {
                             putExtra("artwork", Gson().toJson(likedItem!![it]))
                         })
