@@ -1,9 +1,15 @@
 package com.example.data.repository.remote.datasource
 
+import android.provider.ContactsContract.Data
 import com.example.data.model.DataUser
 import com.example.domain.model.DomainArtwork
+import com.example.domain.model.DomainPrice
+import com.example.domain.model.DomainUser
+import com.example.domain.model.PriceWithUser
+import com.example.domain.model.Response
 import com.google.android.gms.tasks.Task
 import com.google.firebase.auth.AuthResult
+import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.PhoneAuthCredential
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.ValueEventListener
@@ -17,12 +23,21 @@ interface FirebaseDataSource {
     //카테고리별 작품 가져오기
     suspend fun getArtworksByCategory(category: String): List<DomainArtwork>
 
+    //작품 가격 제시
     fun savePriceForArtwork(category: String, artworkId: String, price: Float, userId: String): Task<Void>
 
+    fun getPriceForArtwork(category: String, artworkId: String, callback: (List<PriceWithUser>) -> Unit)
 
+    //현재 유저 uid 가져오기
+    fun getCurrentUser(): FirebaseUser?
 
     //사용자 가입 처리
     fun saveUserInfo(uid: String, user: DataUser): Task<Void>
+
+    //사용자 정보 가져오기
+    fun getUserInfo(uid: String, callback: (Response<DomainUser>) -> Unit)
+
+    suspend fun getUserInfoLists(uid: List<String>): Response<List<DomainUser>>
 
     //사용자 가입 여부 확인
     fun checkUserRtdbUseCase(uid: String): Task<DataSnapshot>
