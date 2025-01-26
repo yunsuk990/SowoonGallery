@@ -2,8 +2,12 @@ package com.example.domain.repository
 
 import com.example.domain.model.DomainArtwork
 import com.example.domain.model.DomainUser
+import com.example.domain.model.DomainPrice
+import com.example.domain.model.PriceWithUser
+import com.example.domain.model.Response
 import com.google.android.gms.tasks.Task
 import com.google.firebase.auth.AuthResult
+import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.PhoneAuthCredential
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.ValueEventListener
@@ -13,7 +17,11 @@ interface FirebaseRepository {
 
     fun saveUserInfo(user: DomainUser): Task<Void>
 
+    fun getUserInfo(uid: String, callback: (Response<DomainUser>) -> Unit)
+
     fun checkUserRtdbUseCase(uid: String): Task<DataSnapshot>
+
+    suspend fun getUserInfoLists(uid: List<String>): Response<List<DomainUser>>
 
     fun signInWithPhoneAuthCredential(credential: PhoneAuthCredential): Task<AuthResult>
 
@@ -26,6 +34,10 @@ interface FirebaseRepository {
     fun getLikedArtwork(uid: String, artworkUid: String): Task<DataSnapshot>
 
     fun getLikedCountArtwork(artworkUid: String, category: String, listener: ValueEventListener)
+
+    fun getCurrentUser(): FirebaseUser?
+
+    fun getPriceForArtwork(category: String, artworkId: String, callback: (List<PriceWithUser>) -> Unit)
 
     fun savePriceForArtwork(
         category: String,

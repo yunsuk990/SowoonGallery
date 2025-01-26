@@ -1,6 +1,6 @@
 package com.example.domain.model
 
-data class Price(
+data class DomainPrice(
     val price: Float = 0f,
     val userId: String = ""
 )

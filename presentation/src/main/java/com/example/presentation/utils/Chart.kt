@@ -27,7 +27,6 @@ fun chart(
     yData: List<Float>,
     dataLabel: String,
     modifier: Modifier = Modifier,
-    dateIndexMap: Map<Float, String>,
 ){
     AndroidView(
         modifier = modifier,
@@ -42,8 +41,7 @@ fun chart(
                     valueFormatter = object : ValueFormatter(){
                         override fun getFormattedValue(value: Float): String {
                             val index = value.toInt() // 소수점 제거하고 인덱스로 사용
-                            Log.d("Xdata123: ", value.toString())
-                            return if (index in xData.indices) {
+                            return if (index in 0 until xData.size) {
                                 xData[index] // 인덱스에 해당하는 날짜 반환
                             } else {
                                 "" // 유효하지 않은 인덱스는 빈 문자열 반환
@@ -81,18 +79,19 @@ fun chart(
             }
         },
         update = { chart ->
-            val entries = yData.mapIndexed { index, value ->
-                Entry(index.toFloat(), value)
+            if (xData.isNotEmpty() && yData.isNotEmpty()) {
+                val entries = yData.mapIndexed { index, value ->
+                    Entry(index.toFloat(), value)
+                }
+
+                val dataSet = LineDataSet(entries, dataLabel).apply {
+                    circleRadius = 5f
+                    valueTextSize = 12f
+                    mode = LineDataSet.Mode.LINEAR
+                }
+                chart.data = LineData(dataSet)
+                chart.invalidate() // 그래프를 다시 그리기
             }
-            val dataSet = LineDataSet(entries, dataLabel).apply {
-                circleRadius = 5f
-                valueTextSize = 12f
-
-                mode = LineDataSet.Mode.LINEAR
-            }  // Create a dataset of entries
-
-            chart.data = LineData(dataSet)
-            chart.invalidate() // 그래프 다시 그리기
         }
     )
 }
@@ -105,6 +104,5 @@ fun test121212(){
         yData = listOf(100f, 200f, 250f),
         dataLabel = "그래프",
         Modifier.background(Color.White),
-        remember { mutableStateMapOf<Float, String>() }
     )
 }

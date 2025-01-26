@@ -11,5 +11,8 @@ data class DomainArtwork(
     var url: String? = null,
     var favoriteUser: Map<String, Boolean> = emptyMap(),
     var likedArtworks: Map<String, Boolean> = emptyMap(),
-    var prices: Map<String, Price> = emptyMap()
+    var prices: Map<String, DomainPrice> = emptyMap(),
+    var sold: Boolean = false,
+    var minimalPrice: Float = 0f,
+    var currentPrice: Float = minimalPrice
 )

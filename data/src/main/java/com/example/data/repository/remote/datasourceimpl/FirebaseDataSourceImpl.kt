@@ -1,16 +1,23 @@
 package com.example.data.repository.remote.datasourceimpl
 
 import android.os.Build
+import android.util.Log
 import androidx.annotation.RequiresApi
 import com.example.data.model.DataUser
 import com.example.data.repository.remote.datasource.FirebaseDataSource
 import com.example.domain.model.DomainArtwork
-import com.example.domain.model.Price
+import com.example.domain.model.DomainPrice
+import com.example.domain.model.DomainUser
+import com.example.domain.model.PriceWithUser
+import com.example.domain.model.Response
 import com.google.android.gms.tasks.Task
+import com.google.android.gms.tasks.Tasks
 import com.google.firebase.auth.AuthResult
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.PhoneAuthCredential
 import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
 import com.google.firebase.storage.FirebaseStorage
@@ -68,12 +75,115 @@ class FirebaseDataSourceImpl @Inject constructor(
         val currentDate = LocalDate.now()
         val formatter = DateTimeFormatter.ofPattern("MM-dd")
         val formattedDate = currentDate.format(formatter)
-        val priceData = Price(price, userId)
-        return imagesRef.child(category).child(artworkId).child("prices").child(formattedDate).setValue(priceData)
+        val domainPriceData = DomainPrice(price, userId)
+        val priceRef = imagesRef.child(category).child(artworkId).child("prices")
+        return priceRef.get().continueWithTask { task ->
+            if (task.isSuccessful) {
+                val snapshot = task.result
+                val updates = hashMapOf<String, Any?>()
+
+                // Step 2: 사용자의 이전 데이터 삭제
+                snapshot?.children?.forEach { dateSnapshot ->
+                    val domainPrice = dateSnapshot.getValue(DomainPrice::class.java)
+                    if (domainPrice != null && domainPrice.userId == userId && dateSnapshot.key != formattedDate) {
+                        updates[dateSnapshot.key!!] = null
+                    }
+                }
+
+                // Step 3: 당일 데이터 추가
+                updates[formattedDate] = domainPriceData
+                Log.d("FirebaseDataSource_savePriceForArtwork", "save_update")
+                // Step 4: Firebase 업데이트 실행
+                priceRef.updateChildren(updates)
+            } else {
+                throw task.exception ?: Exception("Failed to fetch prices")
+            }
+        }
+        //return imagesRef.child(category).child(artworkId).child("prices").child(formattedDate).(domainPriceData)
     }
+
+    override fun getPriceForArtwork(
+        category: String, artworkId: String, callback: (List<PriceWithUser>) -> Unit
+    ){
+        imagesRef.child(category).child(artworkId).child("prices").addValueEventListener(object: ValueEventListener{
+            override fun onDataChange(snapshot: DataSnapshot) {
+                val priceList = mutableListOf<PriceWithUser>()
+                var uidLists = mutableListOf<String>()
+                snapshot?.children?.forEach{snapshot ->
+                    var domainPrice = snapshot.getValue(DomainPrice::class.java)!!
+                    uidLists.add(domainPrice.userId)
+                    priceList.add(PriceWithUser(domainPrice.userId, "", 0, domainPrice.price, snapshot.key!!))
+                }
+
+                // 모든 uid에 대해 사용자 정보를 가져온 후 업데이트
+                val pendingTasks = mutableListOf<Task<DataSnapshot>>()
+                uidLists.forEach { uid ->
+                    pendingTasks.add(usersRef.child(uid).get())
+                }
+
+                Tasks.whenAllComplete(pendingTasks).addOnCompleteListener {
+                    pendingTasks.forEachIndexed { index, task ->
+                        if (task.isSuccessful) {
+                            val userSnapshot = task.result
+                            val userInfo = userSnapshot?.getValue(DomainUser::class.java)
+                            val userId = uidLists.elementAt(index)
+
+                            // priceList에 사용자 정보 업데이트
+                            priceList.filter { it.uid == userId }.forEach {
+                                it.name = userInfo?.name ?: "Unknown"
+                                it.age = userInfo?.age ?: 0
+                            }
+                        }
+                    }
+                    // 모든 데이터를 업데이트한 후 콜백 호출
+                    Log.d("FirebaseDataSource_getPriceForArtwork", priceList.toString())
+                    callback(priceList)
+                }
+            }
+
+            override fun onCancelled(error: DatabaseError) {
+
+            }
+        })
+    }
+
+    override fun getCurrentUser(): FirebaseUser? = firebaseAuth.currentUser
 
     // 사용자 정보를 db에 저장
     override fun saveUserInfo(uid: String, user: DataUser): Task<Void> = usersRef.child(uid).setValue(user)
+
+    override fun getUserInfo(uid: String, callback: (Response<DomainUser>) -> Unit) {
+        usersRef.child(uid).get()
+            .addOnSuccessListener { snapshot ->
+                val userInfo = snapshot.getValue(DomainUser::class.java)
+                if( userInfo != null){
+                    callback(Response.Success(userInfo))
+                }else{
+                    callback(Response.Error("사용자 정보가 없습니다"))
+                }
+            }
+            .addOnFailureListener {
+                callback(Response.Error(it.message.toString()))
+            }
+    }
+
+    override suspend fun getUserInfoLists(
+        uid: List<String>,
+    ): Response<List<DomainUser>> {
+        return try {
+            val userList = uid.mapNotNull { userId ->
+                val snapshot = usersRef
+                    .child(userId)
+                    .get()
+                    .await()
+
+                snapshot.getValue(DomainUser::class.java)
+            }
+            Response.Success(userList)
+        } catch (e: Exception) {
+            Response.Error(e.toString())
+        }
+    }
 
     // 등록된 사용자인지 확인
     override fun checkUserRtdbUseCase(uid: String): Task<DataSnapshot> = usersRef.child(uid).get()
