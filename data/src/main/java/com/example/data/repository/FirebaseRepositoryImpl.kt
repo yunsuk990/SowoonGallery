@@ -1,11 +1,11 @@
 package com.example.data.repository
 
+import android.net.Uri
 import android.util.Log
 import com.example.data.mapper.MainMapper
 import com.example.data.repository.remote.datasource.FirebaseDataSource
 import com.example.domain.model.DomainArtwork
 import com.example.domain.model.DomainUser
-import com.example.domain.model.DomainPrice
 import com.example.domain.model.PriceWithUser
 import com.example.domain.model.Response
 import com.example.domain.repository.FirebaseRepository
@@ -45,6 +45,38 @@ class FirebaseRepositoryImpl @Inject constructor(
 
     override fun saveUserInfo(user: DomainUser) = firebaseDataSource.saveUserInfo(user.uid, MainMapper.userMapper(user))
     override fun getUserInfo(uid: String, callback: (Response<DomainUser>) -> Unit) = firebaseDataSource.getUserInfo(uid,callback)
+    override suspend fun uploadProfileImage(
+        uid: String,
+        uri: Uri?,
+        currentUser: DomainUser,
+        name: String,
+        age: Int
+    ): Response<Boolean>{
+
+        val updateFields = mutableMapOf<String, Any>()
+        if(name != currentUser.name) updateFields["name"] = name
+        if(age != currentUser.age) updateFields["age"] = age
+        val imageUrl = if(uri != null){
+            val result = firebaseDataSource.uploadImageToStorage(uid, uri)
+            when(result){
+                is Response.Success -> result.data
+                is Response.Error -> return Response.Error(result.message, result.exception)
+            }
+        }else{
+            null
+        }
+        imageUrl?.let {
+            updateFields["profileImage"] = it
+        }
+
+        return if(updateFields.isNotEmpty()){
+            Log.d("uploadProfileImage_Repository", updateFields.toString())
+            firebaseDataSource.updateUserProfile(uid, updateFields)
+        }else{
+            Log.d("uploadProfileImage_Repository", updateFields.toString())
+            Response.Success(true)
+        }
+    }
 
     override fun checkUserRtdbUseCase(uid: String): Task<DataSnapshot> = firebaseDataSource.checkUserRtdbUseCase(uid)
     override suspend fun getUserInfoLists(

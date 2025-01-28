@@ -1,8 +1,8 @@
 package com.example.domain.repository
 
+import android.net.Uri
 import com.example.domain.model.DomainArtwork
 import com.example.domain.model.DomainUser
-import com.example.domain.model.DomainPrice
 import com.example.domain.model.PriceWithUser
 import com.example.domain.model.Response
 import com.google.android.gms.tasks.Task
@@ -18,6 +18,14 @@ interface FirebaseRepository {
     fun saveUserInfo(user: DomainUser): Task<Void>
 
     fun getUserInfo(uid: String, callback: (Response<DomainUser>) -> Unit)
+
+    suspend fun uploadProfileImage(
+        uid: String,
+        uri: Uri?,
+        currentUser: DomainUser,
+        name: String,
+        age: Int
+    ): Response<Boolean>
 
     fun checkUserRtdbUseCase(uid: String): Task<DataSnapshot>
 

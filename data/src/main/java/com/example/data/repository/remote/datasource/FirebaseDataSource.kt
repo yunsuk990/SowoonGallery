@@ -1,5 +1,6 @@
 package com.example.data.repository.remote.datasource
 
+import android.net.Uri
 import android.provider.ContactsContract.Data
 import com.example.data.model.DataUser
 import com.example.domain.model.DomainArtwork
@@ -22,6 +23,16 @@ interface FirebaseDataSource {
 
     //카테고리별 작품 가져오기
     suspend fun getArtworksByCategory(category: String): List<DomainArtwork>
+
+    //프로필 이미지 fireStorage에 저장하기
+    suspend fun uploadImageToStorage(uid: String, uri: Uri): Response<String>
+
+    //프로필 이미지 url Realtime Database에 저장하기
+    suspend fun updateUserProfile(uid: String, updateUserProfile: Map<String, Any>): Response<Boolean>
+
+    //프로필 정보 수정하기
+
+    fun updateUserProfile(uid: String, profile: DomainUser)
 
     //작품 가격 제시
     fun savePriceForArtwork(category: String, artworkId: String, price: Float, userId: String): Task<Void>

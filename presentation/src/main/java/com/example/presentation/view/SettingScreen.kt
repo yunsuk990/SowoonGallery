@@ -2,6 +2,7 @@ package com.example.presentation.view
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -24,6 +25,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -32,6 +34,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -40,24 +43,43 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
+import coil3.compose.AsyncImage
 import com.example.presentation.R
 import com.example.presentation.model.Screen
 import com.example.presentation.viewModel.MainViewModel
 
 
 @Composable
-fun SettingScreen(viewModel: MainViewModel, navController: NavHostController){
-    Column(modifier = Modifier
-        .background(Color.White)
-        .fillMaxSize()) {
-        profileUser(navController)
+fun SettingScreen(
+    viewModel: MainViewModel,
+    navController: NavHostController,
+){
+    var openProfileDialog by remember { mutableStateOf(false) }
+    Column(
+        modifier = Modifier
+            .fillMaxSize(),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        profileUser(navController, viewModel) { openProfileDialog = true }
         Spacer(modifier = Modifier.height(30.dp))
         profileMenu()
     }
+    if(openProfileDialog){
+        ProfileEditDialog(viewModel) { openProfileDialog = false }
+    }
+
 }
 
 @Composable
-fun profileUser(navController: NavHostController) {
+fun profileUser(
+    navController: NavHostController,
+    viewModel: MainViewModel,
+    profileOnClick: () -> Unit,
+) {
+
+    val userInfo by viewModel.userInfoStateFlow.collectAsState()
+
+
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -67,37 +89,45 @@ fun profileUser(navController: NavHostController) {
         Box(
             modifier = Modifier
                 .clip(RoundedCornerShape(100.dp))
-                .size(80.dp)
+                .size(100.dp)
                 .background(color = colorResource(id = R.color.lightgray))
                 .clickable {
-
+//                    navController.navigate(Screen.ProfileEdit.route) {
+//                        launchSingleTop = true
+//                    }
+                    profileOnClick()
                 },
             contentAlignment = Alignment.Center,
         ){
-            Icon(painter = painterResource(id = R.drawable.person_border), contentDescription = null, Modifier.size(35.dp))
+            if(userInfo.profileImage != null){
+                AsyncImage(model = userInfo.profileImage, contentDescription = null, contentScale = ContentScale.Crop)
+            }else{
+                Icon(painter = painterResource(id = R.drawable.profile), contentDescription = null, modifier = Modifier.size(24.dp))
+            }
         }
-
-        Text(text = "YunSuk", letterSpacing = 1.sp ,fontSize = 20.sp, color = Color.Black, modifier = Modifier.padding(top = 25.dp))
+        Text(text = userInfo.name, letterSpacing = 1.sp ,fontSize = 20.sp, color = Color.Black, modifier = Modifier.padding(top = 25.dp))
         Row(
             modifier = Modifier.padding(top = 25.dp, start = 20.dp, end = 20.dp),
             horizontalArrangement = Arrangement.Center
         ) {
-            userSection(modifier = Modifier.weight(1f), "Liked", R.drawable.heart_border){
+            userSection(
+                modifier = Modifier.weight(1f),
+                "Liked",
+                R.drawable.heart_border,
+                userInfo.likedArtworks.size
+            ) {
                 navController.navigate(Screen.Favorite.route) {
-                    popUpTo(navController.graph.startDestinationId) {
-                        saveState = true
-                    }
                     launchSingleTop = true
-                    restoreState = true
                 }
             }
-            userSection(modifier = Modifier.weight(1f), "BookMark", R.drawable.bookmark_border){
+            userSection(
+                modifier = Modifier.weight(1f),
+                "BookMark",
+                R.drawable.bookmark_border,
+                userInfo.favoriteArtworks.size
+            ){
                 navController.navigate(Screen.BookMark.route) {
-                    popUpTo(navController.graph.startDestinationId) {
-                        saveState = true
-                    }
                     launchSingleTop = true
-                    restoreState = true
                 }
             }
         }
@@ -105,14 +135,17 @@ fun profileUser(navController: NavHostController) {
 }
 
 @Composable
-fun userSection(modifier: Modifier, title: String, icon: Int, onClick: () -> Unit){
+fun userSection(modifier: Modifier, title: String, icon: Int, size: Int, onClick: () -> Unit){
+    val interactionSource by remember { mutableStateOf(MutableInteractionSource()) }
     Column (
         horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = modifier.wrapContentSize().clickable {
-            onClick()
-        }
+        modifier = modifier
+            .wrapContentSize()
+            .clickable(indication = null, interactionSource = interactionSource) {
+                onClick()
+            }
     ){
-        Text(text = "0", fontSize = 16.sp, color = Color.Black, fontWeight = FontWeight.Bold)
+        Text(text = size.toString(), fontSize = 16.sp, color = Color.Black, fontWeight = FontWeight.Bold)
         Spacer(modifier = Modifier.height(8.dp))
         Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -133,9 +166,6 @@ fun SettingScreenTest(){
         .background(Color.White)
         .fillMaxSize()) {
         Column(modifier = Modifier.background(Color.White)) {
-            profileUser(navController)
-            Spacer(modifier = Modifier.height(30.dp))
-            profileMenu()
         }
     }
 }

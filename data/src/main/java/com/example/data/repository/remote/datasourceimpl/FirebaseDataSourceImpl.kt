@@ -1,5 +1,6 @@
 package com.example.data.repository.remote.datasourceimpl
 
+import android.net.Uri
 import android.os.Build
 import android.util.Log
 import androidx.annotation.RequiresApi
@@ -33,11 +34,12 @@ import javax.inject.Inject
 class FirebaseDataSourceImpl @Inject constructor(
     private val firebaseAuth: FirebaseAuth,
     private val firebaseRtdb: FirebaseDatabase,
-        private val firestore: FirebaseStorage
+    private val firestore: FirebaseStorage
 ): FirebaseDataSource {
 
     private val usersRef = firebaseRtdb.getReference("users")
     private val imagesRef = firebaseRtdb.getReference("images")
+    private val storageRef = firestore.getReference("profile")
 
     //작품 전체 가져오기
     override suspend fun getAllArtworks(): List<DomainArtwork> {
@@ -63,6 +65,33 @@ class FirebaseDataSourceImpl @Inject constructor(
             itemList.add(artwork)
         }
         return itemList
+    }
+
+    override suspend fun uploadImageToStorage(uid: String, uri: Uri): Response<String>{
+        val fileRef = storageRef.child("${uid}.jpg")
+        return try {
+            fileRef.putFile(uri).await() // 이미지 업로드
+            val downloadUrl = fileRef.downloadUrl.await().toString() // 다운로드 URL 반환
+            Response.Success(downloadUrl)
+        }catch (e: Exception){
+            Response.Error("Image upload failed", e)
+        }
+    }
+
+    override suspend fun updateUserProfile(
+        uid: String,
+        updateFields: Map<String, Any>
+    ): Response<Boolean> {
+        return try {
+            usersRef.child(uid).updateChildren(updateFields).await()
+            Response.Success(true)
+        }catch (e: Exception){
+            Response.Error("Failed to update user profile", e)
+        }
+    }
+
+    override fun updateUserProfile(uid: String, profile: DomainUser) {
+
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
@@ -153,18 +182,20 @@ class FirebaseDataSourceImpl @Inject constructor(
     override fun saveUserInfo(uid: String, user: DataUser): Task<Void> = usersRef.child(uid).setValue(user)
 
     override fun getUserInfo(uid: String, callback: (Response<DomainUser>) -> Unit) {
-        usersRef.child(uid).get()
-            .addOnSuccessListener { snapshot ->
+        usersRef.child(uid).addValueEventListener(object: ValueEventListener{
+            override fun onDataChange(snapshot: DataSnapshot) {
                 val userInfo = snapshot.getValue(DomainUser::class.java)
                 if( userInfo != null){
+                    userInfo?.uid = uid
                     callback(Response.Success(userInfo))
                 }else{
                     callback(Response.Error("사용자 정보가 없습니다"))
                 }
             }
-            .addOnFailureListener {
-                callback(Response.Error(it.message.toString()))
+            override fun onCancelled(error: DatabaseError) {
+                callback(Response.Error(error.message))
             }
+        })
     }
 
     override suspend fun getUserInfoLists(
