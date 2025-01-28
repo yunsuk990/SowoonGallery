@@ -109,30 +109,36 @@ fun ProfileScreen(viewModel: MainViewModel) {
                 }
             }
         )
+        artworkGridLayout(artworkList = artworkList)
+        
+    }
+}
 
-        LazyVerticalStaggeredGrid(
-            columns = StaggeredGridCells.Fixed(2),
-            content = {
-                artworkList?.let { list ->
-                    if(list.isNotEmpty()){
-                        items(artworkList!!.size) {
-                            artworkCard(artwork = artworkList!![it], viewModel){
-                                context.startActivity(Intent(context, ArtworkActivity::class.java).apply {
-                                    putExtra("artwork", Gson().toJson(artworkList!![it]))
-                                })
-                            }
+@Composable
+fun artworkGridLayout(artworkList: List<DomainArtwork>){
+    val context = LocalContext.current
+    LazyVerticalStaggeredGrid(
+        columns = StaggeredGridCells.Fixed(2),
+        content = {
+            artworkList?.let { list ->
+                if(list.isNotEmpty()){
+                    items(artworkList!!.size) {
+                        artworkCard(artwork = artworkList!![it]){
+                            context.startActivity(Intent(context, ArtworkActivity::class.java).apply {
+                                putExtra("artwork", Gson().toJson(artworkList!![it]))
+                            })
                         }
                     }
                 }
-            },
-            contentPadding = PaddingValues(5.dp),
-            horizontalArrangement = Arrangement.spacedBy(5.dp),
-            verticalItemSpacing = 5.dp,
-        )
-    }
+            }
+        },
+        contentPadding = PaddingValues(5.dp),
+        horizontalArrangement = Arrangement.spacedBy(5.dp),
+        verticalItemSpacing = 5.dp,
+    )
 }
 @Composable
-fun artworkCard(artwork: DomainArtwork, viewModel: MainViewModel, onClick: () -> Unit){
+fun artworkCard(artwork: DomainArtwork, onClick: () -> Unit) {
     Column {
         AsyncImage(
             model = artwork.url,
@@ -143,41 +149,6 @@ fun artworkCard(artwork: DomainArtwork, viewModel: MainViewModel, onClick: () ->
                 .clickable { onClick() },
             contentDescription = "이미지"
         )
-    }
-}
-@Composable
-fun LikeBtn(
-    likedState: Boolean,
-    modifier: Modifier,
-    likedBtnOnClick: () -> Unit,
-){
-
-    Box(
-        modifier = Modifier
-            .wrapContentSize() // IconButton 크기
-            .clickable(
-                onClick = { likedBtnOnClick() },
-                indication = null, // Ripple 효과 제거
-                interactionSource = remember { MutableInteractionSource() } // 사용자 상호작용 추적
-            )
-            .padding(end = 3.dp),
-        contentAlignment = Alignment.Center // 아이콘 정렬
-    ){
-        if (!likedState) {
-            androidx.compose.material.Icon(
-                painterResource(id = R.drawable.heart_border),
-                contentDescription = "좋아요",
-                modifier = modifier
-            )
-        } else {
-            androidx.compose.material.Icon(
-                painterResource(id = R.drawable.heart_filled),
-                contentDescription = "좋아요",
-                modifier = modifier,
-                tint = Color.Red
-
-            )
-        }
     }
 }
 
