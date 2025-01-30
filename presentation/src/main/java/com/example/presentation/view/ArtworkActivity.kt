@@ -21,7 +21,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -30,12 +29,9 @@ import androidx.compose.material.IconButton
 import androidx.compose.material.TabRow
 import androidx.compose.material.TabRowDefaults
 import androidx.compose.material.TabRowDefaults.tabIndicatorOffset
-import androidx.compose.material.TopAppBar
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
-import androidx.compose.material.icons.filled.KeyboardArrowLeft
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -56,6 +52,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.layout.ContentScale
@@ -64,11 +61,9 @@ import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.zIndex
 import coil3.compose.AsyncImage
 import com.example.domain.model.DomainArtwork
 import com.example.presentation.R
@@ -122,7 +117,9 @@ fun ArtworkScreen(artwork: DomainArtwork, viewModel: ArtworkViewModel){
     val artworkLikedCountState by viewModel.artworkLikedCountState.observeAsState(0)
     var isZoomDialogOpen by remember { mutableStateOf(false) }
 
-    Box(modifier = Modifier.fillMaxSize().background(Color.White)){
+    Box(modifier = Modifier
+        .fillMaxSize()
+        .background(Color.White)){
         Column(
             modifier = Modifier.verticalScroll(scrollstate)
         ){
@@ -157,6 +154,7 @@ fun ArtworkScreen(artwork: DomainArtwork, viewModel: ArtworkViewModel){
                 .fillMaxWidth()
                 .align(Alignment.BottomCenter),
             artwork,
+            viewModel
         )
     }
 }
@@ -195,32 +193,103 @@ fun ArtworkTopBar(modifier: Modifier, favoriteState: Boolean, favoriteBtnOnClick
 @Composable
 fun artworkActivityTest(){
     Surface(modifier = Modifier.fillMaxSize()) {
+        var artwork = DomainArtwork()
         Column {
-            TopAppBar(
-                title = {
-                    Box(
-                        modifier = Modifier.fillMaxWidth(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = "소운",
-                            style = MaterialTheme.typography.titleMedium
-                        )
+            Column(modifier = Modifier
+                .padding(start = 15.dp, end = 15.dp, top = 15.dp)
+                .background(Color.White)) {
+                Row {
+                    Column {
+                        Text(text = artwork.name.toString(), fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Color.Black)
+                        Text(text = artwork.madeIn.toString(), fontSize = 14.sp, color = Color.Gray, modifier = Modifier.padding(top = 5.dp))
                     }
+                    Spacer(modifier = Modifier.weight(1f))
+                }
+                Divider(thickness = 0.5.dp, color = Color.LightGray, modifier = Modifier.padding(top = 15.dp, bottom = 15.dp))
 
-                },
-                navigationIcon = {
-                    IconButton(onClick = {}) { Icon(painter = painterResource(id = R.drawable.back), contentDescription = null) }
-                },
-                contentColor = Color.Black,
-                backgroundColor = Color.White,
-                actions = {
-                    IconButton(onClick = { }) {
-                        Icon(painterResource(R.drawable.bookmark_filled), contentDescription = "저장", modifier = Modifier.size(30.dp))
+                Text(text = "작품 리뷰", color = Color.Black, fontSize = 14.sp)
+
+                Spacer(modifier = Modifier.padding(top = 15.dp))
+
+
+                Row(
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(
+                        modifier = Modifier.weight(1f),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(text = "카테고리", color = Color.Gray, fontSize = 14.sp, textAlign = TextAlign.Center)
+                        Text(text = "한국화", color = Color.Black, fontSize = 14.sp, textAlign = TextAlign.Center)
                     }
-                },
-            )
+                    Column(
+                        modifier = Modifier.weight(1f),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(text = "사이즈", color = Color.Gray, fontSize = 14.sp)
+                        Text(text = "50 * 30", color = Color.Black, fontSize = 14.sp)
+                    }
+                    Column(
+                        modifier = Modifier.weight(1f),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(text = "재료", color = Color.Gray, fontSize = 14.sp)
+                        Text(text = "acrlil", color = Color.Black, fontSize = 14.sp)
+                    }
+                }
+
+                Divider(thickness = 0.5.dp, color = Color.LightGray, modifier = Modifier.padding(top = 15.dp, bottom = 15.dp))
+
+                Text(text = "작가", color = Color.Black, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+
+                userProfile(artwork = artwork, Modifier.padding(top=15.dp))
+
+                Spacer(modifier = Modifier.padding(top = 15.dp))
+            }
         }
+    }
+}
+
+@Composable
+fun userProfile(artwork: DomainArtwork, modifier: Modifier){
+    Column {
+        Row(
+            modifier = modifier,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(100.dp))
+                    .size(60.dp)
+                    .background(color = colorResource(id = R.color.lightgray)),
+                contentAlignment = Alignment.Center,
+            ){
+//            if(userInfo.profileImage != null){
+//                AsyncImage(model = userInfo.profileImage, contentDescription = null, contentScale = ContentScale.Crop)
+//            } else{
+//                Icon(
+//                    painter = painterResource(id = R.drawable.profile),
+//                    contentDescription = null,
+//                    modifier = Modifier.size(24.dp)
+//                )
+//            }
+                Icon(
+                    painter = painterResource(id = R.drawable.profile),
+                    contentDescription = null,
+                    modifier = Modifier.size(24.dp)
+                )
+            }
+            Column(
+                modifier = Modifier.padding(start = 15.dp)
+            ) {
+                Text(text = "최윤석", fontSize = 14.sp, color = Color.Black)
+                Text(text = "American,b.1999", fontSize = 14.sp, color = Color.Gray)
+            }
+            Spacer(modifier = Modifier.weight(1f))
+            Icon(painter = painterResource(id = R.drawable.forward), contentDescription = null)
+        }
+        Spacer(modifier = Modifier.height(15.dp))
+        Text(text = "작가 소개", fontSize = 14.sp, color = Color.Black)
     }
 }
 
@@ -228,6 +297,7 @@ fun artworkActivityTest(){
 fun userActionButton(
     modifier: Modifier,
     artwork: DomainArtwork,
+    viewModel: ArtworkViewModel,
 ) {
     val context = LocalContext.current
     Card(
@@ -250,7 +320,7 @@ fun userActionButton(
             Spacer(modifier = Modifier.weight(1f))
             TextButton(
                 onClick = {
-                    context.startActivity(Intent(context, ArtworkPriceActivity::class.java).putExtra(
+                    context.startActivity(Intent(context, ChatRoomActivity::class.java).putExtra(
                         "artwork", Gson().toJson(artwork, DomainArtwork::class.java)
                     ))
                 },
@@ -265,26 +335,11 @@ fun userActionButton(
     }
 }
 
-@Preview(showSystemUi = true)
-@Composable
-fun userMakePrice(){
-    val artwork = DomainArtwork()
-    Surface(modifier = Modifier.fillMaxSize()) {
-        Column(modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 20.dp)) {
-            Text(text = artwork.name!!, fontSize = 20.sp, fontWeight = FontWeight.Bold)
-            Spacer(modifier = Modifier.height(15.dp))
-            Text(text = artwork.madeIn.toString(), fontSize = 16.sp)
-            Spacer(modifier = Modifier.height(5.dp))
-            Text(text = artwork.material.toString(), fontSize = 16.sp)
-            Spacer(modifier = Modifier.height(5.dp))
-            Text(text = artwork.size!!, fontSize = 16.sp)
-        }
-    }
-}
-
 @Composable
 fun artworkInfo(artwork: DomainArtwork,  likedState: Boolean, onClick: () -> Unit){
-    Column(modifier = Modifier.padding(start = 15.dp, end = 15.dp, top = 15.dp).background(Color.White)) {
+    Column(modifier = Modifier
+        .padding(start = 15.dp, end = 15.dp, top = 15.dp)
+        .background(Color.White)) {
         Row {
             Column {
                 Text(text = artwork.name!!, fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Color.Black)
@@ -296,9 +351,45 @@ fun artworkInfo(artwork: DomainArtwork,  likedState: Boolean, onClick: () -> Uni
             }
         }
         Divider(thickness = 0.5.dp, color = Color.LightGray, modifier = Modifier.padding(top = 15.dp, bottom = 15.dp))
-        Text(text = artwork.material.toString(), fontSize = 14.sp)
-        Spacer(modifier = Modifier.height(5.dp))
-        Text(text = artwork.size!!, fontSize = 14.sp)
+
+        Text(text = "작품 리뷰작품 리뷰작품 리뷰작품 리뷰작품 리뷰작품 리뷰작품 리뷰작품 리뷰작품 리뷰작품 리뷰작품 리뷰작품 리뷰작품 리뷰작품 리뷰작품 리뷰작품 리뷰작품 리뷰작품 리뷰작품 리뷰작품 리뷰작품 리뷰작품 리뷰작품 리뷰작품 리뷰작품 리뷰작품 리뷰작품 리뷰작품 리뷰작품 리뷰작품 리뷰작품 리뷰작품 리뷰작품 리뷰작품 리뷰작품 리뷰", color = Color.Black, fontSize = 14.sp)
+
+        Spacer(modifier = Modifier.padding(top = 30.dp))
+
+
+        Row(
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Column(
+                modifier = Modifier.weight(1f),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(text = "카테고리", color = Color.Gray, fontSize = 14.sp, textAlign = TextAlign.Center)
+                Text(text = "한국화", color = Color.Black, fontSize = 14.sp, textAlign = TextAlign.Center)
+            }
+            Column(
+                modifier = Modifier.weight(1f),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(text = "사이즈", color = Color.Gray, fontSize = 14.sp)
+                Text(text = "50 * 30", color = Color.Black, fontSize = 14.sp)
+            }
+            Column(
+                modifier = Modifier.weight(1f),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(text = "재료", color = Color.Gray, fontSize = 14.sp)
+                Text(text = "acrlil", color = Color.Black, fontSize = 14.sp)
+            }
+        }
+
+        Divider(thickness = 0.5.dp, color = Color.LightGray, modifier = Modifier.padding(top = 15.dp, bottom = 15.dp))
+
+        Text(text = "작가", color = Color.Black, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+
+        userProfile(artwork = artwork, Modifier.padding(top=15.dp))
+
+        Spacer(modifier = Modifier.padding(top = 15.dp))
     }
 }
 

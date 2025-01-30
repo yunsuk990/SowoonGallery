@@ -1,28 +1,16 @@
 package com.example.presentation
 
 
-import android.net.Uri
 import android.os.Bundle
-import android.util.Log
 import androidx.activity.ComponentActivity
-import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
-import androidx.activity.result.PickVisualMediaRequest
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.BottomNavigation
 import androidx.compose.material.BottomNavigationItem
-import androidx.compose.material.ModalBottomSheetLayout
-import androidx.compose.material.ModalBottomSheetState
-import androidx.compose.material.ModalBottomSheetValue
-import androidx.compose.material.rememberModalBottomSheetState
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
@@ -30,8 +18,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -52,13 +38,11 @@ import com.example.presentation.view.HomeScreen
 import com.example.presentation.view.LikedScreen
 import com.example.presentation.view.ProfileScreen
 import com.example.presentation.view.SettingScreen
+import com.example.presentation.view.ChattingScreen
 import com.example.presentation.view.ui.theme.SowoonTheme
 import com.example.presentation.viewModel.MainViewModel
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -108,6 +92,7 @@ fun MyAppNavHost(
         composable(Screen.Favorite.route) { LikedScreen(viewModel, navController)}
         composable(Screen.BookMark.route) { BookMarkScreen(viewModel, navController) }
         composable(Screen.Setting.route) { SettingScreen(viewModel, navController) }
+        composable(Screen.Chat.route) { ChattingScreen(viewModel, navController) }
         //composable(Screen.ProfileEdit.route) { ProfileEditScreen(viewModel, navController) }
     }
 }
@@ -115,7 +100,7 @@ fun MyAppNavHost(
 @Composable
 fun BottomAppBar(navController: NavHostController) {
     var onItemSelected by rememberSaveable { mutableStateOf(0) }
-    var items = listOf(Screen.Home, Screen.Profile, Screen.Setting)
+    var items = listOf(Screen.Home, Screen.Profile, Screen.Chat, Screen.Setting)
 
     BottomNavigation(
         backgroundColor = Color.White
