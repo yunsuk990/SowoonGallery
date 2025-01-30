@@ -79,7 +79,7 @@ import com.google.gson.Gson
 @Composable
 fun ProfileScreen(viewModel: MainViewModel) {
     var selectedIndex by rememberSaveable { mutableStateOf(0) }
-    var list = arrayListOf("전체", "한국화", "수채화", "아크릴화")
+    var list = arrayListOf("전체", "한국화", "수채화", "아크릴화", "도자기")
     val artworkList by viewModel.artworkLiveData.collectAsState()
     var sortedBy by remember { mutableStateOf(ArtworkSort.NONE) }
     
