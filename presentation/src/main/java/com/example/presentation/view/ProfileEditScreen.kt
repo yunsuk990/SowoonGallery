@@ -9,6 +9,7 @@ import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -25,6 +26,7 @@ import androidx.compose.material.ModalBottomSheetValue
 import androidx.compose.material.Surface
 import androidx.compose.material.rememberModalBottomSheetState
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
@@ -47,6 +49,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.tooling.preview.Preview
@@ -83,22 +86,38 @@ fun ProfileEditDialog(
     Dialog(onDismissRequest = {
         onDismissClick()
     }) {
-        Card {
+        Card(
+            colors = CardDefaults.cardColors(
+                containerColor = Color.White
+            )
+        ) {
             Box(
                 modifier = Modifier.fillMaxWidth(),
                 contentAlignment = Alignment.Center
             ){
                 Column(
-                    modifier = Modifier.padding(15.dp).fillMaxWidth()
+                    modifier = Modifier
+                        .padding(15.dp)
+                        .fillMaxWidth()
                 ) {
                     Text(text = "Profile", modifier = Modifier
                         .fillMaxWidth()
-                        .padding(top = 8.dp, bottom = 15.dp), color = Color.Black, fontSize = 20.sp, style = MaterialTheme.typography.titleLarge, textAlign = TextAlign.Center)
+                        .padding(top = 8.dp, bottom = 15.dp), color = Color.Black, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleLarge, textAlign = TextAlign.Center)
                     Row(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         profileImage(photoGalleryUri, singlePhotoPickerLauncher, userInfo)
-                        Text(text = "choose image", fontSize = 16.sp, color = Color.Black, modifier = Modifier.padding(start = 15.dp), textDecoration = TextDecoration.Underline)
+                        Text(text = "choose image", fontSize = 16.sp, color = Color.Black, modifier = Modifier
+                            .padding(start = 15.dp)
+                            .clickable(
+                                indication = null,
+                                interactionSource = remember { MutableInteractionSource() }) {
+                                singlePhotoPickerLauncher.launch(
+                                    PickVisualMediaRequest(
+                                        ActivityResultContracts.PickVisualMedia.ImageOnly
+                                    )
+                                )
+                            }, textDecoration = TextDecoration.Underline)
                     }
                     Spacer(modifier = Modifier.height(30.dp))
                     profileInfo(onDismissClick, viewModel, photoGalleryUri, userInfo)
@@ -205,7 +224,6 @@ fun profileImage(
                         ActivityResultContracts.PickVisualMedia.ImageOnly
                     )
                 )
-                //scope.launch { bottomState.show() }
             },
         contentAlignment = Alignment.Center,
     ){
