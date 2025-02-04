@@ -1,10 +1,12 @@
 package com.example.sowoongallery.di
 
+import com.example.domain.repository.ArtworkRepository
+import com.example.domain.repository.AuthRepository
 import com.example.domain.repository.FirebaseRepository
-import com.example.domain.usecase.CheckUserRtdbUseCase
-import com.example.domain.usecase.GetArtworksUseCase
-import com.example.domain.usecase.SaveUserInfoUseCase
-import com.example.domain.usecase.SignInWithPhoneUseCase
+import com.example.domain.usecase.*
+import com.example.domain.usecase.artworkUseCase.GetArtworksUseCase
+import com.example.domain.usecase.authUseCase.CheckUserRtdbUseCase
+import com.example.domain.usecase.authUseCase.SaveUserInfoUseCase
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -18,26 +20,24 @@ object UseCaseModule {
     @Provides
     @Singleton
     fun provideGetArtworksUseCase(
-        firebaseRepository: FirebaseRepository
-    ) =  GetArtworksUseCase(firebaseRepository)
+        artworkRepository: ArtworkRepository
+    ) =  GetArtworksUseCase(artworkRepository)
 
     @Provides
     @Singleton
     fun provideSaveUserInfoUseCase(
-        firebaseRepository: FirebaseRepository
-    ) = SaveUserInfoUseCase(firebaseRepository)
+        authRepository: AuthRepository
+    ) = SaveUserInfoUseCase(authRepository)
 
     @Provides
     @Singleton
     fun provideCheckUserRtdbUseCase(
-        firebaseRepository: FirebaseRepository
-    ) = CheckUserRtdbUseCase(firebaseRepository)
+        authRepository: AuthRepository
+    ) = CheckUserRtdbUseCase(authRepository)
 
     @Provides
     @Singleton
     fun provideSignInWithPhoneUseCase(
-        firebaseRepository: FirebaseRepository
-    ) = SignInWithPhoneUseCase(firebaseRepository)
-
-
+        authRepository: AuthRepository
+    ) = SignInWithPhoneUseCase(authRepository)
 }
