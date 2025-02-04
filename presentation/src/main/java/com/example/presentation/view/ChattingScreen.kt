@@ -1,6 +1,7 @@
 package com.example.presentation.view
 
 import android.content.Intent
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -41,6 +42,7 @@ import coil3.compose.AsyncImage
 import com.example.domain.model.DomainArtwork
 import com.example.domain.model.DomainChatRoom
 import com.example.domain.model.DomainChatRoomWithUser
+import com.example.domain.model.DomainUser
 import com.example.presentation.R
 import com.example.presentation.viewModel.MainViewModel
 import com.google.gson.Gson
@@ -48,9 +50,10 @@ import com.google.gson.Gson
 @Composable
 fun ChattingScreen(viewModel: MainViewModel, navController: NavController) {
     val chatRoomsList by viewModel.chatRoomsList.collectAsState()
-    LaunchedEffect(viewModel.userInfoStateFlow.value.uid){
-        viewModel.loadChatLists()
-    }
+//    LaunchedEffect(chatRoomsList){
+//        viewModel.loadChatLists()
+//    }
+    Log.d("ChattingScreen", chatRoomsList.toString())
 
     Column(modifier = Modifier
         .background(Color.White)
@@ -75,9 +78,10 @@ fun chatRoom(chatRoom: DomainChatRoomWithUser) {
     val context = LocalContext.current
     Row(
         modifier = Modifier.padding(vertical = 15.dp, horizontal = 10.dp).clickable {
-//            context.startActivity(Intent(context, ChatRoomActivity::class.java).putExtra(
-//                "artwork", Gson().toJson(chatRoom.chatRoom.ar, DomainArtwork::class.java)
-//            ))
+            context.startActivity(Intent(context, ChatRoomActivity::class.java)
+                .putExtra("artwork", Gson().toJson(chatRoom.artwork, DomainArtwork::class.java))
+                .putExtra("destUser", Gson().toJson(chatRoom.destUser, DomainUser::class.java))
+            )
         }
     ) {
         Box(
@@ -87,19 +91,19 @@ fun chatRoom(chatRoom: DomainChatRoomWithUser) {
                 .background(color = colorResource(id = R.color.lightgray)),
             contentAlignment = Alignment.Center,
         ){
-//            AsyncImage(
-//                model = chatRoom.chatRoom.artwork.url,
-//                contentDescription = null,
-//                contentScale = ContentScale.Crop
-//            )
+            AsyncImage(
+                model = chatRoom.artwork.url,
+                contentDescription = null,
+                contentScale = ContentScale.Crop
+            )
         }
         Column(modifier = Modifier.padding(start = 10.dp, top = 5.dp)) {
             Row(modifier = Modifier.padding(bottom = 5.dp)) {
-                Text(text = chatRoom.destUser.name, color = Color.Black, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
+                Text(text = chatRoom.artwork.name!!, color = Color.Black, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
                 Spacer(modifier = Modifier.weight(1f))
                 Text(chatRoom.chatRoom.lastMessage.timestamp, color = Color.Gray, fontSize = 15.sp)
             }
-            Text(text = chatRoom.chatRoom.lastMessage.message, color = Color.Black, fontSize = 15.sp)
+            Text(text = chatRoom.chatRoom.lastMessage.message, color = Color.Gray, fontSize = 15.sp)
         }
     }
 }
