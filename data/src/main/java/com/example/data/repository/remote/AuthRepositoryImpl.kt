@@ -29,6 +29,8 @@ class AuthRepositoryImpl @Inject constructor(
     override fun clearUid() = authDataSource.clearUid()
 
     override fun getUserInfo(uid: String): Flow<DomainUser?> = authDataSource.getUserInfo(uid)
+    override suspend fun getUserInfoOnce(uid: String): DomainUser = authDataSource.getUserInfoOnce(uid)
+
     override suspend fun deleteUserAccount(uid: String): Boolean {
 //        val artworkDeleted = firebaseDataSource.removeUserFromLikedArtworks(uid)
 //        if (artworkDeleted) {

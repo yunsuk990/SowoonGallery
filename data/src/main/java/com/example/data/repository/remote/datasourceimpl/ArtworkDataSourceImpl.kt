@@ -56,6 +56,13 @@ class ArtworkDataSourceImpl @Inject constructor(
         return itemList
     }
 
+    override suspend fun getArtworkById(artworkUid: String): DomainArtwork {
+        val artworkSnapshot = imagesRef.child(artworkUid).get().await()
+        val artwork = artworkSnapshot.getValue(DomainArtwork::class.java)!!
+        return artwork
+
+    }
+
     // 작품 북마크 설정
     override fun setFavoriteArtwork(
         uid: String,
@@ -179,80 +186,4 @@ class ArtworkDataSourceImpl @Inject constructor(
         return artworkData
     }
 
-    override fun getPriceForArtwork(
-        category: String, artworkId: String, callback: (List<PriceWithUser>) -> Unit
-    ){
-        imagesRef.child(category).child(artworkId).child("prices").addValueEventListener(object: ValueEventListener {
-            override fun onDataChange(snapshot: DataSnapshot) {
-                val priceList = mutableListOf<PriceWithUser>()
-                var uidLists = mutableListOf<String>()
-                snapshot?.children?.forEach{snapshot ->
-                    var domainPrice = snapshot.getValue(DomainPrice::class.java)!!
-                    uidLists.add(domainPrice.userId)
-                    priceList.add(PriceWithUser(domainPrice.userId, "", 0, domainPrice.price, snapshot.key!!))
-                }
-
-                // 모든 uid에 대해 사용자 정보를 가져온 후 업데이트
-                val pendingTasks = mutableListOf<Task<DataSnapshot>>()
-                uidLists.forEach { uid ->
-                    pendingTasks.add(usersRef.child(uid).get())
-                }
-
-                Tasks.whenAllComplete(pendingTasks).addOnCompleteListener {
-                    pendingTasks.forEachIndexed { index, task ->
-                        if (task.isSuccessful) {
-                            val userSnapshot = task.result
-                            val userInfo = userSnapshot?.getValue(DomainUser::class.java)
-                            val userId = uidLists.elementAt(index)
-
-                            // priceList에 사용자 정보 업데이트
-                            priceList.filter { it.uid == userId }.forEach {
-                                it.name = userInfo?.name ?: "Unknown"
-                                it.age = userInfo?.age ?: 0
-                            }
-                        }
-                    }
-                    // 모든 데이터를 업데이트한 후 콜백 호출
-                    Log.d("FirebaseDataSource_getPriceForArtwork", priceList.toString())
-                    callback(priceList)
-                }
-            }
-
-            override fun onCancelled(error: DatabaseError) {
-
-            }
-        })
-    }
-
-    @RequiresApi(Build.VERSION_CODES.O)
-    override fun savePriceForArtwork(category: String, artworkId: String, price: Float, userId: String, ): Task<Void> {
-        val currentDate = LocalDate.now()
-        val formatter = DateTimeFormatter.ofPattern("MM-dd")
-        val formattedDate = currentDate.format(formatter)
-        val domainPriceData = DomainPrice(price, userId)
-        val priceRef = imagesRef.child(category).child(artworkId).child("prices")
-        return priceRef.get().continueWithTask { task ->
-            if (task.isSuccessful) {
-                val snapshot = task.result
-                val updates = hashMapOf<String, Any?>()
-
-                // Step 2: 사용자의 이전 데이터 삭제
-                snapshot?.children?.forEach { dateSnapshot ->
-                    val domainPrice = dateSnapshot.getValue(DomainPrice::class.java)
-                    if (domainPrice != null && domainPrice.userId == userId && dateSnapshot.key != formattedDate) {
-                        updates[dateSnapshot.key!!] = null
-                    }
-                }
-
-                // Step 3: 당일 데이터 추가
-                updates[formattedDate] = domainPriceData
-                Log.d("FirebaseDataSource_savePriceForArtwork", "save_update")
-                // Step 4: Firebase 업데이트 실행
-                priceRef.updateChildren(updates)
-            } else {
-                throw task.exception ?: Exception("Failed to fetch prices")
-            }
-        }
-        //return imagesRef.child(category).child(artworkId).child("prices").child(formattedDate).(domainPriceData)
-    }
 }

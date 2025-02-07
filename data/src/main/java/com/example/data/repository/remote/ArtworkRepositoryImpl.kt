@@ -31,16 +31,12 @@ class ArtworkRepositoryImpl @Inject constructor(
         return artworkDataSource.getFavoritesArtwork(uid)
     }
 
-    override fun getPriceForArtwork(category: String, artworkId: String, callback: (List<PriceWithUser>) -> Unit){
-        artworkDataSource.getPriceForArtwork(category,artworkId) { item ->
-            Log.d("FirebaseRepository_getPriceForArtwork", item.toString())
-            callback(item)
-        }
-    }
 
     override suspend fun getRecentArtworks(limit: Int): List<DomainArtwork> = artworkDataSource.getRecentArtworks(limit)
 
     override suspend fun getArtistArtworks(artistId: String): List<DomainArtwork> = artworkDataSource.getArtistArtworks(artistId)
+
+    override suspend fun getArtworkById(artworkId: String): DomainArtwork = artworkDataSource.getArtworkById(artworkId)
 
     override suspend fun getLikedArtworks(uid: String): Flow<List<DomainArtwork>> = artworkDataSource.getLikedArtworks(uid)
 
@@ -60,7 +56,5 @@ class ArtworkRepositoryImpl @Inject constructor(
         val updateArtwork = artwork.copy(url = artworkUrl)
         return artworkDataSource.uploadImageToRTDB(updateArtwork)
     }
-
-    override fun savePriceForArtwork(category: String, artworkId: String, price: Float, userId: String, ): Task<Void> = artworkDataSource.savePriceForArtwork(category,artworkId,price,userId)
 
 }

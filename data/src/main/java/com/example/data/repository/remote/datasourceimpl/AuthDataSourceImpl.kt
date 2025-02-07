@@ -62,7 +62,10 @@ class AuthDataSourceImpl @Inject constructor(
 
     override fun clearUid() = sharedPreferences.edit().remove(KEY_UID).apply()
 
-    override fun signOut() { firebaseAuth.signOut() }
+    override fun signOut() {
+        clearUid()
+        firebaseAuth.signOut()
+    }
 
     override fun clear() {}
 
@@ -100,6 +103,11 @@ class AuthDataSourceImpl @Inject constructor(
 
     // 사용자 정보를 db에 저장
     override fun saveUserInfo(uid: String, user: DomainUser): Task<Void> = usersRef.child(uid).setValue(user)
+
+    override suspend fun getUserInfoOnce(uid: String): DomainUser {
+        val snapshot = usersRef.child(uid).get().await()
+        return snapshot.getValue(DomainUser::class.java)!!
+    }
 
     override fun getUserInfo(uid: String): Flow<DomainUser?> = callbackFlow {
         val valueEventListener = object: ValueEventListener {

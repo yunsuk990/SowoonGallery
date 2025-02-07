@@ -17,10 +17,7 @@ interface ArtworkDataSource {
     //카테고리별 작품 가져오기
     suspend fun getArtworksByCategory(category: String): List<DomainArtwork>
 
-    //작품 가격 제시
-    fun savePriceForArtwork(category: String, artworkId: String, price: Float, userId: String): Task<Void>
-
-    fun getPriceForArtwork(category: String, artworkId: String, callback: (List<PriceWithUser>) -> Unit)
+    suspend fun getArtworkById(artworkUid: String): DomainArtwork
 
     fun getFavoriteArtwork(uid: String, artworkUid: String): Task<DataSnapshot>
 
