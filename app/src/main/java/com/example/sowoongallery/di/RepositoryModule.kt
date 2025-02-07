@@ -31,9 +31,11 @@ object RepositoryModule {
     @Provides
     @Singleton
     fun provideFirebaseRepository(
-        firebaseDataSource: FirebaseDataSource
+        firebaseDataSource: FirebaseDataSource,
+        artworkDataSource: ArtworkDataSource,
+        authDataSource: AuthDataSource
     ): FirebaseRepository {
-        return FirebaseRepositoryImpl(firebaseDataSource)
+        return FirebaseRepositoryImpl(firebaseDataSource, artworkDataSource, authDataSource)
     }
 
     @Provides
