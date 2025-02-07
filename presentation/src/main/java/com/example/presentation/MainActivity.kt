@@ -33,12 +33,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.example.presentation.model.Screen
-import com.example.presentation.view.BookMarkScreen
-import com.example.presentation.view.HomeScreen
-import com.example.presentation.view.LikedScreen
-import com.example.presentation.view.ProfileScreen
-import com.example.presentation.view.SettingScreen
-import com.example.presentation.view.ChattingScreen
+import com.example.presentation.view.*
 import com.example.presentation.view.ui.theme.SowoonTheme
 import com.example.presentation.viewModel.MainViewModel
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
@@ -88,19 +83,19 @@ fun MyAppNavHost(
 ){
     NavHost(navController = navController, startDestination = Screen.Home.route, modifier = modifier){
         composable(Screen.Home.route) { HomeScreen(viewModel, navController) }
-        composable(Screen.Profile.route) { ProfileScreen(viewModel) }
+        composable(Screen.Profile.route) { ArtworkScreen(viewModel) }
         composable(Screen.Favorite.route) { LikedScreen(viewModel, navController)}
         composable(Screen.BookMark.route) { BookMarkScreen(viewModel, navController) }
+        composable(Screen.MyPage.route) { MyPageScreen(viewModel, navController) }
         composable(Screen.Setting.route) { SettingScreen(viewModel, navController) }
         composable(Screen.Chat.route) { ChattingScreen(viewModel, navController) }
-        //composable(Screen.ProfileEdit.route) { ProfileEditScreen(viewModel, navController) }
     }
 }
 
 @Composable
 fun BottomAppBar(navController: NavHostController) {
     var onItemSelected by rememberSaveable { mutableStateOf(0) }
-    var items = listOf(Screen.Home, Screen.Profile, Screen.Chat, Screen.Setting)
+    var items = listOf(Screen.Home, Screen.Profile, Screen.Chat, Screen.MyPage)
 
     BottomNavigation(
         backgroundColor = Color.White
