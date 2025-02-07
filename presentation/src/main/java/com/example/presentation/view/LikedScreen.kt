@@ -1,9 +1,5 @@
 package com.example.presentation.view
 
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.InteractionSource
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.Divider
@@ -17,9 +13,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
@@ -33,6 +26,7 @@ import com.example.presentation.viewModel.MainViewModel
 @Composable
 fun LikedScreen(viewModel: MainViewModel, navController: NavController) {
     val likedItem by viewModel.artworkLikedLiveData.collectAsState()
+
     LaunchedEffect(key1 = likedItem){
         viewModel.getLikedArtworksList()
     }
@@ -46,10 +40,9 @@ fun LikedScreen(viewModel: MainViewModel, navController: NavController) {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LikedTopBar(navController: NavController) {
-    val interactionSource by remember { mutableStateOf(MutableInteractionSource()) }
     CenterAlignedTopAppBar(
         title = { Text(text = "Favorites", textAlign = TextAlign.Center, style = MaterialTheme.typography.titleMedium) },
-        colors = TopAppBarDefaults.smallTopAppBarColors(
+        colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
             containerColor = Color.White,
             titleContentColor = Color.Black,
             navigationIconContentColor = Color.Black,
