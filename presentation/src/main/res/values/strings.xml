@@ -6,4 +6,9 @@
     <string name="title_activity_start">StartActivity</string>
     <string name="title_activity_global_application">GlobalApplication</string>
     <string name="title_activity_artwork">ArtworkActivity</string>
+    <string name="title_activity_artwork_price">ArtworkPriceActivity</string>
+    <string name="title_activity_chat_room">ChatRoomActivity</string>
+    <string name="title_activity_artwork_upload">ArtworkUploadActivity</string>
+    <string name="title_activity_profile_edit">ProfileEditActivity</string>
+    <string name="title_activity_artist_profile">ArtistProfileActivity</string>
 </resources>

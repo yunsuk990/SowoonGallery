@@ -14,5 +14,8 @@
     <color name="red">#FF0000</color>
     <color name="test">#F4F6FF</color>
     <color name="date_text">#EDF0F8</color>
+    <color name="messageGray">#E1E1E1</color>
+    <color name="placeholderColor">#EBEBEB</color>
+    <color name="placeholderColorDark">#E0E0E0</color>
 
 </resources>
