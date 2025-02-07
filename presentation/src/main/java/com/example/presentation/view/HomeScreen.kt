@@ -1,147 +1,259 @@
 package com.example.presentation.view
 
-import android.content.Context
 import android.content.Intent
 import android.util.Log
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.*
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.pager.HorizontalPager
-import androidx.compose.foundation.pager.PageSize
 import androidx.compose.foundation.pager.rememberPagerState
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.DrawerValue
-import androidx.compose.material.IconButton
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.outlined.FavoriteBorder
-import androidx.compose.material.icons.outlined.Home
-import androidx.compose.material.icons.outlined.List
-import androidx.compose.material3.rememberDrawerState
 import androidx.compose.material3.CenterAlignedTopAppBar
-import androidx.compose.material3.Divider
-import androidx.compose.material3.DrawerState
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalDrawerSheet
-import androidx.compose.material3.ModalNavigationDrawer
-import androidx.compose.material3.NavigationDrawerItem
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.material3.TopAppBarScrollBehavior
-import androidx.compose.material3.rememberTopAppBarState
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
+import coil3.compose.AsyncImage
+import coil3.request.CachePolicy
+import coil3.request.ImageRequest
+import coil3.request.crossfade
+import com.example.domain.model.DomainArtwork
 import com.example.presentation.R
-import com.example.presentation.model.Screen
 import com.example.presentation.utils.ArtInfo
-import com.example.presentation.utils.CustomDialog
 import com.example.presentation.utils.FullScreenArtwork
+import com.example.presentation.utils.shimmerEffect
 import com.example.presentation.viewModel.MainViewModel
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.launch
+import com.google.gson.Gson
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(viewModel: MainViewModel, navController: NavHostController) {
-    val isLoggedIn by viewModel.isLoggedInState
-    val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior(rememberTopAppBarState())
-    val pagerState = rememberPagerState(pageCount = { 3 })
-    val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed) // 메뉴의 초기 상태를 '닫힘'으로 설정
-    val scope = rememberCoroutineScope() // 코루틴을 통해 메뉴 열림/닫힘을 제어
+    val isLoggedIn by viewModel.isLoggedInState.collectAsState()
+    val advertiseImageState by viewModel.advertiseImagesState.collectAsState()
     var imageTranslate by remember { mutableStateOf(false) }
-    var context = LocalContext.current
+    val artistRecentArtworks by viewModel.artistRecentArtworks.collectAsState()
+    val isLoadingRecentArtworks by viewModel.isLoadingRecentArtworks.collectAsState()
+    val isLoadingAdvertiseImages by viewModel.isLoadingAdvertiseImages.collectAsState()
+    val userInfo by viewModel.userInfoStateFlow.collectAsState()
+    val context = LocalContext.current
 
+    LaunchedEffect(key1 = true) {
+        viewModel.advertiseImages()
+        viewModel.loadRecentArtworks(10)
+    }
 
-    ModalNavigationDrawer(
-        drawerState = drawerState,
-        drawerContent = {
-            DrawerContent(scope, drawerState, navController, viewModel, isLoggedIn, context)
+    HomeRoot(
+        isLoggedIn = isLoggedIn,
+        advertiseImageState = advertiseImageState,
+        imageTranslate = imageTranslate,
+        artistRecentArtworks = artistRecentArtworks,
+        isLoadingRecentArtworks = isLoadingRecentArtworks,
+        isLoadingAdvertiseImages = isLoadingAdvertiseImages,
+        imageDismiss = {imageTranslate = false},
+        imageLaunch = { imageTranslate = true},
+        navigateToArworkDetailScreen = { index ->
+            var intent = Intent(context, ArtworkDetailActivity::class.java).putExtra("artwork", Gson().toJson(artistRecentArtworks[index]))
+            intent.putExtra("userInfo", Gson().toJson(userInfo))
+            context.startActivity(intent)
         }
-    ) {
-        val scrollState = rememberScrollState()
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.verticalScroll(scrollState)
-        ) {
-            HomeTopBar(scrollBehavior = scrollBehavior, isLoggedIn = isLoggedIn, onNavigationOnClick = { scope.launch { drawerState.open() }})
-            HorizontalPager(
-                state = pagerState,
-                pageSize = PageSize.Fill
-            ) {
-                Image(
-                    painter = painterResource(id = R.drawable.sowoon_bg),
-                    contentDescription = null,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable {
-                            imageTranslate = true
-                        },
-                    contentScale = ContentScale.FillWidth
-                )
-                if(imageTranslate){
-                    FullScreenArtwork(imageUrl = R.drawable.sowoon_bg) {
-                        imageTranslate = false
-                    }
-                }
-            }
-            Row(
-                modifier = Modifier
-                    .wrapContentHeight()
-                    .fillMaxWidth()
-//                    .align(Alignment.Center)
-                    .padding(top = 8.dp),
-                horizontalArrangement = Arrangement.Center
-            ) {
-                repeat(pagerState.pageCount) { iteration ->
-                    val color = if (pagerState.currentPage == iteration) Color.Black else Color.Gray
-                    Box(
-                        modifier = Modifier
-                            .padding(2.dp)
-                            .clip(CircleShape)
-                            .background(color)
-                            .size(12.dp)
-                    )
+    )
 
+//    if(imageTranslate){
+//        FullScreenArtwork() { }
+//    }
+
+}
+
+@Composable
+fun HomeRoot(
+    isLoggedIn: Boolean,
+    advertiseImageState: List<String>,
+    imageTranslate: Boolean,
+    artistRecentArtworks: List<DomainArtwork>,
+    isLoadingRecentArtworks: Boolean,
+    isLoadingAdvertiseImages: Boolean,
+    imageDismiss: () -> Unit,
+    imageLaunch: () -> Unit,
+    navigateToArworkDetailScreen: (Int) -> Unit,
+) {
+    val scrollState = rememberScrollState()
+
+    Column(
+        modifier = Modifier.fillMaxSize().verticalScroll(scrollState)
+    ) {
+        HomeTopBar(isLoggedIn = isLoggedIn)
+        AdvertiseImages(advertiseImageState = advertiseImageState, imageLaunch, isLoadingAdvertiseImages)
+        RecentArtworks(
+            modifier = Modifier.padding(start = 15.dp, top = 20.dp, bottom = 20.dp),
+            artistRecentArtworks = artistRecentArtworks,
+            isLoadingRecentArtworks = isLoadingRecentArtworks,
+            navigateToArworkDetailScreen = navigateToArworkDetailScreen
+        )
+        val alpha = calculateAlpha(scrollState.value)
+        ArtInfo(alpha)
+    }
+    if(imageTranslate){
+        FullScreenArtwork(imageUrl = R.drawable.sowoon_bg) {
+            imageDismiss()
+        }
+    }
+
+}
+
+@Composable
+fun RecentArtworks(
+    modifier: Modifier,
+    artistRecentArtworks: List<DomainArtwork>,
+    isLoadingRecentArtworks: Boolean,
+    navigateToArworkDetailScreen: (Int) -> Unit
+) {
+    Column(modifier = modifier) {
+        if(isLoadingRecentArtworks){
+            Text("최근 작품", fontSize = 18.sp, color = Color.Transparent, modifier = Modifier.shimmerEffect(), fontWeight = FontWeight.Bold)
+            Spacer(modifier = Modifier.height(15.dp))
+            LazyRow(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(15.dp),
+            ) {
+                item(){artworkHomeCard(DomainArtwork(), modifier = Modifier.width(250.dp).height(180.dp).shimmerEffect())}
+                item(){artworkHomeCard(DomainArtwork(), modifier = Modifier.width(180.dp).height(180.dp).shimmerEffect())}
+            }
+        }else{
+            Text("최근 작품", fontSize = 18.sp, color = Color.Black, fontWeight = FontWeight.Bold)
+            Spacer(modifier = Modifier.height(15.dp))
+            LazyRow(
+                modifier = Modifier.fillMaxWidth().height(180.dp),
+                horizontalArrangement = Arrangement.spacedBy(15.dp),
+            ) {
+                items(artistRecentArtworks.size){ index ->
+                    artworkHomeCard(
+                        artwork = artistRecentArtworks[index],
+                        modifier = Modifier.height(180.dp).clip(RoundedCornerShape(5.dp)),
+                        onClick = { navigateToArworkDetailScreen(index) }
+                    )
                 }
             }
-            Spacer(modifier = Modifier.height(200.dp))
-            val alpha = calculateAlpha(scrollState.value)
-            ArtInfo(alpha)
         }
     }
 }
+
+@Composable
+fun artworkHomeCard(artwork: DomainArtwork, modifier: Modifier, onClick: () -> Unit = {}) {
+    var imageWidth by remember { mutableStateOf(0) }
+    Column(modifier = Modifier.wrapContentSize().clickable { onClick() }) {
+        AsyncImage(
+            model = artwork.url,
+            modifier = modifier.onGloballyPositioned { coordinates ->
+                imageWidth = coordinates.size.width },
+            contentDescription = null,
+        )
+//        Image(
+//            painter = painterResource(R.drawable.artist_profile),
+//            modifier = modifier.onGloballyPositioned { coordinates ->
+//                imageWidth = coordinates.size.width },
+//            contentScale = ContentScale.Crop,
+//            contentDescription = null,
+//        )
+
+
+//        Row(
+//            modifier = Modifier.width(with(LocalDensity.current){ imageWidth.toDp()}).padding(3.dp),
+//            verticalAlignment = Alignment.CenterVertically,
+//        ){
+//            Text(text = artwork.name!!, color = Color.Black, fontSize = 14.sp)
+//            Spacer(modifier = Modifier.weight(1f))
+//            Text(text = artwork.likedArtworks.size.toString(), color = Color.Black, fontSize = 14.sp)
+//            Image(painter = painterResource(R.drawable.heart_filled), contentDescription = null, modifier = Modifier.size(25.dp))
+//        }
+    }
+}
+
+@Composable
+fun AdvertiseImages(advertiseImageState: List<String>, imageLaunch: () -> Unit, isLoadingAdvertiseImages: Boolean) {
+    val pagerState = rememberPagerState(pageCount = {advertiseImageState.size})
+    val testList = listOf(R.drawable.sowoon_bg, R.drawable.logo_final, R.drawable.sowoon_bg)
+    val context = LocalContext.current
+    val count = if(advertiseImageState.size != 0) advertiseImageState.size else 1
+
+    if(isLoadingAdvertiseImages){
+        Box(modifier = Modifier.fillMaxWidth().height(250.dp).shimmerEffect()){}
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Row(
+                modifier = Modifier
+                    .padding(top = 8.dp)
+                    .shimmerEffect(),
+                horizontalArrangement = Arrangement.Center
+            ) {
+                repeat(3) { iteration ->
+                    Box(modifier = Modifier.padding(2.dp).clip(CircleShape).size(8.dp))
+                }
+            }
+        }
+    }else{
+        HorizontalPager(
+            state = pagerState,
+            modifier = Modifier.fillMaxWidth().wrapContentHeight(),
+        ) { page ->
+//      Log.d("AsyncImages", advertiseImageState[page])
+            AsyncImage(
+                model = ImageRequest.Builder(context)
+                    .data(advertiseImageState[page])
+                    .crossfade(true)
+                    .diskCachePolicy(CachePolicy.ENABLED)
+                    .memoryCachePolicy(CachePolicy.ENABLED)
+                    .build(),
+                contentDescription = null,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(250.dp)
+                    .clickable {
+                        imageLaunch()
+                    },
+                contentScale = ContentScale.FillHeight
+            )
+        }
+        Row(
+            modifier = Modifier
+                .wrapContentHeight()
+                .fillMaxWidth()
+                .padding(top = 8.dp),
+            horizontalArrangement = Arrangement.Center
+        ) {
+            repeat(count) { iteration ->
+                Log.d("repeat", "called")
+                val color = if(pagerState.currentPage == iteration) Color.Black else Color.LightGray
+                Box(
+                    modifier = Modifier
+                        .padding(2.dp)
+                        .clip(CircleShape)
+                        .background(color)
+                        .size(8.dp)
+                )
+            }
+        }
+    }
+}
+
+
 
 // Alpha 계산 로직
 fun calculateAlpha(scrollValue: Int): Float {
@@ -150,22 +262,19 @@ fun calculateAlpha(scrollValue: Int): Float {
     val triggerEnd = 500f    // Alpha 변화 종료 지점 (스크롤 값)
     return ((scrollValue - triggerStart) / (triggerEnd - triggerStart)).coerceIn(0f, 1f)
 }
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3Api::class)
 @Composable
-fun HomeTopBar(scrollBehavior: TopAppBarScrollBehavior, isLoggedIn: Boolean, onNavigationOnClick: () -> Unit){
+fun HomeTopBar(isLoggedIn: Boolean){
     val context = LocalContext.current
     CenterAlignedTopAppBar(
         title = { Text(text = "Sowoon", textAlign = TextAlign.Center, style = MaterialTheme.typography.titleMedium) },
-        colors = TopAppBarDefaults.smallTopAppBarColors(
+        colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
             containerColor = Color.White,
             titleContentColor = Color.Black,
             navigationIconContentColor = Color.Black,
             actionIconContentColor = Color.Black
         ),
-        navigationIcon = { IconButton(onClick = { onNavigationOnClick() }) {
-                Icon(Icons.Filled.List, contentDescription = null, Modifier.size(30.dp))
-            }
-        },
+        navigationIcon = {},
         actions = {
             if(!isLoggedIn){
                 IconButton(
@@ -178,176 +287,27 @@ fun HomeTopBar(scrollBehavior: TopAppBarScrollBehavior, isLoggedIn: Boolean, onN
                 }
             }
         },
-        scrollBehavior = scrollBehavior
     )
+    Divider(thickness = 0.5.dp, color = Color.LightGray)
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+
+@Preview(showBackground = true)
 @Composable
-fun DrawerContent(
-    scope: CoroutineScope,
-    drawerState: DrawerState,
-    navController: NavHostController,
-    viewModel: MainViewModel,
-    isLoggedIn: Boolean,
-    context: Context,
-) {
-    val current = navController.currentBackStackEntry?.destination?.route
-    var loginDialog by remember { mutableStateOf(false) }
-
-    ModalDrawerSheet(modifier = Modifier.fillMaxWidth(0.48f)) {
-        Text("Sowoon", modifier = Modifier.padding(16.dp), fontSize = 18.sp)
-        Divider(thickness = 0.5.dp, color = Color.LightGray)
-        NavigationDrawerItem(
-            icon = {
-                Icon(Icons.Outlined.Home, contentDescription = "홈")
-            },
-            label = { Text(text = "Home") },
-            selected = current == Screen.Home.route,
-            onClick = {
-                scope.launch { drawerState.close() }
-                navController.navigate(Screen.Home.route)
-            }
-        )
-
-        //Gallery 버튼
-        NavigationDrawerItem(
-            icon = {
-                Icon(Icons.Outlined.List, contentDescription = "홈")
-            },
-            label = { Text(text = "Gallery") },
-            selected = current == Screen.Profile.route,
-            onClick = {
-                scope.launch { drawerState.close() }
-                navController.navigate(Screen.Profile.route) {
-                    popUpTo(navController.graph.startDestinationId) {
-                        saveState = true
-                    }
-                    launchSingleTop = true
-                    restoreState = true
-                }
-            }
-        )
-
-
-        //Favorites 버튼
-        NavigationDrawerItem(
-            icon = {
-                Icon(Icons.Outlined.FavoriteBorder, contentDescription = "홈")
-            },
-            label = { Text(text = "Favorites") },
-            selected = current == Screen.Favorite.route,
-            onClick = {
-                scope.launch { drawerState.close() }
-                navController.navigate(Screen.Favorite.route) {
-                    popUpTo(navController.graph.startDestinationId) {
-                        saveState = true
-                    }
-                    launchSingleTop = true
-                    restoreState = true
-                }
-            }
-        )
-
-
-        //Bookmark 버튼
-        NavigationDrawerItem(
-            icon = {
-                Icon(painterResource(id = R.drawable.bookmark_border), contentDescription = "홈")
-            },
-            label = { Text(text = "Bookmark") },
-            selected = false,
-            onClick = {
-                scope.launch { drawerState.close() }
-                navController.navigate(Screen.BookMark.route) {
-                    popUpTo(navController.graph.startDestinationId) {
-                        saveState = true
-                    }
-                    launchSingleTop = true
-                    restoreState = true
-                }
-            }
-        )
-
-        // Setting 버튼
-        NavigationDrawerItem(
-            icon = {
-                Icon(painterResource(id = R.drawable.setting_border), contentDescription = "설정")
-            },
-            label = { Text(text = "Setting") },
-            selected = false,
-            onClick = {
-                scope.launch { drawerState.close() }
-                navController.navigate(Screen.Setting.route) {
-                    popUpTo(navController.graph.startDestinationId) {
-                        saveState = true
-                    }
-                    launchSingleTop = true
-                    restoreState = true
-                }
-            }
-        )
-
-        Divider(thickness = 0.5.dp, color = Color.LightGray)
-        Spacer(modifier = Modifier.weight(1f))
-
-        //로그인, 로그아웃 버튼
-        NavigationDrawerItem(
-            label = {
-                Box(
-                    modifier = Modifier.fillMaxWidth(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    scope.launch { drawerState.close() }
-                    if (isLoggedIn) {
-                        outLinedButton(onClick = { loginDialog = true }, text = "로그아웃")
-                        if (loginDialog) {
-                            CustomDialog(
-                                onClickConfirm = { viewModel.logOut() },
-                                { loginDialog = false },
-                                "로그아웃"
-                            )
-                        }
-                    } else {
-                        outLinedButton("로그인") {
-                            context.startActivity(
-                                Intent(
-                                    context,
-                                    StartActivity::class.java
-                                )
-                            )
-                        }
-                    }
-                }
-            },
-            selected = false,
-            onClick = { }
-        )
-
-        // 회원탈퇴 버튼
-        NavigationDrawerItem(
-            label = {
-                Box(
-                    modifier = Modifier.fillMaxWidth(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    outLinedButton("회원탈퇴") {
-                        viewModel.deleteAccount()
-                    }
-                }
-            },
-            selected = false,
-            onClick = { }
-        )
-    }
-}
-
-@Composable
-fun outLinedButton(text: String, onClick: () -> Unit){
-    OutlinedButton(
-        onClick = { onClick() },
-        modifier = Modifier.fillMaxWidth()
-    ){
-        Text(text = text)
+fun HomeScreenTest(){
+    Scaffold {
+        Column {
+            HomeRoot(
+                isLoggedIn = false,
+                advertiseImageState = listOf(),
+                imageTranslate = false,
+                artistRecentArtworks = listOf(DomainArtwork(likedArtworks = mapOf("a" to true)), DomainArtwork(likedArtworks = mapOf("a" to true, "b" to true))),
+                isLoadingRecentArtworks = true,
+                imageDismiss = {},
+                imageLaunch = {},
+                navigateToArworkDetailScreen = {},
+                isLoadingAdvertiseImages = true
+            )
+        }
     }
 }
