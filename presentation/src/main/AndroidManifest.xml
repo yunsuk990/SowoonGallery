@@ -3,40 +3,55 @@
 
     <application>
         <activity
-            android:name=".view.ArtworkPriceActivity"
-            android:exported="false"
-            android:label="@string/title_activity_artwork_price"
-            android:theme="@style/Theme.Sowoon" />
+                android:name=".view.ArtistProfileActivity"
+                android:exported="false"
+                android:label="@string/title_activity_artist_profile"
+                android:theme="@style/Theme.SowoonGallery"/>
         <activity
-            android:name=".view.ArtworkActivity"
-            android:exported="false"
-            android:label="@string/title_activity_artwork"
-            android:theme="@style/Theme.Sowoon" />
+                android:name=".view.ArtworkUploadActivity"
+                android:exported="false"
+                android:label="@string/title_activity_artwork_upload"
+                android:theme="@style/Theme.Sowoon"/>
         <activity
-            android:name=".view.StartActivity"
-            android:exported="false"
-            android:label="@string/title_activity_start"
-            android:theme="@style/Theme.Sowoon" />
+                android:name=".view.ProfileEditActivity"
+                android:exported="false"
+                android:label="@string/title_activity_profile_edit"
+                android:theme="@style/Theme.Sowoon"/>
         <activity
-            android:name=".view.LoginActivity"
-            android:exported="false"
-            android:label="@string/title_activity_login"
-            android:theme="@style/Theme.Sowoon" />
+                android:name=".view.ChatRoomActivity"
+                android:exported="false"
+                android:label="@string/title_activity_chat_room"
+                android:theme="@style/Theme.Sowoon"/>
         <activity
-            android:name=".SplashActivity"
-            android:exported="true"
-            android:label="@string/title_activity_splash"
-            android:theme="@style/Theme.MySplashScreen">
+                android:name=".view.ArtworkDetailActivity"
+                android:exported="false"
+                android:label="@string/title_activity_artwork"
+                android:theme="@style/Theme.Sowoon"/>
+        <activity
+                android:name=".view.StartActivity"
+                android:exported="false"
+                android:label="@string/title_activity_start"
+                android:theme="@style/Theme.Sowoon"/>
+        <activity
+                android:name=".view.LoginActivity"
+                android:exported="false"
+                android:label="@string/title_activity_login"
+                android:theme="@style/Theme.Sowoon"/>
+        <activity
+                android:name=".SplashActivity"
+                android:exported="true"
+                android:label="@string/title_activity_splash"
+                android:theme="@style/Theme.MySplashScreen">
             <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
+                <action android:name="android.intent.action.MAIN"/>
 
-                <category android:name="android.intent.category.LAUNCHER" />
+                <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
         <activity
-            android:name=".MainActivity"
-            android:exported="true"
-            android:theme="@style/Theme.Sowoon" />
+                android:name=".MainActivity"
+                android:exported="true"
+                android:theme="@style/Theme.Sowoon"/>
     </application>
 
 </manifest>
