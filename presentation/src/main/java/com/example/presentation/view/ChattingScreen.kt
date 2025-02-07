@@ -50,38 +50,38 @@ import com.google.gson.Gson
 @Composable
 fun ChattingScreen(viewModel: MainViewModel, navController: NavController) {
     val chatRoomsList by viewModel.chatRoomsList.collectAsState()
-//    LaunchedEffect(chatRoomsList){
-//        viewModel.loadChatLists()
-//    }
+    val context = LocalContext.current
+
     Log.d("ChattingScreen", chatRoomsList.toString())
 
     Column(modifier = Modifier
         .background(Color.White)
         .fillMaxSize()) {
         ChattingTopBar()
-        chatListItem(chatRoomsList)
+        chatListItem(chatRoomsList, onChatRoomClick = { chatRoom ->
+            context.startActivity(Intent(context, ChatRoomActivity::class.java)
+                .putExtra("artwork", Gson().toJson(chatRoom.artwork, DomainArtwork::class.java))
+                .putExtra("destUser", Gson().toJson(chatRoom.destUser, DomainUser::class.java))
+            )
+        })
     }
 
 }
 
 @Composable
-fun chatListItem(chatRoomsList: List<DomainChatRoomWithUser>) {
+fun chatListItem(chatRoomsList: List<DomainChatRoomWithUser>, onChatRoomClick: (DomainChatRoomWithUser) -> Unit) {
     LazyColumn(){
         items(chatRoomsList.size){index ->
-            chatRoom(chatRoom = chatRoomsList[index])
+            chatRoom(chatRoom = chatRoomsList[index], onChatRoomClick)
         }
     }
 }
 
 @Composable
-fun chatRoom(chatRoom: DomainChatRoomWithUser) {
-    val context = LocalContext.current
+fun chatRoom(chatRoom: DomainChatRoomWithUser, onChatRoomClick: (DomainChatRoomWithUser) -> Unit) {
     Row(
         modifier = Modifier.padding(vertical = 15.dp, horizontal = 10.dp).clickable {
-            context.startActivity(Intent(context, ChatRoomActivity::class.java)
-                .putExtra("artwork", Gson().toJson(chatRoom.artwork, DomainArtwork::class.java))
-                .putExtra("destUser", Gson().toJson(chatRoom.destUser, DomainUser::class.java))
-            )
+            onChatRoomClick(chatRoom)
         }
     ) {
         Box(

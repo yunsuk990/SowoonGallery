@@ -4,8 +4,11 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.domain.model.*
-import com.example.domain.usecase.*
+import com.example.domain.usecase.artworkUseCase.GetArtworkByIdUseCase
 import com.example.domain.usecase.authUseCase.GetCurrentUserUidUseCase
+import com.example.domain.usecase.authUseCase.GetUserInfoUseCase
+import com.example.domain.usecase.authUseCase.SaveUserInfoUseCase
+import com.example.domain.usecase.chatUseCase.ChatUseCases
 import com.example.presentation.model.ChatState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -19,7 +22,9 @@ import javax.inject.Inject
 @HiltViewModel
 class ChatRoomViewModel @Inject constructor(
     private val chatUsecases: ChatUseCases,
-    private val getUserUid: GetCurrentUserUidUseCase
+    private val getUserUid: GetCurrentUserUidUseCase,
+    private val getArtworkByIdUseCase: GetArtworkByIdUseCase,
+    private val getUserInfoUseCase: GetUserInfoUseCase
 ): ViewModel() {
 
     //채팅방 유효성 검사
@@ -39,7 +44,6 @@ class ChatRoomViewModel @Inject constructor(
             _currentUserUid.value = it
         }
     }
-
 
     fun checkChatRoom(destUid: String, artworkId: String) {
         viewModelScope.launch {
@@ -64,13 +68,6 @@ class ChatRoomViewModel @Inject constructor(
     }
 
     fun loadMessages(chatRoomId: String){
-//        viewModelScope.launch {
-//            chatUsecases.loadMessage.execute(chatRoomId = chatRoomId) {
-//                _messageList.value = it
-//                Log.d("loadMessages", messageList.value.toString())
-//            }
-//        }
-
         viewModelScope.launch {
             chatUsecases.loadMessage.execute(chatRoomId = chatRoomId)
                 .collect{ messageList ->
@@ -96,12 +93,14 @@ class ChatRoomViewModel @Inject constructor(
                         createdAt = SimpleDateFormat("yyyy.MM.dd HH:mm:ss").format(Date()),
                         lastMessage = messageModel
                     )
+                    //채팅방 새로 만들고 메세지 보내기
                     val response = chatUsecases.createChatRoom.execute(uid = currentUserUid.value, destUid = opponentUid, chatRoom = chatModel)
                     when(response){
                         is Response.Success -> {
                             var chatRoomId = response.data
-                           // _checkChatState.value = ChatState.OldChat(chatRoomId)
-                            chatUsecases.sendMessage.execute(chatRoomId, messageModel)
+                            _checkChatState.value = ChatState.OldChat(chatRoomId)
+                            loadMessages(chatRoomId)
+                            //chatUsecases.sendMessage.execute(chatRoomId, messageModel)
                         }
                         is Response.Error -> { _checkChatState.value = ChatState.Error(response.message)}
                     }
