@@ -1,5 +1,9 @@
 package com.example.domain.model
 
+import android.os.Parcelable
+import kotlinx.parcelize.Parcelize
+
+@Parcelize
 data class DomainArtwork(
     var key: String? = "",
     var artistUid: String? = "",
@@ -13,8 +17,7 @@ data class DomainArtwork(
     var review: String? = "",
     var favoriteUser: Map<String, Boolean> = emptyMap(),
     var likedArtworks: Map<String, Boolean> = emptyMap(),
-    var prices: Map<String, DomainPrice> = emptyMap(),
     var sold: Boolean = false,
-    var minimalPrice: Float = 0f,
-    var currentPrice: Float = minimalPrice
-)
+    var minimalPrice: Int = 0,
+    var currentPrice: Int = minimalPrice
+): Parcelable
