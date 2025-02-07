@@ -40,9 +40,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -121,15 +119,21 @@ private fun MainScreen(
 
             Spacer(modifier = Modifier.height(15.dp))
 
+            //번호 등록
             PhoneNumberInput(phoneNumber){ newNumber -> phoneNumber = newNumber}
 
+            //인증 문자 전송 버튼
             PhoneVerificationButton(activity,phoneNumberVisible, phoneNumber, viewModel){ phoneNumberVisible = false}
 
             if(!phoneNumberVisible){
                 Log.d("Verification", "true")
                 Spacer(modifier = Modifier.height(10.dp))
+
+                //인증 번호 입력
                 VerificationInput(verifyNumber){ newCode -> verifyNumber = newCode }
-                VerifyButton(viewModel,verifyNumber, activity)
+
+                //인증 진행
+                VerifyButton(viewModel,verifyNumber)
             }
 
             HandleAuthState(activity, authState, viewModel)
@@ -169,16 +173,14 @@ fun HandleAuthState(activity: Activity, authState: AuthState?, viewModel: LoginV
 }
 
 @Composable
-fun VerifyButton(viewModel: LoginViewModel, verifyNumber: String, activity: Activity) {
+fun VerifyButton(viewModel: LoginViewModel, verifyNumber: String) {
     outLinedButton(
         buttonText = "인증번호 확인",
         isEnabled = true,
         onClick = {
             //인증번호 확인
-            var a = verifyNumber
-            val credential = PhoneAuthProvider.getCredential(viewModel.storedVerificationId, a).apply {
-                Log.d("credential", "called")
-            }
+            val credential = PhoneAuthProvider.getCredential(viewModel.storedVerificationId, verifyNumber)
+            Log.d("credential", credential.toString())
             viewModel.signInWithPhoneAuthCredential(credential)
         }
     )
@@ -207,7 +209,7 @@ fun PhoneVerificationButton(
             Log.d("sms_phone", PhoneNumberUtils.formatNumber("+82${phoneNumber.removeRange(0,1)}", "KR").toString())
             Log.d("phoneNumberVisible",phoneNumberVisible.toString())
             if(phoneNumberVisible){
-                viewModel.verfiyPhoneNumber("+82 ${phoneNumber.removeRange(0,1)}", activity)
+                viewModel.verifyPhoneNumber("+82 ${phoneNumber.removeRange(0,1)}", activity)
             }else{
                 viewModel.resendVerifyPhoneNumber("+82 ${phoneNumber.removeRange(0,1)}", activity)
             }
