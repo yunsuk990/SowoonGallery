@@ -1,4 +1,4 @@
-package com.example.domain.usecase
+package com.example.domain.usecase.chatUseCase
 
 import com.example.domain.model.DomainChatRoom
 import com.example.domain.repository.FirebaseRepository

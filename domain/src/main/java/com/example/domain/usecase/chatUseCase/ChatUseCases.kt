@@ -1,4 +1,4 @@
-package com.example.domain.usecase
+package com.example.domain.usecase.chatUseCase
 
 import javax.inject.Inject
 
