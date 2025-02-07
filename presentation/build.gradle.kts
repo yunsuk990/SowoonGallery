@@ -4,7 +4,7 @@ plugins {
     id("com.google.gms.google-services")
     id("kotlin-kapt")
     id("com.google.dagger.hilt.android")
-    id("kotlin-parcelize")
+    id("org.jetbrains.kotlin.plugin.compose")
 }
 
 android {
@@ -31,11 +31,11 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_1_8
-        targetCompatibility = JavaVersion.VERSION_1_8
+        sourceCompatibility = JavaVersion.VERSION_11
+        targetCompatibility = JavaVersion.VERSION_11
     }
     kotlinOptions {
-        jvmTarget = "1.8"
+        jvmTarget = "11"
     }
     buildFeatures {
         compose = true
@@ -61,7 +61,7 @@ dependencies {
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.ui:ui-graphics")
     implementation("androidx.compose.ui:ui-tooling-preview")
-    implementation("androidx.compose.material3:material3")
+    implementation("androidx.compose.material3:material3:1.3.0")
     implementation(platform("androidx.compose:compose-bom:2023.03.00"))
     implementation("com.google.code.gson:gson:2.11.0")
     implementation(project(mapOf("path" to ":domain")))
@@ -69,11 +69,13 @@ dependencies {
     implementation("io.coil-kt.coil3:coil-network-okhttp:3.0.0-rc02")
     implementation(platform("androidx.compose:compose-bom:2023.03.00"))
     implementation("com.google.accompanist:accompanist-systemuicontroller:0.36.0")
+    implementation(platform("androidx.compose:compose-bom:2023.03.00"))
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.2.1")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.6.1")
     androidTestImplementation(platform("androidx.compose:compose-bom:2023.03.00"))
     androidTestImplementation("androidx.compose.ui:ui-test-junit4")
+    androidTestImplementation(platform("androidx.compose:compose-bom:2023.03.00"))
     androidTestImplementation(platform("androidx.compose:compose-bom:2023.03.00"))
     androidTestImplementation(platform("androidx.compose:compose-bom:2023.03.00"))
     debugImplementation("androidx.compose.ui:ui-tooling")
@@ -85,7 +87,7 @@ dependencies {
 
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.6")
     implementation("androidx.navigation:navigation-compose:2.8.0")
-    implementation("androidx.compose.material:material:1.7.1")
+    implementation("androidx.compose.material:material:1.7.5")
     implementation("androidx.compose.foundation:foundation:1.7.4")
 
 
@@ -98,6 +100,15 @@ dependencies {
 
     //chart
     implementation ("com.github.PhilJay:MPAndroidChart:v3.1.0")
+
+    //viewModel Hilt 및 탐색
+    implementation ("androidx.hilt:hilt-navigation-compose:1.2.0")
+
+    //costraintLayout
+    implementation ("androidx.constraintlayout:constraintlayout-compose:1.0.1")
+
+    //shimmer
+    implementation ("com.facebook.shimmer:shimmer:0.5.0")
 
 
 }
