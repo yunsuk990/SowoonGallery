@@ -5,9 +5,11 @@ import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.example.domain.model.DomainUser
-import com.example.domain.usecase.CheckUserRtdbUseCase
-import com.example.domain.usecase.SaveUserInfoUseCase
+import com.example.domain.model.Response
+import com.example.domain.usecase.authUseCase.CheckUserRtdbUseCase
+import com.example.domain.usecase.authUseCase.SaveUserInfoUseCase
 import com.example.domain.usecase.SignInWithPhoneUseCase
 import com.example.presentation.model.AuthState
 import com.google.firebase.Firebase
@@ -21,6 +23,7 @@ import com.google.firebase.auth.PhoneAuthOptions
 import com.google.firebase.auth.PhoneAuthProvider
 import com.google.firebase.auth.auth
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.launch
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
@@ -53,45 +56,43 @@ class LoginViewModel @Inject constructor(
             }
     }
 
-    //가입된 사용자인지 확인
-    fun checkUserRTD(uid: String){
-        checkUserRtdbUseCase.execute(uid).addOnSuccessListener { snapshot ->
-            //사용자 존재
-            if(snapshot.exists()){
-                Log.d("checkUserRTD", "SUCCESS")
-                _authState.value = AuthState.ExistUser
-            }else{
-                _authState.value = AuthState.NewUser(uid)
-            }
-        }.addOnFailureListener {
-            _authState.value = AuthState.Error("Database Error")
-        }
-    }
+//    //가입된 사용자인지 확인
+//    fun checkUserRTD(uid: String){
+//        checkUserRtdbUseCase.execute(uid).addOnSuccessListener { snapshot ->
+//            //사용자 존재
+//            if(snapshot.exists()){
+//                _authState.value = AuthState.ExistUser
+//            }else{
+//                _authState.value = AuthState.NewUser(uid)
+//            }
+//        }.addOnFailureListener {
+//            _authState.value = AuthState.Error("Database Error")
+//        }
+//    }
 
+    //인증 버튼 클릭 시 (로그인 처리)
     fun signInWithPhoneAuthCredential(credential: PhoneAuthCredential) {
         _authState.value = AuthState.Loading
-        signInWithPhoneUseCase.excute(credential)
-            .addOnCompleteListener { task ->
-                if (task.isSuccessful) {
-                    val user = task.result?.user
-                    Log.d("sms", "signInWithCredential:success + $user")
-                    if(user!=null){
-                        checkUserRTD(user?.uid!!)
+        viewModelScope.launch {
+            // true -> 기존사용자, false -> 새 사용자
+            val response = signInWithPhoneUseCase.execute(credential)
+            when(response){
+                is Response.Success -> {
+                    if(response.data != null){
+                        _authState.value = AuthState.NewUser(response.data!!)
+                    }else{
+                        _authState.value = AuthState.ExistUser
                     }
-                } else {
-                    _authState.value = AuthState.Error("인증코드 오류")
                 }
+                is Response.Error -> { _authState.value = AuthState.Error("인증코드 오류") }
             }
-            .addOnFailureListener {
-                _authState.value = AuthState.Error(it.toString())
-            }
-
+        }
     }
 
 
 
     // 전화번호 인증코드 요청
-    fun verfiyPhoneNumber(phoneNumber: String, activity: Activity){
+    fun verifyPhoneNumber(phoneNumber: String, activity: Activity){
         val options = PhoneAuthOptions.newBuilder(auth)
             .setPhoneNumber(phoneNumber) // Phone number to verify
             .setTimeout(90L, TimeUnit.SECONDS) // Timeout and unit
