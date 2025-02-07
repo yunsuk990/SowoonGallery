@@ -30,17 +30,11 @@ interface ArtworkRepository {
 
     suspend fun getLikedArtworks(uid: String): Flow<List<DomainArtwork>>
 
-    fun savePriceForArtwork(
-        category: String,
-        artworkId: String,
-        price: Float,
-        userId: String,
-    ): Task<Void>
-
-    fun getPriceForArtwork(category: String, artworkId: String, callback: (List<PriceWithUser>) -> Unit)
-
     suspend fun getRecentArtworks(limit: Int): List<DomainArtwork>
+
     suspend fun getArtistArtworks(artistId: String): List<DomainArtwork>
+
+    suspend fun getArtworkById(artworkId: String): DomainArtwork
 
 
 

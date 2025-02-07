@@ -17,6 +17,7 @@ interface AuthRepository {
     fun saveUserInfo(user: DomainUser): Task<Void>
     //사용자 정보 가져오기
     fun getUserInfo(uid: String): Flow<DomainUser?>
+    suspend fun getUserInfoOnce(uid: String): DomainUser
     //사용자 가입 여부 확인
     suspend fun checkUserRtdbUseCase(uid: String): Boolean
     //sms 인증처리

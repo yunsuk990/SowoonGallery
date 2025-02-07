@@ -11,4 +11,6 @@ class GetUserInfoUseCase @Inject constructor(
     private val authRepository: AuthRepository
 ) {
     fun execute(uid: String): Flow<DomainUser?> = authRepository.getUserInfo(uid)
+
+    suspend fun excuteOnce(uid: String): DomainUser = authRepository.getUserInfoOnce(uid)
 }
