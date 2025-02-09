@@ -33,6 +33,7 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import coil3.compose.AsyncImage
@@ -40,6 +41,7 @@ import com.example.domain.model.DomainUser
 import com.example.presentation.R
 import com.example.presentation.model.Screen
 import com.example.presentation.utils.LoginToastMessage
+import com.example.presentation.utils.noRippleClickable
 import com.example.presentation.viewModel.MainViewModel
 import com.google.gson.Gson
 
@@ -163,8 +165,11 @@ fun profileUser(
                     .align(Alignment.TopEnd) // 오른쪽 끝 정렬
                     .padding(end = 16.dp) // 우측 여백 추가
                     .size(32.dp)
-                    .clickable {
-                        navController.navigate("setting") { launchSingleTop = true }
+                    .noRippleClickable {
+                        navController.navigate("setting") {
+                            launchSingleTop = true
+                            restoreState = true
+                        }
                     }
             )
         }
