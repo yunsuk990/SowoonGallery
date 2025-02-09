@@ -11,6 +11,7 @@ import com.example.domain.usecase.authUseCase.GetUserInfoUseCase
 import com.example.domain.usecase.artworkUseCase.*
 import com.example.domain.usecase.authUseCase.GetCurrentUserUidUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -45,6 +46,9 @@ class ArtworkViewModel @Inject constructor(
 
     private val _artistArtworks =  MutableStateFlow<List<DomainArtwork>>(emptyList())
     val artistArtworks: StateFlow<List<DomainArtwork>> = _artistArtworks.asStateFlow()
+    private val _isLoadingArtistArtworks = MutableStateFlow<Boolean>(true)
+    val isLoadingArtistArtworks: StateFlow<Boolean> = _isLoadingArtistArtworks
+
 
     private val _userInfo = MutableStateFlow(DomainUser())
     val userInfo: StateFlow<DomainUser> = _userInfo
@@ -106,9 +110,11 @@ class ArtworkViewModel @Inject constructor(
 
     fun getArtistArtworks(artistUid: String) {
         viewModelScope.launch {
+            _isLoadingArtistArtworks.value = true
             var result = getArtworksUseCase.executeByUid(artistUid)
             _artistArtworks.value = result
             Log.d("getArtistArtworks_viewModel", result.toString())
+            _isLoadingArtistArtworks.value = false
         }
     }
 
