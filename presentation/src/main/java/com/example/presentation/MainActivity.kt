@@ -94,25 +94,33 @@ fun MyAppNavHost(
 
 @Composable
 fun BottomAppBar(navController: NavHostController) {
-    var onItemSelected by rememberSaveable { mutableStateOf(0) }
+    val backStackEntry by navController.currentBackStackEntryAsState()
     var items = listOf(Screen.Home, Screen.Profile, Screen.Chat, Screen.MyPage)
+    val currentRoute = backStackEntry?.destination?.route
+    var selectedItemIndex by rememberSaveable { mutableStateOf(0) }
+
+    // 현재 화면이 BottomNavigation에 포함된 화면인지 확인
+    val currentScreenIndex = items.indexOfFirst { it.route == currentRoute }
+    if (currentScreenIndex != -1) {
+        selectedItemIndex = currentScreenIndex // 현재 화면이 포함된 경우 index 업데이트
+    }
+
 
     BottomNavigation(
         backgroundColor = Color.White
     ) {
-        val backStackEntry by navController.currentBackStackEntryAsState()
-
         items.forEachIndexed{ index, screen ->
+            var isSelected = index == selectedItemIndex
+
             BottomNavigationItem(
-                selected = onItemSelected == index,
+                selected = isSelected,
                 onClick = {
-                    onItemSelected = index
-                    navController.navigate(screen.route) {
-                        popUpTo(navController.graph.findStartDestination().id) {
-                            saveState = true
+                    if(currentRoute != screen.route){
+                        selectedItemIndex = index
+                        navController.navigate(screen.route) {
+                            launchSingleTop = true
+                            restoreState = true
                         }
-                        launchSingleTop = true
-                        restoreState = true
                     }
                 },
                 selectedContentColor = Color.Gray,
@@ -121,7 +129,7 @@ fun BottomAppBar(navController: NavHostController) {
                     Text(
                         text = screen.title,
                         fontSize = 12.sp,
-                        color = if(onItemSelected == index){
+                        color = if(isSelected){
                             Color.Black
                         }else{
                             Color.LightGray
@@ -130,8 +138,8 @@ fun BottomAppBar(navController: NavHostController) {
                 },
                 icon = {
                     Icon(
-                        painter = if(onItemSelected == index) painterResource(id = items[index].iconClicked) else painterResource(id = items[index].iconBorder),
-                        tint = if(onItemSelected == index) Color.Black else Color.LightGray,
+                        painter = if(isSelected) painterResource(id = items[index].iconClicked) else painterResource(id = items[index].iconBorder),
+                        tint = if(isSelected) Color.Black else Color.LightGray,
                         contentDescription = null,
                         modifier = Modifier
                             .size(35.dp)
