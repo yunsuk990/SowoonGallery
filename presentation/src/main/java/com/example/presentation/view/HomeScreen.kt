@@ -54,7 +54,6 @@ fun HomeScreen(viewModel: MainViewModel, navController: NavHostController) {
     val context = LocalContext.current
 
     LaunchedEffect(key1 = true) {
-        viewModel.advertiseImages()
         viewModel.loadRecentArtworks(10)
     }
 
@@ -73,11 +72,6 @@ fun HomeScreen(viewModel: MainViewModel, navController: NavHostController) {
             context.startActivity(intent)
         }
     )
-
-//    if(imageTranslate){
-//        FullScreenArtwork() { }
-//    }
-
 }
 
 @Composable
@@ -189,7 +183,6 @@ fun AdvertiseImages(advertiseImageState: List<String>, imageLaunch: () -> Unit, 
     val pagerState = rememberPagerState(pageCount = {advertiseImageState.size})
     val testList = listOf(R.drawable.sowoon_bg, R.drawable.logo_final, R.drawable.sowoon_bg)
     val context = LocalContext.current
-    val count = if(advertiseImageState.size != 0) advertiseImageState.size else 1
 
     if(isLoadingAdvertiseImages){
         Box(modifier = Modifier.fillMaxWidth().height(250.dp).shimmerEffect()){}
@@ -238,7 +231,7 @@ fun AdvertiseImages(advertiseImageState: List<String>, imageLaunch: () -> Unit, 
                 .padding(top = 8.dp),
             horizontalArrangement = Arrangement.Center
         ) {
-            repeat(count) { iteration ->
+            repeat(advertiseImageState.size) { iteration ->
                 Log.d("repeat", "called")
                 val color = if(pagerState.currentPage == iteration) Color.Black else Color.LightGray
                 Box(
