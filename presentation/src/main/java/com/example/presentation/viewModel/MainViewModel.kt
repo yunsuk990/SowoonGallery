@@ -99,6 +99,7 @@ class MainViewModel @Inject constructor(
         }
         getCurrentUserUidUseCase.execute()?.let { uid -> loadChatLists(uid) }
         // 카테고리 작품들 가져오기
+        advertiseImages()
         //loadArtworks()
     }
 
