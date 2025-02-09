@@ -56,6 +56,7 @@ import com.example.domain.model.DomainUser
 import com.example.presentation.R
 import com.example.presentation.utils.FullScreenArtwork
 import com.example.presentation.utils.LoginToastMessage
+import com.example.presentation.utils.shimmerEffect
 import com.example.presentation.view.ui.theme.SowoonTheme
 import com.example.presentation.viewModel.ArtworkViewModel
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
@@ -94,6 +95,7 @@ class ArtworkDetailActivity : ComponentActivity() {
                 val artworkLikedState by viewModel.artworkLikedState.observeAsState(initial = false)
                 val artistArtworks by viewModel.artistArtworks.collectAsState()
                 val userInfo by viewModel.userInfo.collectAsState()
+                val isLoadingArtistArtworks by viewModel.isLoadingArtistArtworks.collectAsState()
                 //val artworkLikedCountState by viewModel.artworkLikedCountState.observeAsState(0)
                 var requestLogin by remember { mutableStateOf(false) }
 
@@ -103,13 +105,14 @@ class ArtworkDetailActivity : ComponentActivity() {
                         .fillMaxSize()
                         .background(Color.White)
                 ) {
-                    ArtworkScreen(
+                    ArtworkDetailScreen(
                         artwork = artwork,
                         artistInfo = artistInfo,
                         favoriteState = artworkFavoriteState,
                         likedState = artworkLikedState,
                         userInfo = userInfo,
                         artistArtworks = artistArtworks,
+                        isLoadingArtistArtworks = isLoadingArtistArtworks,
                         likedBtnOnClick = {
                             if (viewModel.userUid != null) {
                                 viewModel.setLikedArtwork(artworkLikedState, artwork.key!!)
@@ -125,10 +128,12 @@ class ArtworkDetailActivity : ComponentActivity() {
                             }
                         },
                         artistInfoBtnOnClick = {
-                            startActivity(Intent(this, ArtistProfileActivity::class.java)
-                                .putExtra("artist", Gson().toJson(artistInfo, DomainUser::class.java))
-                                .putParcelableArrayListExtra("artistArtworks", ArrayList(artistArtworks))
-                            )
+                            if(!isLoadingArtistArtworks){
+                                startActivity(Intent(this, ArtistProfileActivity::class.java)
+                                    .putExtra("artist", Gson().toJson(artistInfo, DomainUser::class.java))
+                                    .putParcelableArrayListExtra("artistArtworks", ArrayList(artistArtworks))
+                                )
+                            }
                         },
                         actionBtnOnClick = {
                             if(viewModel.userUid == null){
@@ -165,17 +170,18 @@ class ArtworkDetailActivity : ComponentActivity() {
 
 
 @Composable
-fun ArtworkScreen(
+fun ArtworkDetailScreen(
     artwork: DomainArtwork,
     artistInfo: DomainUser,
     favoriteState: Boolean,
     likedState: Boolean,
     userInfo: DomainUser,
     artistArtworks: List<DomainArtwork>,
+    isLoadingArtistArtworks: Boolean,
     likedBtnOnClick: () -> Unit,
     bookmarkBtnOnClick: () -> Unit,
     artistInfoBtnOnClick: () -> Unit,
-    actionBtnOnClick: () -> Unit
+    actionBtnOnClick: () -> Unit,
 ) {
     var isZoomDialogOpen by remember { mutableStateOf(false) }
     Box {
@@ -231,7 +237,8 @@ fun ArtworkScreen(
                     modifier = Modifier.padding(start = 15.dp, end = 15.dp),
                     name = artistInfo.name,
                     artistArtworks = artistArtworks,
-                    userInfo = userInfo
+                    userInfo = userInfo,
+                    isLoadingArtistArtworks = isLoadingArtistArtworks
                 )
             }
 
@@ -267,33 +274,52 @@ fun ArtworkScreen(
 fun artistOtherArtworks(
     modifier: Modifier,
     name: String,
-    visibleCount: Int = 10,
     artistArtworks: List<DomainArtwork>,
-    userInfo: DomainUser
+    userInfo: DomainUser,
+    isLoadingArtistArtworks: Boolean
 ){
     val context = LocalContext.current
-    Column(modifier = modifier.heightIn(max = 1000.dp)) {
-        Text(text = "${name}님의 다른 작품들 ", color = Color.Black, fontSize = 16.sp, fontWeight = FontWeight.Bold)
-        LazyVerticalStaggeredGrid(
-            modifier = Modifier
-                .padding(top = 20.dp)
-                .wrapContentHeight(),
-            columns = StaggeredGridCells.Fixed(2),
-            horizontalArrangement = Arrangement.spacedBy(5.dp),
-            verticalItemSpacing = 5.dp,
-        ){
-            val limitedArtworks = artistArtworks.take(visibleCount)
-            items(limitedArtworks.size){ index ->
-                artworkCard(artwork = limitedArtworks[index], onClick = {
-                    context.startActivity(Intent(context, ArtworkDetailActivity::class.java).apply {
-                        putExtra("artwork", Gson().toJson(limitedArtworks[index]))
-                        putExtra("userInfo", Gson().toJson(userInfo))
+
+    if(isLoadingArtistArtworks){
+        Column(modifier = modifier.heightIn(max = 400.dp)) {
+            Text(text = "${name}님의 다른 작품들 ", color = Color.Black, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+            LazyVerticalStaggeredGrid(
+                modifier = Modifier
+                    .padding(top = 20.dp)
+                    .wrapContentHeight(),
+                columns = StaggeredGridCells.Fixed(2),
+                horizontalArrangement = Arrangement.spacedBy(5.dp),
+                verticalItemSpacing = 5.dp,
+            ){
+                items(4){ index ->
+                    Box(
+                        modifier = Modifier.width(150.dp).height(150.dp).clip(RoundedCornerShape(5.dp)).shimmerEffect()
+                    ){}
+                }
+            }
+        }
+    }else{
+        Column(modifier = modifier.heightIn(max = 1000.dp)) {
+            Text(text = "${name}님의 다른 작품들 ", color = Color.Black, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+            LazyVerticalStaggeredGrid(
+                modifier = Modifier
+                    .padding(top = 20.dp)
+                    .wrapContentHeight(),
+                columns = StaggeredGridCells.Fixed(2),
+                horizontalArrangement = Arrangement.spacedBy(5.dp),
+                verticalItemSpacing = 5.dp,
+            ){
+                items(artistArtworks.size){ index ->
+                    artworkCard(artwork = artistArtworks[index], onClick = {
+                        context.startActivity(Intent(context, ArtworkDetailActivity::class.java).apply {
+                            putExtra("artwork", Gson().toJson(artistArtworks[index]))
+                            putExtra("userInfo", Gson().toJson(userInfo))
+                        })
                     })
-                })
+                }
             }
         }
     }
-
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -392,26 +418,25 @@ fun userActionButton(
     ) {
 
         Row(
-            modifier = Modifier.padding(20.dp)
+            modifier = Modifier.padding(20.dp),
         ) {
             Column {
-                Text(text = if(artwork.sold) "판매완료" else "판매중", fontSize = 14.sp, color = Color.Black)
+                Text(text = if(artwork.sold) "판매완료 (가격제안 가능)" else "판매중 (가격제안 가능)", fontSize = 16.sp, color = Color.Black)
                 Spacer(modifier = Modifier.height(3.dp))
                 Text(text = DecimalFormat("#,###").format(artwork.minimalPrice * 10000)+ "원", fontSize = 20.sp, fontWeight = FontWeight.Medium, color = Color.Black)
             }
-            (artwork.minimalPrice * 10000).toString()
             Spacer(modifier = Modifier.weight(1f))
             TextButton(
                 onClick = { actionBtnOnClick() },
                 shape = RoundedCornerShape(5.dp),
                 border = BorderStroke(0.5.dp,color=Color.Black),
                 colors = ButtonDefaults.buttonColors(containerColor = Color.Black),
-                contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 8.dp, bottom = 8.dp)
+                contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 15.dp, bottom = 15.dp)
             ) {
                 if(userInfo.uid == artwork.artistUid){
                     Text(text = "판매 확정하기", fontSize = 14.sp, color = Color.White)
                 }else{
-                    Text(text = "작가 문의하기", fontSize = 14.sp, color = Color.White)
+                    Text(text = "메세지로 거래하기", fontSize = 14.sp, color = Color.White)
                 }
             }
         }
@@ -509,14 +534,24 @@ fun artworkActivityTest(){
         material = "acril"
     )
     Surface(modifier = Modifier.fillMaxSize()) {
-        ArtworkScreen(
-            artwork, DomainUser(), false, false,DomainUser(),
-            artistArtworks = listOf(DomainArtwork()),
+        ArtworkDetailScreen(
+            artwork = DomainArtwork(artistUid = "123"),
+            artistInfo = DomainUser(name = "정은숙"),
+            favoriteState = true,
+            likedState = true,
+            userInfo = DomainUser(),
+            artistArtworks = listOf(artwork, artwork,artwork),
+            isLoadingArtistArtworks = true,
             likedBtnOnClick = {},
             bookmarkBtnOnClick = {},
             artistInfoBtnOnClick = {}
-        ) {
-
-        }
+        ) { }
+//        artistOtherArtworks(
+//            modifier = Modifier,
+//            name = "정은숙",
+//            artistArtworks = listOf(artwork, artwork,artwork),
+//            userInfo = DomainUser(),
+//            isLoadingArtistArtworks = true
+//        )
     }
 }
