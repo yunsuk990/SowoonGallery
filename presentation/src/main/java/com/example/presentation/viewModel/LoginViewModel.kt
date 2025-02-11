@@ -16,6 +16,7 @@ import com.google.firebase.Firebase
 import com.google.firebase.FirebaseException
 import com.google.firebase.FirebaseTooManyRequestsException
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.FirebaseAuthException
 import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException
 import com.google.firebase.auth.FirebaseAuthMissingActivityForRecaptchaException
 import com.google.firebase.auth.PhoneAuthCredential
@@ -23,6 +24,9 @@ import com.google.firebase.auth.PhoneAuthOptions
 import com.google.firebase.auth.PhoneAuthProvider
 import com.google.firebase.auth.auth
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
@@ -36,8 +40,12 @@ class LoginViewModel @Inject constructor(
 
     private val auth: FirebaseAuth = Firebase.auth
 
-    var storedVerificationId = ""
-    var resendToken: PhoneAuthProvider.ForceResendingToken? = null
+
+    private val _storedVerificationId =  MutableStateFlow<String>("")
+    val storedVerificationId: StateFlow<String> = _storedVerificationId
+
+    private val _resendToken =  MutableStateFlow<PhoneAuthProvider.ForceResendingToken?>(null)
+    val resendToken: StateFlow<PhoneAuthProvider.ForceResendingToken?> = _resendToken
 
     //최종가입 성공 유무
     private val _authState = MutableLiveData<AuthState>()
@@ -45,30 +53,18 @@ class LoginViewModel @Inject constructor(
 
 
     //DB 가입 처리
-    fun saveUserInfoRTD(uid: String, name: String, age: String){
+    fun saveUserInfoRTD(domainUser: DomainUser){
         _authState.value = AuthState.Loading
-        saveUserInfoUseCase.execute(DomainUser(uid,name,age.toInt()))
-            .addOnSuccessListener {
-                _authState.value = AuthState.Authenticated
+        viewModelScope.launch {
+            delay(1500)
+            val response = saveUserInfoUseCase.execute(domainUser)
+            when(response){
+                is Response.Success -> { _authState.value = AuthState.Authenticated }
+                is Response.Error -> { _authState.value = AuthState.Error("가입 실패") }
             }
-            .addOnFailureListener {
-                _authState.value = AuthState.Error("가입 실패")
-            }
-    }
 
-//    //가입된 사용자인지 확인
-//    fun checkUserRTD(uid: String){
-//        checkUserRtdbUseCase.execute(uid).addOnSuccessListener { snapshot ->
-//            //사용자 존재
-//            if(snapshot.exists()){
-//                _authState.value = AuthState.ExistUser
-//            }else{
-//                _authState.value = AuthState.NewUser(uid)
-//            }
-//        }.addOnFailureListener {
-//            _authState.value = AuthState.Error("Database Error")
-//        }
-//    }
+        }
+    }
 
     //인증 버튼 클릭 시 (로그인 처리)
     fun signInWithPhoneAuthCredential(credential: PhoneAuthCredential) {
@@ -84,7 +80,14 @@ class LoginViewModel @Inject constructor(
                         _authState.value = AuthState.ExistUser
                     }
                 }
-                is Response.Error -> { _authState.value = AuthState.Error("인증코드 오류") }
+                is Response.Error -> {
+                    Log.d("signInWithPhoneAuthCredential", "Error: ${response.message}, ${response.exception}")
+                    if(response.exception is FirebaseAuthInvalidCredentialsException){
+                        _authState.value = AuthState.Error(message =  "휴대전화 번호 인증에 실패했어요. 다시 입력해주세요.")
+                    }else{
+                        _authState.value = AuthState.Error("네트워크 에러입니다. 잠시 후 다시 시도해주세요.")
+                    }
+                }
             }
         }
     }
@@ -95,7 +98,7 @@ class LoginViewModel @Inject constructor(
     fun verifyPhoneNumber(phoneNumber: String, activity: Activity){
         val options = PhoneAuthOptions.newBuilder(auth)
             .setPhoneNumber(phoneNumber) // Phone number to verify
-            .setTimeout(90L, TimeUnit.SECONDS) // Timeout and unit
+            .setTimeout(60, TimeUnit.SECONDS) // Timeout and unit
             .setActivity(activity) // Activity (for callback binding)
             .setCallbacks(callbacks) // OnVerificationStateChangedCallbacks
             .build()
@@ -106,11 +109,11 @@ class LoginViewModel @Inject constructor(
     fun resendVerifyPhoneNumber(phoneNumber: String,  activity: Activity){
         val options = PhoneAuthOptions.newBuilder(auth)
             .setPhoneNumber(phoneNumber) // Phone number to verify
-            .setTimeout(90L, TimeUnit.SECONDS) // Timeout and unit
+            .setTimeout(60L, TimeUnit.SECONDS) // Timeout and unit
             .setActivity(activity) // Activity (for callback binding)
             .setCallbacks(callbacks) // OnVerificationStateChangedCallbacks
-        if(resendToken!= null){
-            options.setForceResendingToken(resendToken!!)
+        if(resendToken.value!= null){
+            options.setForceResendingToken(resendToken.value!!)
         }
         PhoneAuthProvider.verifyPhoneNumber(options.build())
     }
@@ -131,13 +134,15 @@ class LoginViewModel @Inject constructor(
 
             if (e is FirebaseAuthInvalidCredentialsException) {
                 // Invalid request
+                _authState.value = AuthState.Error(message =  "휴대전화 번호 인증에 실패했어요. 다시 입력해주세요.")
             } else if (e is FirebaseTooManyRequestsException) {
+                _authState.value = AuthState.Error(message =  "인증번호 요청 횟수를 초과했어요. 잠시 후 다시 시도해주세요.")
                 // The SMS quota for the project has been exceeded
             } else if (e is FirebaseAuthMissingActivityForRecaptchaException) {
                 // reCAPTCHA verification attempted with null Activity
+            }else{
+                _authState.value = AuthState.Error(message =  e.message.toString())
             }
-            //Toast.makeText(application, "전화번호가 잘못되었습니다.", Toast.LENGTH_SHORT).show()
-            // Show a message and update the UI
         }
 
         override fun onCodeSent(
@@ -145,8 +150,9 @@ class LoginViewModel @Inject constructor(
             token: PhoneAuthProvider.ForceResendingToken,
         ) {
             Log.d("sms", "onCodeSent:$verificationId" + "::::$token")
-            storedVerificationId = verificationId
-            resendToken = token
+
+            _storedVerificationId.value = verificationId
+            _resendToken.value = token
         }
     }
 
