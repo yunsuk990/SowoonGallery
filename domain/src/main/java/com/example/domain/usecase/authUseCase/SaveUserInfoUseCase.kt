@@ -8,5 +8,5 @@ import javax.inject.Inject
 class SaveUserInfoUseCase @Inject constructor(
     private val authRepository: AuthRepository
 ) {
-    fun execute(user: DomainUser) = authRepository.saveUserInfo(user)
+    suspend fun execute(user: DomainUser) = authRepository.saveUserInfo(user)
 }
