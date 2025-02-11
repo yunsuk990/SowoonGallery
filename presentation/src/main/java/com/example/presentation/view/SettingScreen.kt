@@ -1,6 +1,7 @@
 package com.example.presentation.view
 
 import android.content.Intent
+import android.util.Log
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -32,6 +33,7 @@ import com.google.gson.Gson
 fun  SettingScreen(viewModel: MainViewModel, navController: NavHostController){
 
     val userInfo by viewModel.userInfoStateFlow.collectAsState()
+    Log.d("SettingScreen", "userInfo: $userInfo")
     val context = LocalContext.current
     var requestLogin by remember { mutableStateOf(false) }
     var requestLogOut by remember { mutableStateOf(false) }
@@ -64,8 +66,10 @@ fun  SettingScreen(viewModel: MainViewModel, navController: NavHostController){
             LoginToastMessage(
                 dismissOnClick = { requestLogin = false },
                 confirmOnClick = {
-                    context.startActivity(Intent(context, StartActivity::class.java))
                     requestLogin = false
+                    context.startActivity(Intent(context, StartActivity::class.java).apply {
+                        flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                    })
                 }
             )
         }
