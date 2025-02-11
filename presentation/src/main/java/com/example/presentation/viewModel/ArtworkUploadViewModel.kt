@@ -45,4 +45,15 @@ class ArtworkUploadViewModel @Inject constructor(
             }
         }
     }
+
+    fun uploadNewArtwork(artworkList: List<Pair<Uri, DomainArtwork>>){
+        viewModelScope.launch {
+            _uploadState.value = UploadState.Loading
+            val response = uploadNewArtworkUseCase.executeList(artworkList)
+            when(response){
+                is Response.Success -> { _uploadState.value = UploadState.Success }
+                is Response.Error -> { _uploadState.value = UploadState.Error(response.message) }
+            }
+        }
+    }
 }
