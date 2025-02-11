@@ -17,5 +17,6 @@
     <color name="messageGray">#E1E1E1</color>
     <color name="placeholderColor">#EBEBEB</color>
     <color name="placeholderColorDark">#E0E0E0</color>
+    <color name="check">#2efcff</color>
 
 </resources>
