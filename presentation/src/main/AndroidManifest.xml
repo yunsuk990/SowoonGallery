@@ -6,7 +6,7 @@
                 android:name=".view.ArtistProfileActivity"
                 android:exported="false"
                 android:label="@string/title_activity_artist_profile"
-                android:theme="@style/Theme.SowoonGallery"/>
+                android:theme="@style/Theme.Sowoon"/>
         <activity
                 android:name=".view.ArtworkUploadActivity"
                 android:exported="false"
