@@ -9,5 +9,6 @@ class UploadNewArtworkUseCase @Inject constructor(
     private val artworkRepository: ArtworkRepository
 ) {
     suspend fun execute(artwork: DomainArtwork, imageUri: Uri) = artworkRepository.uploadNewArtwork(artwork, imageUri)
+    suspend fun executeList(artworkList: List<Pair<Uri, DomainArtwork>>) = artworkRepository.uploadNewArtwork(artworkList)
 
 }
