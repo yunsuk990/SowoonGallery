@@ -24,6 +24,8 @@ interface ArtworkRepository {
 
     suspend fun uploadNewArtwork(artwork: DomainArtwork, imageUri: Uri): Response<Boolean>
 
+    suspend fun uploadNewArtwork(artworkList: List<Pair<Uri, DomainArtwork>>): Response<Boolean>
+
     suspend fun getArtworkLists(): List<DomainArtwork>
 
     suspend fun getFavoriteArtworks(uid: String): Flow<List<DomainArtwork>>
@@ -35,7 +37,5 @@ interface ArtworkRepository {
     suspend fun getArtistArtworks(artistId: String): List<DomainArtwork>
 
     suspend fun getArtworkById(artworkId: String): DomainArtwork
-
-
 
 }
