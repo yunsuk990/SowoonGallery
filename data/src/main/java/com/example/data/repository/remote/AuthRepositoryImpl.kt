@@ -4,6 +4,7 @@ import android.net.Uri
 import android.util.Log
 import com.example.data.repository.remote.datasource.ArtworkDataSource
 import com.example.data.repository.remote.datasource.AuthDataSource
+import com.example.domain.model.Career
 import com.example.domain.model.DomainUser
 import com.example.domain.model.Response
 import com.example.domain.repository.AuthRepository
@@ -19,7 +20,7 @@ class AuthRepositoryImpl @Inject constructor(
     override fun signOut() = authDataSource.signOut()
     override fun clear() = authDataSource.clear()
     override fun getAuthStateFlow() = authDataSource.getAuthStateFlow()
-    override fun saveUserInfo(user: DomainUser): Task<Void>{
+    override suspend fun saveUserInfo(user: DomainUser): Response<Boolean>{
         saveUid()
         return authDataSource.saveUserInfo(user.uid, user)
     }
@@ -42,35 +43,27 @@ class AuthRepositoryImpl @Inject constructor(
         return false
     }
     override suspend fun checkUserRtdbUseCase(uid: String): Boolean = authDataSource.checkUserRtdbUseCase(uid)
-    override suspend fun signInWithPhoneAuthCredential(credential: PhoneAuthCredential): Response<String?> {
-        var result = authDataSource.signInWithPhoneAuthCredential(credential)
-        return if (result != null) {
-            val userUid = result.user?.uid.toString()
-            val isRegistered = checkUserRtdbUseCase(userUid)
-            if (isRegistered) {
-                authDataSource.saveUid()
-                Log.d("signInWithPhoneAuthCredential", "isRegistered_기존 사용자")
-                Response.Success(null)
-            } else {
-                Log.d("signInWithPhoneAuthCredential", "isRegistered_새 사용자")
-                Response.Success(userUid)
-            }
-        } else {
-            Response.Error("인증 실패")
-        }
 
-//        result.addOnSuccessListener {
-//            if(userSnapshot.result.exists()){
-//                Log.d("signInWithPhoneAuthCredential", "checkUserRtdbUseCase_exists")
-//            }else{
-//                Log.d("signInWithPhoneAuthCredential", "checkUserRtdbUseCase_Noexists")
-//            }
-//        }.addOnFailureListener{
-//            Log.d("signInWithPhoneAuthCredential", "Failure")
-//        }
-//        Log.d("result" ,result.toString())
-//        authDataSource.saveUid()
-//        return result
+
+    override suspend fun signInWithPhoneAuthCredential(credential: PhoneAuthCredential): Response<String?> {
+        var authResult = authDataSource.signInWithPhoneAuthCredential(credential)
+        when(authResult){
+            is Response.Success -> {
+                val userUid = authResult.data?.user?.uid.toString()
+                val isRegistered = checkUserRtdbUseCase(userUid)
+                if (isRegistered) {
+                    authDataSource.saveUid()
+                    Log.d("signInWithPhoneAuthCredential", "isRegistered_기존 사용자")
+                    return Response.Success(null)
+                } else {
+                    Log.d("signInWithPhoneAuthCredential", "isRegistered_새 사용자")
+                    return Response.Success(userUid)
+                }
+            }
+            is Response.Error -> {
+                return Response.Error(exception = authResult.exception, message = authResult.message)
+            }
+        }
     }
 
     override suspend fun updateProfileInfo(
@@ -101,5 +94,8 @@ class AuthRepositoryImpl @Inject constructor(
             Response.Success(true)
         }
     }
+
+    override suspend fun setArtistIntroduce(artistIntroduce: String): Response<Boolean> = authDataSource.setAristIntroduce(artistIntroduce)
+    override suspend fun setArtistCareer(career: Career): Response<Boolean> = authDataSource.setArtistCareer(career)
 
 }
