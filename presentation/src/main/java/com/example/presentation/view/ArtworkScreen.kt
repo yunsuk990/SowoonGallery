@@ -46,6 +46,7 @@ import com.google.gson.Gson
 fun ArtworkScreen(viewModel: MainViewModel) {
     //val refreshing by viewModel.isRefreshing.collectAsState()
 
+    val userInfo by viewModel.userInfoStateFlow.collectAsState()
     var selectedIndex by rememberSaveable { mutableStateOf(0) }
     val artworkList by viewModel.artworkLiveData.collectAsState()
     var sortedBy by remember { mutableStateOf(ArtworkSort.NONE) }
@@ -69,9 +70,11 @@ fun ArtworkScreen(viewModel: MainViewModel) {
             }
             artworkGridLayout(artworkList)
         }
-        addArtworkForArtists(Modifier.align(Alignment.BottomEnd), onClick = {
-            context.startActivity(Intent(context, ArtworkUploadActivity::class.java))
-        })
+        if(userInfo.mode == 1){
+            addArtworkForArtists(Modifier.align(Alignment.BottomEnd), onClick = {
+                context.startActivity(Intent(context, ArtworkUploadActivity::class.java))
+            })
+        }
     }
 }
 
@@ -116,17 +119,15 @@ fun artworkGridLayout(artworkList: List<DomainArtwork>){
 }
 @Composable
 fun artworkCard(artwork: DomainArtwork, onClick: () -> Unit) {
-    Column {
-        AsyncImage(
-            model = artwork.url,
-            modifier = Modifier
-                .wrapContentHeight()
-                .wrapContentWidth()
-                .clip(RoundedCornerShape(5.dp))
-                .clickable { onClick() },
-            contentDescription = "이미지"
-        )
-    }
+    AsyncImage(
+        model = artwork.url,
+        modifier = Modifier
+            .wrapContentHeight()
+            .wrapContentWidth()
+            .clip(RoundedCornerShape(5.dp))
+            .clickable { onClick() },
+        contentDescription = "이미지"
+    )
 }
 
 @Composable
