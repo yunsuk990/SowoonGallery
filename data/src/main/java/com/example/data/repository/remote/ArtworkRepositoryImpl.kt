@@ -10,6 +10,9 @@ import com.example.domain.repository.ArtworkRepository
 import com.google.android.gms.tasks.Task
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.ValueEventListener
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 
@@ -30,7 +33,6 @@ class ArtworkRepositoryImpl @Inject constructor(
     override suspend fun getFavoriteArtworks(uid: String): Flow<List<DomainArtwork>> {
         return artworkDataSource.getFavoritesArtwork(uid)
     }
-
 
     override suspend fun getRecentArtworks(limit: Int): List<DomainArtwork> = artworkDataSource.getRecentArtworks(limit)
 
@@ -55,6 +57,31 @@ class ArtworkRepositoryImpl @Inject constructor(
         val artworkUrl = artworkDataSource.uploadImageToStorage(imageUri)
         val updateArtwork = artwork.copy(url = artworkUrl)
         return artworkDataSource.uploadImageToRTDB(updateArtwork)
+    }
+
+    override suspend fun uploadNewArtwork(artworkList: List<Pair<Uri, DomainArtwork>>): Response<Boolean>{
+        return try {
+            // Coroutine scope 시작
+            coroutineScope {
+                val uploadResults = artworkList.map { (uri, artwork) ->
+                    // 각 이미지에 대해 비동기적으로 업로드 작업 실행
+                    async {
+                        val artworkUrl = artworkDataSource.uploadImageToStorage(uri)
+                        val updatedArtwork = artwork.copy(url = artworkUrl)
+                        artworkDataSource.uploadImageToRTDB(updatedArtwork)
+                    }
+                }
+
+                // 모든 업로드 작업을 병렬로 실행하고 완료 대기
+                uploadResults.awaitAll()
+            }
+
+            // 모든 업로드가 성공적으로 완료된 경우
+            Response.Success(true)
+        } catch (e: Exception) {
+            // 예외 발생 시 에러 메시지와 함께 Response.Error 반환
+            Response.Error(e.message.toString(), e)
+        }
     }
 
 }
