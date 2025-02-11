@@ -86,7 +86,7 @@ class ArtworkDetailActivity : ComponentActivity() {
                 viewModel.getLikedArtwork(artworkUid = artwork.key!!)
                 //viewModel.getLikedCountArtwork(artwork.key!!, artwork.category!!)
                 viewModel.getArtistInfo(artwork.artistUid!!)
-                viewModel.getArtistArtworks(artwork.artistUid!!)
+                viewModel.getArtistArtworks(artwork.artistUid!!, artwork.key!!)
             }
 
             SowoonTheme {
@@ -423,7 +423,7 @@ fun userActionButton(
             Column {
                 Text(text = if(artwork.sold) "판매완료 (가격제안 가능)" else "판매중 (가격제안 가능)", fontSize = 16.sp, color = Color.Black)
                 Spacer(modifier = Modifier.height(3.dp))
-                Text(text = DecimalFormat("#,###").format(artwork.minimalPrice * 10000)+ "원", fontSize = 20.sp, fontWeight = FontWeight.Medium, color = Color.Black)
+                Text(text = DecimalFormat("#,###").format(artwork.minimalPrice.toInt() * 10000)+ "원", fontSize = 20.sp, fontWeight = FontWeight.Medium, color = Color.Black)
             }
             Spacer(modifier = Modifier.weight(1f))
             TextButton(
