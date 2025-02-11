@@ -240,7 +240,7 @@ fun userSection(modifier: Modifier, title: String, icon: Int, size: Int, onClick
 @Composable
 fun profileMenu(userInfo: DomainUser, logOutBtnOnClick: () -> Unit) {
     var selectedIndex by remember { mutableStateOf(0) }
-    val tabTitles = listOf("설정", "구매한 작품")
+    val tabTitles = if(userInfo.mode == 0) listOf("설정", "구매한 작품") else listOf("설정", "판매한 작품")
     Column {
         TabRow(
             selectedTabIndex = selectedIndex,
@@ -297,7 +297,7 @@ fun myPageScreenPreview(){
         .background(Color.White)
         .fillMaxSize()) {
         Column(modifier = Modifier.background(Color.White)) {
-            MyPageRoot(isLoggedInState = true, DomainUser(name = "YunSuk"), {}, {}, {}, {}, navController)
+            MyPageRoot(isLoggedInState = true, DomainUser(name = "YunSuk", mode = 1), {}, {}, {}, {}, navController)
 
         }
     }
