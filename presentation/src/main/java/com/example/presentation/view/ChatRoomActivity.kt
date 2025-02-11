@@ -14,12 +14,14 @@ import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -32,6 +34,7 @@ import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -50,6 +53,8 @@ import com.example.presentation.viewModel.ChatRoomViewModel
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.google.gson.Gson
 import dagger.hilt.android.AndroidEntryPoint
+import java.text.SimpleDateFormat
+import java.util.*
 
 
 @AndroidEntryPoint
@@ -131,7 +136,7 @@ fun chatRoomRoot(
     modifier: Modifier,
 ) {
     Column(
-        modifier = modifier
+        modifier = modifier.background(Color.White)
     ) {
         MessageList(currentUserUid, messageList, destUser, Modifier.weight(1f).padding(start = 5.dp , end = 8.dp))
         userMessageTextField(
@@ -157,19 +162,50 @@ fun MessageList(
     var listState = rememberLazyListState(initialFirstVisibleItemIndex = messageList.size)
     Log.d("MessageList_messageListUpdate", messageList.toString())
 
+    // 메시지를 날짜별로 그룹화하고 포맷 처리
+    val groupedMessages = messageList
+        .groupBy { it.timestamp.split("/").first() }
+        .mapKeys { formatDate(it.key) }
+        .toList()
+        .sortedBy { it.first }
+
     LaunchedEffect(key1 = messageList.size) {
         if(messageList.isNotEmpty()){
             listState.scrollToItem(messageList.size - 1)
         }
     }
+
     LazyColumn(
         state = listState,
         modifier = modifier
     ) {
-        itemsIndexed(messageList){ index, item ->
-            ChatBubble(messageList[index], currentUserUid, destUser)
+        groupedMessages.forEach { (date, messages) ->
+            item {
+                Box(modifier = Modifier.fillMaxWidth().padding(top = 30.dp, bottom = 5.dp)){
+                    Box(
+                        modifier = Modifier.clip(RoundedCornerShape(20.dp)).background(color = Color.White).align(Alignment.Center).padding(vertical = 5.dp, horizontal = 12.dp),
+                    ){
+                        Text(
+                            text = date, // 이미 날짜 포맷된 값
+                            fontSize = 14.sp,
+                            color = Color.Gray,
+                            textAlign = TextAlign.Center
+                        )
+                    }
+                }
+            }
+            items(messages) { message ->
+                ChatBubble(message, currentUserUid, destUser)
+            }
         }
     }
+}
+
+fun formatDate(dateStr: String): String {
+    val dateFormat = SimpleDateFormat("yyyy.MM.dd", Locale.KOREA)
+    val date = dateFormat.parse(dateStr)
+    val newDateFormat = SimpleDateFormat("yyyy년 M월 d일 EEEE", Locale.KOREA)
+    return newDateFormat.format(date!!)
 }
 
 @Composable
@@ -177,23 +213,28 @@ fun ChatBubble(message: DomainMessage, currentUserUid: String, destUser: DomainU
     val isCurrentUser = message.senderUid == currentUserUid
     val bubbleColor = if(isCurrentUser) Color.Black else colorResource(R.color.messageGray)
     val textColor = if(isCurrentUser) Color.White else Color.Black
+    val modifier = if(isCurrentUser) Modifier.padding(start = 70.dp) else Modifier.padding(end = 70.dp, start = 8.dp)
+
+    val time = message.timestamp.split("/").last()
 
     Box(
         modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp, horizontal = 4.dp)
     ){
         val alignment = if(isCurrentUser) Alignment.CenterEnd else Alignment.CenterStart
+        val timeAlign = if(isCurrentUser) Alignment.Start else Alignment.End
+        val padding = if(isCurrentUser) Modifier.padding(start = 5.dp) else Modifier.padding(end = 5.dp)
 
         Row(modifier = Modifier.align(alignment)){
             if(!isCurrentUser){
                 userProfileImage(destUser.profileImage)
             }
-            Column(modifier = Modifier.padding(start = 8.dp)) {
+            Column(modifier = modifier) {
                 if(!isCurrentUser){
-                    Text(text = destUser.name, color = Color.Black, fontSize = 16.sp)
+                    Text(text = destUser.name, color = Color.Black, fontSize = 14.sp)
                 }
                 Box(
                     modifier = Modifier
-                        .padding(top = 5.dp)
+                        .padding(top = 3.dp)
                         .clip(
                             if(isCurrentUser){
                                 RoundedCornerShape(topStart = 15.dp, bottomStart = 15.dp, topEnd = 15.dp)
@@ -203,8 +244,11 @@ fun ChatBubble(message: DomainMessage, currentUserUid: String, destUser: DomainU
                         )
                         .background(bubbleColor)
                 ){
-                    Text(text = message.message, color = textColor, fontSize = 18.sp, modifier = Modifier.padding(vertical = 8.dp, horizontal = 15.dp))
+                    SelectionContainer {
+                        Text(text = message.message, color = textColor, fontSize = 16.sp, modifier = Modifier.padding(vertical = 8.dp, horizontal = 15.dp))
+                    }
                 }
+                Text(text = time, fontSize = 10.sp, modifier = padding.align(timeAlign))
             }
         }
     }
@@ -308,16 +352,10 @@ fun GreetingPreview() {
             inputMessage = "",
             currentUserUid = "123",
             messageList = listOf(
-                DomainMessage(message = "hi", senderUid = "123"),
-                DomainMessage(message = "hi", senderUid = "1234"),
-                DomainMessage(message = "Im very intersted in this artwork. Could you please provide me with more details about it?", senderUid = "123"),
-                DomainMessage(message = "Im very intersted in this artwork. Could you please provide me with more details about it?", senderUid = "123"),
-                DomainMessage(message = "Im very intersted in this artwork. Could you please provide me with more details about it?", senderUid = "123"),
-                DomainMessage(message = "Im very intersted in this artwork. Could you please provide me with more details about it?", senderUid = "123"),
-                DomainMessage(message = "Im very intersted in this artwork. Could you please provide me with more details about it?", senderUid = "123"),
-                DomainMessage(message = "Im very intersted in this artwork. Could you please provide me with more details about it?", senderUid = "123"),
-                DomainMessage(message = "Im very intersted in this artwork. Could you please provide me with more details about it?", senderUid = "123"),
-            ),
+                DomainMessage(message = "hibrobrobrobro", senderUid = "1234", timestamp = "2025.02.11/13:54"),
+                DomainMessage(message = "hibrobrobrobro", senderUid = "1234", timestamp = "2025.02.11/14:54"),
+                DomainMessage(message = "hibrobrobrobro", senderUid = "1234", timestamp = "2025.02.12/16:54"),
+                ),
             onValueChange = {},
             inputBtnOnClicked = {},
             destUser = DomainUser(name = "최윤석"),

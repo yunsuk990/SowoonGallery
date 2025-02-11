@@ -82,7 +82,7 @@ class ChatRoomViewModel @Inject constructor(
         var messageModel = DomainMessage(
             message = message,
             senderUid = currentUserUid.value,
-            timestamp = SimpleDateFormat("yyyy.MM.dd HH:mm:ss").format(Date())
+            timestamp = SimpleDateFormat("yyyy.MM.dd/HH:mm").format(Date())
         )
         viewModelScope.launch {
             when(val state = _checkChatState.value){
@@ -90,7 +90,7 @@ class ChatRoomViewModel @Inject constructor(
                     var chatModel = DomainChatRoom(
                         artworkId = artworkId,
                         users = mapOf(currentUserUid.value to true,  opponentUid to true),
-                        createdAt = SimpleDateFormat("yyyy.MM.dd HH:mm:ss").format(Date()),
+                        createdAt = SimpleDateFormat("yyyy.MM.dd/HH:mm").format(Date()),
                         lastMessage = messageModel
                     )
                     //채팅방 새로 만들고 메세지 보내기

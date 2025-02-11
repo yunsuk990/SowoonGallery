@@ -4,13 +4,7 @@ import android.content.Intent
 import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Surface
@@ -34,18 +28,20 @@ import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.max
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import coil3.compose.AsyncImage
-import com.example.domain.model.DomainArtwork
-import com.example.domain.model.DomainChatRoom
-import com.example.domain.model.DomainChatRoomWithUser
-import com.example.domain.model.DomainUser
+import com.example.domain.model.*
 import com.example.presentation.R
 import com.example.presentation.viewModel.MainViewModel
 import com.google.gson.Gson
+import java.text.SimpleDateFormat
+import java.util.*
+import java.util.concurrent.TimeUnit
 
 @Composable
 fun ChattingScreen(viewModel: MainViewModel, navController: NavController) {
@@ -70,6 +66,7 @@ fun ChattingScreen(viewModel: MainViewModel, navController: NavController) {
 
 @Composable
 fun chatListItem(chatRoomsList: List<DomainChatRoomWithUser>, onChatRoomClick: (DomainChatRoomWithUser) -> Unit) {
+    Spacer(modifier = Modifier.height(8.dp))
     LazyColumn(){
         items(chatRoomsList.size){index ->
             chatRoom(chatRoom = chatRoomsList[index], onChatRoomClick)
@@ -79,10 +76,25 @@ fun chatListItem(chatRoomsList: List<DomainChatRoomWithUser>, onChatRoomClick: (
 
 @Composable
 fun chatRoom(chatRoom: DomainChatRoomWithUser, onChatRoomClick: (DomainChatRoomWithUser) -> Unit) {
+    var timestamp = chatRoom.chatRoom.lastMessage.timestamp
+    var dateFormat = SimpleDateFormat("yyyy.M.d/HH:mm", Locale.KOREA)
+    val koreanDateFormat = SimpleDateFormat("M월 d일", Locale.KOREA)
+
+    val today = dateFormat.parse(dateFormat.format(Date()))!!
+    val lastday = dateFormat.parse(timestamp)!!
+    val diff = TimeUnit.DAYS.convert(lastday.time - today.time, TimeUnit.MILLISECONDS)
+    var time = when {
+        diff == 0L -> timestamp.split("/").last() // 같은 날이면 "HH:mm" 만 표시
+        diff == -1L -> "어제" // 하루 차이면 "어제" 표시
+        diff <= -365L -> dateFormat.format(lastday).split("/").first()
+        else -> koreanDateFormat.format(lastday) // 날짜만 표시 ("MM.dd")
+    }
+
+
     Row(
-        modifier = Modifier.padding(vertical = 15.dp, horizontal = 10.dp).clickable {
+        modifier = Modifier.clickable {
             onChatRoomClick(chatRoom)
-        }
+        }.padding( top = 8.dp, start = 10.dp, end = 10.dp, bottom = 8.dp)
     ) {
         Box(
             modifier = Modifier
@@ -99,11 +111,23 @@ fun chatRoom(chatRoom: DomainChatRoomWithUser, onChatRoomClick: (DomainChatRoomW
         }
         Column(modifier = Modifier.padding(start = 10.dp, top = 5.dp)) {
             Row(modifier = Modifier.padding(bottom = 5.dp)) {
-                Text(text = chatRoom.artwork.name!!, color = Color.Black, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
+                Text(text = chatRoom.artwork.name!!, color = Color.Black, fontSize = 15.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.width(200.dp)
+                )
                 Spacer(modifier = Modifier.weight(1f))
-                Text(chatRoom.chatRoom.lastMessage.timestamp, color = Color.Gray, fontSize = 15.sp)
+                Text(time, color = Color.Gray, fontSize = 12.sp)
             }
-            Text(text = chatRoom.chatRoom.lastMessage.message, color = Color.Gray, fontSize = 15.sp)
+            Text(
+                text = chatRoom.chatRoom.lastMessage.message,
+                color = Color.Gray,
+                fontSize = 15.sp,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.width(200.dp)
+            )
         }
     }
 }
@@ -120,4 +144,28 @@ fun ChattingTopBar() {
         actions = {},
     )
     Divider(thickness = 0.5.dp, color = Color.LightGray)
+}
+
+@Preview(showSystemUi = true)
+@Composable
+fun ChattingScreenTest(){
+    Surface() {
+        Column {
+            chatListItem(
+                chatRoomsList = listOf(
+                    DomainChatRoomWithUser(
+                        destUser = DomainUser(),
+                        chatRoom = DomainChatRoom(lastMessage = DomainMessage(message = "asdfasdfasdfasdfasdfasdfasdfasdfasdfasdfasdfasdfasdfasdfasdfasdf", timestamp = "2021.12.10/13:03")),
+                        artwork = DomainArtwork(name = "yunsukasdfasdfasdfasasdfasdasdfasdfasdfasdf")
+                ),
+                    DomainChatRoomWithUser(
+                        destUser = DomainUser(),
+                        chatRoom = DomainChatRoom(lastMessage = DomainMessage(message = "asdfasdfasdfasdfasdfasdfasdfasdfasdfasdfasdfasdfasdfasdfasdfasdf", timestamp = "2021.12.10/13:03")),
+                        artwork = DomainArtwork(name = "yunsukasdfasdfasdfasasdfasdasdfasdfasdfasdf")
+                    )
+                ),
+                onChatRoomClick = {}
+            )
+        }
+    }
 }
