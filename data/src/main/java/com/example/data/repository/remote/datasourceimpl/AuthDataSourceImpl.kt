@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.SharedPreferences
 import android.util.Log
 import com.example.data.repository.remote.datasource.AuthDataSource
+import com.example.domain.model.Career
 import com.example.domain.model.DomainUser
 import com.example.domain.model.Response
 import com.google.android.gms.tasks.Task
@@ -102,7 +103,14 @@ class AuthDataSourceImpl @Inject constructor(
     }
 
     // 사용자 정보를 db에 저장
-    override fun saveUserInfo(uid: String, user: DomainUser): Task<Void> = usersRef.child(uid).setValue(user)
+    override suspend fun saveUserInfo(uid: String, user: DomainUser): Response<Boolean> {
+        return try {
+            usersRef.child(uid).setValue(user).await()
+            Response.Success(true)
+        }catch (e: Exception){
+            Response.Error(message = e.message.toString(), exception = e)
+        }
+    }
 
     override suspend fun getUserInfoOnce(uid: String): DomainUser {
         val snapshot = usersRef.child(uid).get().await()
@@ -129,20 +137,6 @@ class AuthDataSourceImpl @Inject constructor(
             usersRef.removeEventListener(valueEventListener)
         }
     }
-//        usersRef.child(uid).addValueEventListener(object: ValueEventListener {
-//            override fun onDataChange(snapshot: DataSnapshot) {
-//                val userInfo = snapshot.getValue(DomainUser::class.java)
-//                if( userInfo != null){
-//                    userInfo?.uid = uid
-//                    callback(Response.Success(userInfo))
-//                }else{
-//                    callback(Response.Error("사용자 정보가 없습니다"))
-//                }
-//            }
-//            override fun onCancelled(error: DatabaseError) {
-//                callback(Response.Error(error.message))
-//            }
-//        })
 
     // 등록된 사용자인지 확인
     override suspend fun checkUserRtdbUseCase(uid: String): Boolean{
@@ -157,14 +151,45 @@ class AuthDataSourceImpl @Inject constructor(
     }
 
     //로그인 처리
-    override suspend fun signInWithPhoneAuthCredential(credential: PhoneAuthCredential): AuthResult? {
+    override suspend fun signInWithPhoneAuthCredential(credential: PhoneAuthCredential): Response<AuthResult?> {
         return try {
             Log.d("signInWithPhoneAuthCredential", "called" )
-            firebaseAuth.signInWithCredential(credential).await()
+            val response = firebaseAuth.signInWithCredential(credential).await()
+            Response.Success(response)
         }catch (e: Exception){
-            Log.d("signInWithPhoneAuthCredential", "failed" )
-            null
+            Log.d("signInWithPhoneAuthCredential", "exception: ${e.message}" )
+            Response.Error(message =  e.message.toString(), exception = e)
         }
     }
 
+    //작가 소개 글 update
+    override suspend fun setAristIntroduce(artistIntroduce: String): Response<Boolean> {
+        return try {
+            var uid = getUid()
+            usersRef.child(uid!!).child("artistProfile").updateChildren(
+                mapOf(
+                    "introduce" to artistIntroduce
+                )
+            ).await()
+            Response.Success(true)
+        }catch (e: Exception){
+            Response.Error(e.message.toString(), e)
+        }
+    }
+
+    override suspend fun setArtistCareer(career: Career): Response<Boolean> {
+        return try {
+            var uid = getUid()
+            usersRef.child(uid!!).child("artistProfile").child("career").updateChildren(
+                mapOf(
+                    "graduate" to career.graduate,
+                    "awards" to career.awards,
+                    "exhibition" to career.exhibition
+                )
+            ).await()
+            Response.Success(true)
+        }catch (e: Exception){
+            Response.Error(e.message.toString(), e)
+        }
+    }
 }

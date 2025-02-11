@@ -5,13 +5,15 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.domain.model.Career
 import com.example.domain.model.DomainArtwork
 import com.example.domain.model.DomainUser
+import com.example.domain.model.Response
 import com.example.domain.usecase.authUseCase.GetUserInfoUseCase
 import com.example.domain.usecase.artworkUseCase.*
 import com.example.domain.usecase.authUseCase.GetCurrentUserUidUseCase
+import com.example.presentation.model.ArtworkSort
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -28,6 +30,7 @@ class ArtworkViewModel @Inject constructor(
     private val getUserInfoUseCase: GetUserInfoUseCase,
     private val getCurrentUserUidUseCase: GetCurrentUserUidUseCase,
     private val getArtworksUseCase: GetArtworksUseCase,
+    private val setArtistProfileUseCase: SetArtistProfileUseCase
 ): ViewModel() {
 
     private val _artworkFavoriteState = MutableLiveData<Boolean>()
@@ -49,13 +52,41 @@ class ArtworkViewModel @Inject constructor(
     private val _isLoadingArtistArtworks = MutableStateFlow<Boolean>(true)
     val isLoadingArtistArtworks: StateFlow<Boolean> = _isLoadingArtistArtworks
 
-
     private val _userInfo = MutableStateFlow(DomainUser())
     val userInfo: StateFlow<DomainUser> = _userInfo
 
-
     init {
         getUserInfo(userUid)
+    }
+
+    fun setData(artistArtwork: List<DomainArtwork>){
+        _artistArtworks.value = artistArtwork
+    }
+
+    fun filterArtworks(category: ArtworkSort, artistArtwork: List<DomainArtwork>) {
+        when(category){
+            ArtworkSort.NONE -> { _artistArtworks.value = artistArtwork}
+            ArtworkSort.BOOKMARK -> _artistArtworks.value = _artistArtworks.value.sortedByDescending { it.favoriteUser.size }
+            ArtworkSort.DATE -> _artistArtworks.value = _artistArtworks.value.sortedBy { it.upload_at }
+            ArtworkSort.LIKE -> _artistArtworks.value = _artistArtworks.value.sortedByDescending { it.likedArtworks.size }
+        }
+
+    }
+
+    fun updateArtistProfile(artistIntroduce: String) = viewModelScope.launch {
+        val response = setArtistProfileUseCase.executeArtistIntroduce(artistIntroduce)
+        when(response){
+            is Response.Success -> { Log.d("updateArtistProfileIntroduce_introduce", "success") }
+            is Response.Error -> {  Log.d("updateArtistProfileIntroduce_introduce", "error: ${response.exception}, ${response.message}") }
+        }
+    }
+
+    fun updateArtistProfile(career: Career) = viewModelScope.launch {
+        val response = setArtistProfileUseCase.executeArtistCareer(career)
+        when(response){
+            is Response.Success -> { Log.d("updateArtistProfileIntroduce_career", "success") }
+            is Response.Error -> {  Log.d("updateArtistProfileIntroduce_career", "error: ${response.exception}, ${response.message}") }
+        }
     }
 
     fun getUserInfo(uid: String? = userUid){
@@ -108,11 +139,11 @@ class ArtworkViewModel @Inject constructor(
         }
     }
 
-    fun getArtistArtworks(artistUid: String) {
+    fun getArtistArtworks(artistUid: String, key: String) {
         viewModelScope.launch {
             _isLoadingArtistArtworks.value = true
             var result = getArtworksUseCase.executeByUid(artistUid)
-            _artistArtworks.value = result
+            _artistArtworks.value = result.filter { it.key != key }
             Log.d("getArtistArtworks_viewModel", result.toString())
             _isLoadingArtistArtworks.value = false
         }

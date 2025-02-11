@@ -119,14 +119,22 @@ fun ProfileEditScreen(userInfo: DomainUser, onUploadBtnClick: (Uri?, DomainUser)
     val sheetState = rememberModalBottomSheetState(initialValue = ModalBottomSheetValue.Hidden)
     val scope = rememberCoroutineScope()
 
+    var userMode = if(userInfo.mode == 0) {
+        "User"
+    } else if(userInfo.mode == 1) {
+        "Artist"
+    } else {
+        "Manager"
+    }
+
     var name by remember { mutableStateOf(userInfo.name) }
     var age by remember { mutableStateOf(userInfo.age) }
     var review by remember { mutableStateOf(userInfo.review) }
-    var mode by remember { mutableStateOf(if(userInfo.mode == 0) "User" else "Artist") }
+    var mode by remember { mutableStateOf(userMode) }
 
     val singlePhotoPickerLauncher = rememberLauncherForActivityResult(contract = ActivityResultContracts.PickVisualMedia(), onResult = { uri -> if(uri != null){ photoGalleryUri = uri } })
     ModalBottomSheetLayout(
-        sheetContent = { ModalBottomSheet(sheetState, singlePhotoPickerLauncher) },
+        sheetContent = { ModalBottomSheet(sheetState, singlePhotoPickerLauncher, null) },
         sheetState = sheetState,
         modifier = Modifier
             .fillMaxSize()

@@ -1,6 +1,7 @@
 package com.example.domain.repository
 
 import android.net.Uri
+import com.example.domain.model.Career
 import com.example.domain.model.DomainUser
 import com.example.domain.model.Response
 import com.google.android.gms.tasks.Task
@@ -14,7 +15,7 @@ interface AuthRepository {
     fun clear()
     fun getAuthStateFlow(): Flow<String?>
     //사용자 가입 처리
-    fun saveUserInfo(user: DomainUser): Task<Void>
+    suspend fun saveUserInfo(user: DomainUser): Response<Boolean>
     //사용자 정보 가져오기
     fun getUserInfo(uid: String): Flow<DomainUser?>
     suspend fun getUserInfoOnce(uid: String): DomainUser
@@ -34,4 +35,7 @@ interface AuthRepository {
         currentUser: DomainUser,
         updateUser: DomainUser
     ): Response<Boolean>
+
+    suspend fun setArtistIntroduce(artistIntroduce: String): Response<Boolean>
+    suspend fun setArtistCareer(career: Career): Response<Boolean>
 }
