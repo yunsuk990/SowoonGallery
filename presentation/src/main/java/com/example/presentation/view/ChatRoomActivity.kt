@@ -2,25 +2,20 @@ package com.example.presentation.view
 
 import android.annotation.SuppressLint
 import android.app.Activity
+import android.graphics.Paint.Align
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -28,20 +23,17 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.platform.rememberNestedScrollInteropConnection
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.constraintlayout.compose.ConstraintLayout
-import androidx.constraintlayout.compose.ConstrainedLayoutReference
-import androidx.constraintlayout.compose.Dimension
-import androidx.core.view.WindowCompat
 import coil3.compose.AsyncImage
 import com.example.domain.model.DomainArtwork
 import com.example.domain.model.DomainMessage
@@ -81,17 +73,17 @@ class ChatRoomActivity : ComponentActivity() {
                 darkIcons = !isSystemInDarkTheme()
             )
 
-            LaunchedEffect(Unit) {
-                Log.d("chatRoomRoot_LaunchedEffect","called")
-                viewModel.checkChatRoom(artwork.artistUid!!, artwork.key!!)
-            }
-
             val currentUserUid by viewModel.currentUserUid.collectAsState()
             val messageList by viewModel.messageList.collectAsState()
             var inputMessage by remember { mutableStateOf("") }
             val keyboardController = LocalSoftwareKeyboardController.current
 
-                // A surface container using the 'background' color from the theme
+
+            //채팅방 확인
+            LaunchedEffect(Unit) {
+                Log.d("chatRoomRoot_LaunchedEffect", "called")
+                viewModel.checkChatRoom(artwork.artistUid!!, artwork.key!!)
+            }
 
             SowoonTheme {
                 Scaffold(
@@ -99,7 +91,7 @@ class ChatRoomActivity : ComponentActivity() {
                         ChatRoomActivityTopBar(name = artwork.name.toString())
                     },
                     modifier = Modifier.fillMaxSize().background(Color.White)
-                ){ padding ->
+                ) { padding ->
                     chatRoomRoot(
                         inputMessage = inputMessage,
                         currentUserUid = currentUserUid,
@@ -109,7 +101,7 @@ class ChatRoomActivity : ComponentActivity() {
                         inputBtnOnClicked = {
                             viewModel.sendMessage(
                                 message = inputMessage,
-                                opponentUid = artwork.artistUid!!,
+                                opponentUid = destUser.uid,
                                 artworkId = artwork.key!!
                             )
                             inputMessage = ""
@@ -136,7 +128,9 @@ fun chatRoomRoot(
     modifier: Modifier,
 ) {
     Column(
-        modifier = modifier.background(Color.White)
+        modifier = modifier.background(Color.White).nestedScroll(
+            rememberNestedScrollInteropConnection()
+        )
     ) {
         MessageList(currentUserUid, messageList, destUser, Modifier.weight(1f).padding(start = 5.dp , end = 8.dp))
         userMessageTextField(
@@ -160,7 +154,6 @@ fun MessageList(
     modifier: Modifier
 ) {
     var listState = rememberLazyListState(initialFirstVisibleItemIndex = messageList.size)
-    Log.d("MessageList_messageListUpdate", messageList.toString())
 
     // 메시지를 날짜별로 그룹화하고 포맷 처리
     val groupedMessages = messageList
@@ -177,7 +170,7 @@ fun MessageList(
 
     LazyColumn(
         state = listState,
-        modifier = modifier
+        modifier = modifier,
     ) {
         groupedMessages.forEach { (date, messages) ->
             item {
@@ -194,8 +187,10 @@ fun MessageList(
                     }
                 }
             }
-            items(messages) { message ->
-                ChatBubble(message, currentUserUid, destUser)
+            itemsIndexed(messages){ index, message ->
+                val isFirstMessage = index == 0
+                val isNewSender = isFirstMessage || messages[index - 1].senderUid != message.senderUid
+                ChatBubble(message, currentUserUid, destUser, isNewSender)
             }
         }
     }
@@ -209,7 +204,7 @@ fun formatDate(dateStr: String): String {
 }
 
 @Composable
-fun ChatBubble(message: DomainMessage, currentUserUid: String, destUser: DomainUser) {
+fun ChatBubble(message: DomainMessage, currentUserUid: String, destUser: DomainUser, isNewSender: Boolean) {
     val isCurrentUser = message.senderUid == currentUserUid
     val bubbleColor = if(isCurrentUser) Color.Black else colorResource(R.color.messageGray)
     val textColor = if(isCurrentUser) Color.White else Color.Black
@@ -218,37 +213,57 @@ fun ChatBubble(message: DomainMessage, currentUserUid: String, destUser: DomainU
     val time = message.timestamp.split("/").last()
 
     Box(
-        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp, horizontal = 4.dp)
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp)
     ){
         val alignment = if(isCurrentUser) Alignment.CenterEnd else Alignment.CenterStart
-        val timeAlign = if(isCurrentUser) Alignment.Start else Alignment.End
-        val padding = if(isCurrentUser) Modifier.padding(start = 5.dp) else Modifier.padding(end = 5.dp)
+        val padding = if(isCurrentUser) Modifier.padding(end = 5.dp, top = 3.dp) else Modifier.padding(start = 5.dp, top = 3.dp)
 
         Row(modifier = Modifier.align(alignment)){
-            if(!isCurrentUser){
+            if(!isCurrentUser && isNewSender){
                 userProfileImage(destUser.profileImage)
+            }else{
+                Spacer(modifier = Modifier.width(50.dp))
             }
             Column(modifier = modifier) {
-                if(!isCurrentUser){
+                if(!isCurrentUser && isNewSender){
                     Text(text = destUser.name, color = Color.Black, fontSize = 14.sp)
                 }
-                Box(
-                    modifier = Modifier
-                        .padding(top = 3.dp)
-                        .clip(
-                            if(isCurrentUser){
-                                RoundedCornerShape(topStart = 15.dp, bottomStart = 15.dp, topEnd = 15.dp)
-                            }else{
-                                RoundedCornerShape(topEnd = 15.dp, bottomStart = 15.dp, bottomEnd = 15.dp)
-                            }
-                        )
-                        .background(bubbleColor)
+                Row(
+                    verticalAlignment = Alignment.Bottom
                 ){
-                    SelectionContainer {
-                        Text(text = message.message, color = textColor, fontSize = 16.sp, modifier = Modifier.padding(vertical = 8.dp, horizontal = 15.dp))
+                    if(isCurrentUser){
+                        Text(text = time, fontSize = 10.sp, modifier = padding.align(Alignment.Bottom), lineHeight = 10.sp)
+                    }
+                    Box(
+                        modifier = Modifier
+                            .padding(top = 5.dp)
+                            .clip(
+                                if(isCurrentUser){
+                                    if(isNewSender){
+                                        RoundedCornerShape(topStart = 8.dp, bottomStart = 8.dp, topEnd = 8.dp)
+                                    }else{
+                                        RoundedCornerShape(8.dp)
+                                    }
+                                }else{
+                                    if(isNewSender){
+                                        RoundedCornerShape(topEnd = 8.dp, bottomStart = 8.dp, bottomEnd = 8.dp)
+                                    }else{
+                                        RoundedCornerShape(8.dp)
+                                    }
+                                }
+                            )
+                            .background(bubbleColor)
+                            .padding(vertical = 5.dp, horizontal = 10.dp)
+                            .align(Alignment.Bottom)
+                    ){
+                        SelectionContainer {
+                            Text(text = message.message, color = textColor, fontSize = 16.sp)
+                        }
+                    }
+                    if(!isCurrentUser){
+                        Text(text = time, fontSize = 10.sp, modifier = padding.align(Alignment.Bottom), lineHeight = 10.sp)
                     }
                 }
-                Text(text = time, fontSize = 10.sp, modifier = padding.align(timeAlign))
             }
         }
     }
@@ -352,7 +367,12 @@ fun GreetingPreview() {
             inputMessage = "",
             currentUserUid = "123",
             messageList = listOf(
-                DomainMessage(message = "hibrobrobrobro", senderUid = "1234", timestamp = "2025.02.11/13:54"),
+                DomainMessage(message = "hibrobrobrobro", senderUid = "123", timestamp = "2025.02.11/13:54"),
+                DomainMessage(message = "hibrobrobrobro", senderUid = "123", timestamp = "2025.02.11/13:54"),
+                DomainMessage(message = "hibrobrobrobro", senderUid = "1234", timestamp = "2025.02.11/14:54"),
+                DomainMessage(message = "hibrobrobrobro", senderUid = "1234", timestamp = "2025.02.11/14:54"),
+                DomainMessage(message = "hibrobrobrobro", senderUid = "1234", timestamp = "2025.02.11/14:54"),
+                DomainMessage(message = "hibrobrobrobro", senderUid = "1234", timestamp = "2025.02.11/14:54"),
                 DomainMessage(message = "hibrobrobrobro", senderUid = "1234", timestamp = "2025.02.11/14:54"),
                 DomainMessage(message = "hibrobrobrobro", senderUid = "1234", timestamp = "2025.02.12/16:54"),
                 ),
