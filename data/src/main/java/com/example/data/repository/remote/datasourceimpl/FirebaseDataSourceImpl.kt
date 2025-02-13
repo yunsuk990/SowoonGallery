@@ -1,17 +1,9 @@
 package com.example.data.repository.remote.datasourceimpl
 
-import android.net.Uri
-import android.os.Build
 import android.util.Log
-import androidx.annotation.RequiresApi
 import com.example.data.repository.remote.datasource.FirebaseDataSource
 import com.example.domain.model.*
-import com.google.android.gms.tasks.Task
-import com.google.android.gms.tasks.Tasks
-import com.google.firebase.auth.AuthResult
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.auth.FirebaseUser
-import com.google.firebase.auth.PhoneAuthCredential
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
@@ -21,8 +13,6 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.tasks.await
-import java.time.LocalDate
-import java.time.format.DateTimeFormatter
 import javax.inject.Inject
 
 class FirebaseDataSourceImpl @Inject constructor(
@@ -40,12 +30,12 @@ class FirebaseDataSourceImpl @Inject constructor(
     private val messageRef = firebaseRtdb.getReference("messages")
 
     //채팅방 생성
-    override suspend fun createChatRoom(uid: String, destUid: String, chatRoom: DomainChatRoom): Response<String> {
+    override suspend fun createChatRoom(uid: String, destUid: String, chatRoom: DomainChatRoom): Response<DomainChatRoom> {
         return try {
             Log.d("createChatRoom_DataSourceImpl", "채팅방 생성 요청: $chatRoom")
             val roomId = chatRoomRef.push().key ?: return Response.Error("채팅방 ID 생성 실패")
 
-            chatRoomRef.child(roomId).setValue(chatRoom).await()
+            chatRoomRef.child(roomId).setValue(chatRoom.copy(roomId = roomId)).await()
             Log.d("createChatRoom_DataSourceImpl", "채팅방 저장 완료: $roomId")
             val updates = mapOf(
                 "/$uid/$roomId" to true,
@@ -58,7 +48,7 @@ class FirebaseDataSourceImpl @Inject constructor(
             newMessageId.setValue(chatRoom.lastMessage).await()
             Log.d("createChatRoom_DataSourceImpl", "사용자 새 채팅방 첫 메세지 저장 완료")
 
-            Response.Success(roomId)
+            Response.Success(chatRoom.copy(roomId = roomId))
         }catch (e: Exception){
             Log.e("createChatRoom_DataSourceImpl", "채팅방 생성 실패: ${e.message}", e)
             Response.Error("실패", e)
@@ -76,12 +66,15 @@ class FirebaseDataSourceImpl @Inject constructor(
     }
 
     //메세지 전송
-    override suspend fun sendMessage(chatroomId: String, message: DomainMessage): Response<Boolean> {
+    override suspend fun sendMessage(chatroom: DomainChatRoom, message: DomainMessage): Response<Boolean> {
         return try {
-            Log.d("sendMessage_DataSourceImpl_chatroomId", chatroomId.toString())
-            val newMessageRef = messageRef.child(chatroomId).push()
+            val newMessageRef = messageRef.child(chatroom.roomId).push()
             newMessageRef.setValue(message).await()
-            chatRoomRef.child(chatroomId).child("lastMessage").updateChildren(
+
+            chatRoomRef.child(chatroom.roomId).child("unreadMessages").setValue(chatroom.unreadMessages)
+            Log.d("sendMeesage_DatasourceImpl", chatroom.unreadMessages.toString())
+
+            chatRoomRef.child(chatroom.roomId).child("lastMessage").updateChildren(
                 mapOf(
                     "message" to message.message,
                     "timestamp" to message.timestamp,
@@ -94,8 +87,30 @@ class FirebaseDataSourceImpl @Inject constructor(
         }
     }
 
+    override fun markMessageAsRead(chatroomId: String, userUid: String) {
+        chatRoomRef.child(chatroomId).child("unreadMessages/${userUid}").setValue(0)
+    }
+
+    override suspend fun observeChatRoom(chatRoomId: String) = callbackFlow {
+        val chatRoomRef = chatRoomRef.child(chatRoomId)
+        val listener = object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                snapshot.getValue(DomainChatRoom::class.java)?.let { chatRoom ->
+                    trySend(chatRoom)
+                }
+            }
+
+            override fun onCancelled(error: DatabaseError) {
+                close(error.toException())
+            }
+        }
+        chatRoomRef.addValueEventListener(listener)
+
+        awaitClose { chatRoomRef.removeEventListener(listener) }
+    }.flowOn(Dispatchers.IO)
+
     //메시지 가져오기
-    override suspend fun loadMessage(chatroomId: String) = callbackFlow  {
+    override suspend fun loadMessage(chatroomId: String, uid: String) = callbackFlow  {
         var ref = messageRef.child(chatroomId)
 
         val valueListener = object : ValueEventListener {
@@ -103,10 +118,12 @@ class FirebaseDataSourceImpl @Inject constructor(
                 val messageList = mutableListOf<DomainMessage>()
                 snapshot.children.forEach { dataSnapshot ->
                     val message = dataSnapshot.getValue(DomainMessage::class.java)
+
                     if(message != null){
                         messageList.add(message)
                     }
                 }
+                markMessageAsRead(chatroomId, uid)
                 trySend(messageList)
             }
 
@@ -129,7 +146,7 @@ class FirebaseDataSourceImpl @Inject constructor(
                 val coroutineScope = CoroutineScope(Dispatchers.IO)
                 for(chatRoomModel in snapshot.children){
                     val chatRoom = chatRoomModel.getValue(DomainChatRoom::class.java)!!
-                    Log.d("getUserChatRoomLists", "${uid}님의 채팅방 발견: ${chatRoom.toString()}")
+                    Log.d("getUserChatRoomLists_DataSourceImpl", "${uid}님의 채팅방 발견: ${chatRoom.toString()}")
 
                     val deferred = coroutineScope.async {
                         val artworkSnapshot = imagesRef.child(chatRoom.artworkId).get().await()
@@ -137,7 +154,7 @@ class FirebaseDataSourceImpl @Inject constructor(
                         val artwork = artworkSnapshot.getValue(DomainArtwork::class.java)!!
                         val destUser = userSnapshot.getValue(DomainUser::class.java)!!
 
-                        Log.d("getUserChatRoomLists", "artwork: ${artwork}, destUser: ${destUser}")
+                        Log.d("getUserChatRoomLists_DataSourceImpl", "artwork: ${artwork}, destUser: ${destUser}")
                         chatList.add(
                             DomainChatRoomWithUser(destUser = destUser, artwork = artwork, chatRoom = chatRoom)
                         )
@@ -161,7 +178,7 @@ class FirebaseDataSourceImpl @Inject constructor(
     }
 
     // 채팅방 유무 확인
-    override suspend fun checkChatRoom(uid: String, destUid: String, artworkId: String): Response<String?> {
+    override suspend fun checkChatRoom(uid: String, destUid: String, artworkId: String): Response<DomainChatRoom?> {
         return try {
             val chatRoomSnapshot = chatRoomRef.orderByChild("artworkId").equalTo(artworkId).get().await()
             for(chat in chatRoomSnapshot.children){
@@ -170,7 +187,7 @@ class FirebaseDataSourceImpl @Inject constructor(
                     Log.d("checkChatRoom", "Found chatRoom: ${chat.key}, users: ${chatRoom.users.keys}")
                     val userSet = chatRoom.users.keys
                     if(uid in userSet && destUid in destUid){
-                        return Response.Success(chat.key)
+                        return Response.Success(chatRoom)
                     }
                 }
             }

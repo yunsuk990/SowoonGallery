@@ -60,7 +60,6 @@ class ArtworkDataSourceImpl @Inject constructor(
         val artworkSnapshot = imagesRef.child(artworkUid).get().await()
         val artwork = artworkSnapshot.getValue(DomainArtwork::class.java)!!
         return artwork
-
     }
 
     // 작품 북마크 설정

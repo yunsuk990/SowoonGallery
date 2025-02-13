@@ -1,23 +1,11 @@
 package com.example.data.repository.remote
 
-import android.net.Uri
-import android.util.Log
-import com.example.data.mapper.MainMapper
 import com.example.data.repository.remote.datasource.ArtworkDataSource
 import com.example.data.repository.remote.datasource.AuthDataSource
 import com.example.data.repository.remote.datasource.FirebaseDataSource
 import com.example.domain.model.*
 import com.example.domain.repository.FirebaseRepository
-import com.google.android.gms.tasks.Task
-import com.google.firebase.auth.AuthResult
-import com.google.firebase.auth.FirebaseUser
-import com.google.firebase.auth.PhoneAuthCredential
-import com.google.firebase.database.DataSnapshot
-import com.google.firebase.database.ValueEventListener
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.asFlow
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.toList
 import javax.inject.Inject
 
 class FirebaseRepositoryImpl @Inject constructor(
@@ -26,20 +14,22 @@ class FirebaseRepositoryImpl @Inject constructor(
     private val authDataSource: AuthDataSource
 ): FirebaseRepository {
 
-    override suspend fun loadMessage(chatroomId: String) = firebaseDataSource.loadMessage(chatroomId)
+    override suspend fun loadMessage(chatroomId: String, uid: String) = firebaseDataSource.loadMessage(chatroomId, uid)
+    override suspend fun observeChatRoom(chatroomId: String): Flow<DomainChatRoom> = firebaseDataSource.observeChatRoom(chatroomId)
+
     override suspend fun createChatRoom(uid: String, destUid: String, chatRoom: DomainChatRoom) = firebaseDataSource.createChatRoom(uid, destUid, chatRoom)
 
 
     //광고 사진
     override suspend fun getAdvertiseImages() = firebaseDataSource.getAdvertiseImages()
     override suspend fun getUserChatRoomLists(uid: String): Flow<List<DomainChatRoomWithUser>> = firebaseDataSource.getUserChatRoomLists(uid)
-    override suspend fun sendMessage(chatroomId: String, message: DomainMessage): Response<Boolean> = firebaseDataSource.sendMessage(chatroomId, message)
+    override suspend fun sendMessage(chatroom: DomainChatRoom, message: DomainMessage): Response<Boolean> = firebaseDataSource.sendMessage(chatroom, message)
 
 
     override suspend fun getUserInfoLists(
         uid: List<String>,
     ) = firebaseDataSource.getUserInfoLists(uid)
 
-    override suspend fun checkChatRoom(uid: String, destUid: String, artworkId: String): Response<String?> = firebaseDataSource.checkChatRoom(uid, destUid, artworkId)
+    override suspend fun checkChatRoom(uid: String, destUid: String, artworkId: String): Response<DomainChatRoom?> = firebaseDataSource.checkChatRoom(uid, destUid, artworkId)
 
 }
