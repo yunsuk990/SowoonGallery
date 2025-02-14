@@ -170,6 +170,7 @@ fun ProfileTopBar(onSortByChanged: (ArtworkSort) -> Unit) {
 fun FilterDropDownMenu(onSortByChanged: (ArtworkSort) -> Unit){
     var dropDownMenuExpanded by remember { mutableStateOf(false) }
     var title by remember { mutableStateOf("") }
+    var list = listOf(ArtworkSort.DATE, ArtworkSort.LIKE, ArtworkSort.BOOKMARK)
     Row(
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -185,35 +186,21 @@ fun FilterDropDownMenu(onSortByChanged: (ArtworkSort) -> Unit){
             title = ""
             dropDownMenuExpanded = false
         },
+        containerColor = Color.White,
         modifier = Modifier.wrapContentSize()
     ) {
-        DropdownMenuItem(
-            text = { Text(text = "좋아요 순")},
-            onClick = {
-                title = "좋아요 순"
-                onSortByChanged(ArtworkSort.LIKE)
-                dropDownMenuExpanded = false
-            },
-            leadingIcon = { Icon(imageVector =  Icons.Filled.Favorite, contentDescription = "좋아요") },
-        )
-        DropdownMenuItem(
-            text = { Text(text = "북마크 순")},
-            onClick = {
-                title = "북마크 순"
-                onSortByChanged(ArtworkSort.BOOKMARK)
-                dropDownMenuExpanded = false
-            },
-            leadingIcon = { Icon(painterResource(id = R.drawable.bookmark_filled), contentDescription = "북마크") },
-        )
-        DropdownMenuItem(
-            text = { Text(text = "날짜 순")}, 
-            onClick = {
-                title = "날짜 순"
-                onSortByChanged(ArtworkSort.DATE)
-                dropDownMenuExpanded = false
-            },
-            leadingIcon = { Icon(imageVector =  Icons.Filled.DateRange, contentDescription = "날짜") },
-        )
+
+        list.forEachIndexed { index, artworkSort ->
+            DropdownMenuItem(
+                text = { Text(text = artworkSort.sort)},
+                onClick = {
+                    title = artworkSort.sort
+                    onSortByChanged(artworkSort)
+                    dropDownMenuExpanded = false
+                }
+                //leadingIcon = { Icon(imageVector =  Icons.Filled.Favorite, contentDescription = "좋아요") },
+            )
+        }
     }
 }
 
