@@ -24,4 +24,6 @@ interface FirebaseRepository {
     suspend fun loadMessage(chatroomId: String, uid: String): Flow<List<DomainMessage>>
 
     suspend fun observeChatRoom(chatroomId: String): Flow<DomainChatRoom>
+
+    fun exitChatRoom(sold: Boolean, artworkId: String)
 }

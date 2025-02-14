@@ -43,4 +43,5 @@ interface ArtworkDataSource {
 
     suspend fun getArtistArtworks(artistUid: String): List<DomainArtwork>
 
+    fun updateArtworkSoldState(artworkId: String, sold: Boolean)
 }

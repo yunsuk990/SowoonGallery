@@ -185,4 +185,8 @@ class ArtworkDataSourceImpl @Inject constructor(
         return artworkData
     }
 
+    override fun updateArtworkSoldState(artworkId: String, sold: Boolean) {
+        imagesRef.child(artworkId).child("sold").setValue(sold)
+    }
+
 }
