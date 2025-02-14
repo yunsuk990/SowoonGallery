@@ -2,10 +2,13 @@ package com.example.presentation.view
 
 import android.annotation.SuppressLint
 import android.app.Activity
-import android.graphics.Paint.Align
+import android.content.Intent
+import android.icu.text.DecimalFormat
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
+import androidx.activity.OnBackPressedCallback
+import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
 import androidx.compose.foundation.background
@@ -17,6 +20,10 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.selection.SelectionContainer
+import androidx.compose.material.ExperimentalMaterialApi
+import androidx.compose.material.ExposedDropdownMenuDefaults
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -30,7 +37,10 @@ import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.rememberNestedScrollInteropConnection
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -66,7 +76,6 @@ class ChatRoomActivity : ComponentActivity() {
         Log.d("ChatRoomActivity_destUser", destUser.toString())
 
         setContent {
-
             val systemUiController = rememberSystemUiController()
             systemUiController.setStatusBarColor(
                 color = Color.White,
@@ -75,9 +84,10 @@ class ChatRoomActivity : ComponentActivity() {
 
             val currentUserUid by viewModel.currentUserUid.collectAsState()
             val messageList by viewModel.messageList.collectAsState()
+            val currentUser by viewModel.currentUserInfo.collectAsState()
             var inputMessage by remember { mutableStateOf("") }
             val keyboardController = LocalSoftwareKeyboardController.current
-
+            var details by remember { mutableStateOf(false) }
 
             //채팅방 확인
             LaunchedEffect(Unit) {
@@ -88,34 +98,152 @@ class ChatRoomActivity : ComponentActivity() {
             SowoonTheme {
                 Scaffold(
                     topBar = {
-                        ChatRoomActivityTopBar(name = artwork.name.toString())
+                        ChatRoomActivityTopBar(name = if(!details) artwork.name.toString() else "Details", details = details,
+                            detailsOnChange = {
+                                newBool -> details = newBool
+                            })
                     },
                     modifier = Modifier.fillMaxSize().background(Color.White)
                 ) { padding ->
-                    chatRoomRoot(
-                        inputMessage = inputMessage,
-                        currentUserUid = currentUserUid,
-                        messageList = messageList,
-                        destUser = destUser,
-                        onValueChange = { inputMessage = it },
-                        inputBtnOnClicked = {
-                            viewModel.sendMessage(
-                                message = inputMessage,
-                                opponentUid = destUser.uid,
-                                artworkId = artwork.key!!
+                    if(!details){
+                            chatRoomRoot(
+                                artwork = artwork,
+                                currentUser = currentUser,
+                                inputMessage = inputMessage,
+                                currentUserUid = currentUserUid,
+                                messageList = messageList,
+                                destUser = destUser,
+                                onValueChange = { inputMessage = it },
+                                inputBtnOnClicked = {
+                                    viewModel.sendMessage(
+                                        message = inputMessage,
+                                        opponentUid = destUser.uid,
+                                        artworkId = artwork.key!!
+                                    )
+                                    inputMessage = ""
+                                },
+                                updateArtworkSoldState = { state ->
+                                    viewModel.exitChatRoom(sold = state, artworkId = artwork.key!!)
+                                },
+                                modifier = Modifier.fillMaxSize().background(Color.White).padding(padding).noRippleClickable {
+                                    keyboardController?.hide()
+                                }
                             )
-                            inputMessage = ""
-                        },
-                        modifier = Modifier.fillMaxSize().background(Color.White).padding(padding).noRippleClickable {
-                            keyboardController?.hide()
-                        }
-                    )
+                    }else{
+                        ArtworkInfo(
+                            artwork = artwork,
+                            destUser = destUser,
+                            modifier = Modifier.fillMaxSize().background(Color.White).padding(padding),
+                            cardOnClick = {
+                                startActivity(
+                                    Intent(this, ArtworkDetailActivity::class.java)
+                                        .putExtra("artwork", Gson().toJson(artwork))
+                                )
+                            },
+                            currentUser = currentUser,
+                        )
+                    }
                 }
             } // A surface container using the 'background' color from the theme
         }
     }
 }
 
+@Composable
+fun ArtworkInfo(
+    artwork: DomainArtwork,
+    destUser: DomainUser,
+    modifier: Modifier,
+    cardOnClick: () -> Unit,
+    currentUser: DomainUser
+){
+    Column(modifier = modifier) {
+        Column(
+            modifier = Modifier.padding(start = 15.dp, end = 15.dp, top = 25.dp)
+        ){
+            Text("Artwork", fontSize = 16.sp, color= Color.Black, fontWeight = FontWeight.SemiBold)
+
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(vertical = 25.dp).noRippleClickable {
+                    cardOnClick()
+                }
+            ) {
+                Box(){
+                    AsyncImage(
+                        model = artwork.url,
+                        contentDescription = null,
+                        modifier = Modifier.size(150.dp),
+                        contentScale = ContentScale.Crop
+                    )
+                }
+                Column(
+                    modifier = Modifier.fillMaxWidth().height(150.dp).padding(start = 10.dp , top = 5.dp),
+                    verticalArrangement = Arrangement.spacedBy(5.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(destUser.name!!, color = Color.Black, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                        Box(
+                            modifier = Modifier.padding(start = 10.dp)
+                                .clip(RoundedCornerShape(20.dp))
+                                .background(color = colorResource(R.color.lightgray))
+                                .padding(horizontal = 10.dp)
+                        ){
+                            if(destUser.mode == 0){
+                                Text("User", fontSize = 14.sp, color = Color.Black)
+                            }else{
+                                Text("Artist", fontSize = 14.sp, color = Color.Black)
+                            }
+                        }
+                    }
+                    Text(artwork.name!!, color = Color.Black, fontSize = 15.sp)
+                    Text(artwork.review!!, color = Color.Gray, fontSize = 14.sp, overflow = TextOverflow.Ellipsis)
+                }
+            }
+        }
+        Divider(thickness = 0.5.dp, color = Color.LightGray, modifier = Modifier.fillMaxWidth())
+
+        Column(
+            modifier = Modifier.padding(start = 15.dp, end = 15.dp, top = 25.dp)
+        ) {
+            Text("Users", fontSize = 16.sp, color= Color.Black, fontWeight = FontWeight.SemiBold)
+
+            Row(
+                modifier = Modifier.padding(top = 20.dp),
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
+                    userProfileImage(currentUser.profileImage)
+                    Text(currentUser.name, color = Color.Black, fontSize = 14.sp, modifier = Modifier.padding(start = 10.dp))
+                }
+                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
+                    userProfileImage(destUser.profileImage)
+                    Text(destUser.name, color = Color.Black, fontSize = 14.sp, modifier = Modifier.padding(start = 10.dp))
+                }
+            }
+
+        }
+
+//        Spacer(modifier = Modifier.weight(1f))
+//
+//        Column(modifier = Modifier.fillMaxWidth().padding(vertical = 20.dp, horizontal = 15.dp)) {
+//            Button(
+//                onClick = {
+//                    chatExitBtnOnClick()
+//                },
+//                colors = ButtonDefaults.buttonColors(
+//                    containerColor = Color.Black
+//                )
+//            ) {
+//                Text("채팅방 나가기", fontSize = 16.sp, color = Color.White)
+//            }
+//        }
+    }
+
+}
+
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterialApi::class)
 @SuppressLint("SuspiciousIndentation")
 @Composable
 fun chatRoomRoot(
@@ -126,22 +254,92 @@ fun chatRoomRoot(
     onValueChange: (String) -> Unit,
     inputBtnOnClicked: () -> Unit,
     modifier: Modifier,
+    artwork: DomainArtwork,
+    updateArtworkSoldState: (Boolean) -> Unit,
+    currentUser: DomainUser,
 ) {
-    Column(
-        modifier = modifier.background(Color.White).nestedScroll(
-            rememberNestedScrollInteropConnection()
-        )
-    ) {
-        MessageList(currentUserUid, messageList, destUser, Modifier.weight(1f).padding(start = 5.dp , end = 8.dp))
-        userMessageTextField(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 10.dp, vertical = 5.dp)
-                .imePadding(),
-            inputMessage = inputMessage,
-            onValueChange = onValueChange,
-            inputBtnOnClicked = { inputBtnOnClicked() }
-        )
+    val context = LocalContext.current
+    var expanded by remember { mutableStateOf(false) }
+    var selectedState by remember { mutableStateOf(if(artwork.sold) "거래완료" else "판매중") }
+    var artworkState = listOf("판매중","거래완료")
+
+    Box(modifier = modifier){
+        Column(
+            modifier = Modifier.nestedScroll(
+                rememberNestedScrollInteropConnection()
+            )
+        ) {
+            Row(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp, horizontal = 10.dp), verticalAlignment = Alignment.CenterVertically){
+                Box(
+                    modifier = Modifier.size(48.dp).clip(RoundedCornerShape(8.dp)).noRippleClickable {
+                        context.startActivity(Intent(context, ArtworkDetailActivity::class.java).putExtra("artwork", Gson().toJson(artwork)))
+                    }
+                ){
+                    AsyncImage(
+                        model = artwork.url,
+                        contentDescription = null,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.size(60.dp)
+                    )
+                }
+                Column(
+                    modifier = Modifier.padding(start = 15.dp),
+                ) {
+                    Text(DecimalFormat("#,###").format(artwork.minimalPrice.toInt() * 10000)+ "원", color = Color.Gray, fontSize = 14.sp)
+                }
+                Spacer(modifier = Modifier.weight(1f))
+                ExposedDropdownMenuBox(
+                    expanded = expanded,
+                    onExpandedChange = { if(currentUser.mode != 0){
+                        expanded = it
+                    } },
+                    modifier = Modifier.wrapContentSize()
+                ) {
+                    Button(
+                        onClick = {},
+                        colors = ButtonDefaults.buttonColors(containerColor = colorResource(R.color.soldOut)),
+                        contentPadding = PaddingValues(horizontal = 8.dp),
+                        shape = RoundedCornerShape(5.dp),
+                        modifier = Modifier.menuAnchor()
+                    ) { Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(selectedState, color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                        if(currentUser.mode != 0){
+                            Icon(Icons.Filled.KeyboardArrowDown, contentDescription = null, modifier = Modifier.size(18.dp))
+                        }
+                    } }
+
+                    ExposedDropdownMenu(
+                        expanded = expanded,
+                        onDismissRequest = { expanded = false},
+                        containerColor = Color.White,
+                        matchTextFieldWidth = false
+                    ) {
+                        artworkState.forEachIndexed { index, s ->
+                            DropdownMenuItem(
+                                onClick = {
+                                    selectedState = s
+                                    updateArtworkSoldState(if(index == 0) false else true)
+                                    expanded = !expanded
+                                },
+                                text = { Text(text = s) }
+                            )
+                        }
+                    }
+                }
+            }
+            Divider(thickness = 0.5.dp, modifier = Modifier.fillMaxWidth(), color = Color.LightGray)
+
+            MessageList(currentUserUid, messageList, destUser, Modifier.weight(1f).padding(start = 5.dp , end = 8.dp, bottom = 8.dp))
+            userMessageTextField(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 10.dp, vertical = 5.dp)
+                    .imePadding(),
+                inputMessage = inputMessage,
+                onValueChange = onValueChange,
+                inputBtnOnClicked = { inputBtnOnClicked() }
+            )
+        }
     }
 
 }
@@ -155,18 +353,18 @@ fun MessageList(
 ) {
     var listState = rememberLazyListState(initialFirstVisibleItemIndex = messageList.size)
 
+    LaunchedEffect(key1 = messageList.size) {
+        if(messageList.isNotEmpty()){
+            listState.scrollToItem(messageList.size - 1)
+        }
+    }
+
     // 메시지를 날짜별로 그룹화하고 포맷 처리
     val groupedMessages = messageList
         .groupBy { it.timestamp.split("/").first() }
         .mapKeys { formatDate(it.key) }
         .toList()
         .sortedBy { it.first }
-
-    LaunchedEffect(key1 = messageList.size) {
-        if(messageList.isNotEmpty()){
-            listState.scrollToItem(messageList.size - 1)
-        }
-    }
 
     LazyColumn(
         state = listState,
@@ -278,10 +476,6 @@ fun userProfileImage(imageUrl: String){
             .background(color = colorResource(id = R.color.lightgray)),
         contentAlignment = Alignment.Center,
     ){
-//        Image(
-//            painter = painterResource(id = imageUrl.toInt()),
-//            contentDescription = null
-//        )
         if(imageUrl.isEmpty()){
             Icon(painter = painterResource(R.drawable.profile), contentDescription = null, modifier = Modifier.size(20.dp))
         }else{
@@ -327,7 +521,7 @@ fun userMessageTextField(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ChatRoomActivityTopBar(name: String){
+fun ChatRoomActivityTopBar(name: String, details: Boolean, detailsOnChange: (Boolean) -> Unit){
     var context = LocalContext.current
     Column() {
         CenterAlignedTopAppBar(
@@ -345,9 +539,20 @@ fun ChatRoomActivityTopBar(name: String){
             ),
             navigationIcon = {
                 IconButton(onClick = {
-                    (context as Activity).finish()
+                    if(details){
+                        detailsOnChange(!details)
+                    }else{
+                        (context as Activity).onBackPressed()
+                    }
                 }) { Icon(painter = painterResource(id = R.drawable.back), contentDescription = "뒤로가기") }
             },
+            actions = {
+                if(!details){
+                    IconButton(onClick = {
+                        detailsOnChange(!details)
+                    }) { Icon(painterResource(R.drawable.alert), contentDescription = null)}
+                }
+            }
         )
         Divider(thickness = 0.5.dp, color = Color.LightGray)
     }
@@ -356,30 +561,44 @@ fun ChatRoomActivityTopBar(name: String){
 @Preview(showBackground = true)
 @Composable
 fun GreetingPreview() {
-
+    var details by remember { mutableStateOf(false) }
     Scaffold(
         topBar = {
-            ChatRoomActivityTopBar("asdf")
+            ChatRoomActivityTopBar(name = if(!details) "artwork" else "Details", details = details, detailsOnChange = { details = it})
         },
         modifier = Modifier.fillMaxSize().background(Color.White)
-    ) {
-        chatRoomRoot(
-            inputMessage = "",
-            currentUserUid = "123",
-            messageList = listOf(
-                DomainMessage(message = "hibrobrobrobro", senderUid = "123", timestamp = "2025.02.11/13:54"),
-                DomainMessage(message = "hibrobrobrobro", senderUid = "123", timestamp = "2025.02.11/13:54"),
-                DomainMessage(message = "hibrobrobrobro", senderUid = "1234", timestamp = "2025.02.11/14:54"),
-                DomainMessage(message = "hibrobrobrobro", senderUid = "1234", timestamp = "2025.02.11/14:54"),
-                DomainMessage(message = "hibrobrobrobro", senderUid = "1234", timestamp = "2025.02.11/14:54"),
-                DomainMessage(message = "hibrobrobrobro", senderUid = "1234", timestamp = "2025.02.11/14:54"),
-                DomainMessage(message = "hibrobrobrobro", senderUid = "1234", timestamp = "2025.02.11/14:54"),
-                DomainMessage(message = "hibrobrobrobro", senderUid = "1234", timestamp = "2025.02.12/16:54"),
+    ) { padding ->
+        if(!details){
+            chatRoomRoot(
+                inputMessage = "",
+                currentUserUid = "123",
+                destUser = DomainUser(name = "최윤석"),
+                messageList = listOf(
+                    DomainMessage(message = "hibrobrobrobro", senderUid = "123", timestamp = "2025.02.11/13:54"),
+                    DomainMessage(message = "hibrobrobrobro", senderUid = "123", timestamp = "2025.02.11/13:54"),
+                    DomainMessage(message = "hibrobrobrobro", senderUid = "1234", timestamp = "2025.02.11/14:54"),
+                    DomainMessage(message = "hibrobrobrobro", senderUid = "1234", timestamp = "2025.02.11/14:54"),
+                    DomainMessage(message = "hibrobrobrobro", senderUid = "1234", timestamp = "2025.02.11/14:54"),
+                    DomainMessage(message = "hibrobrobrobro", senderUid = "1234", timestamp = "2025.02.11/14:54"),
+                    DomainMessage(message = "hibrobrobrobro", senderUid = "1234", timestamp = "2025.02.11/14:54"),
+                    DomainMessage(message = "hibrobrobrobro", senderUid = "1234", timestamp = "2025.02.12/16:54"),
                 ),
-            onValueChange = {},
-            inputBtnOnClicked = {},
-            destUser = DomainUser(name = "최윤석"),
-            modifier = Modifier.fillMaxSize().padding(it)
-        )
+                onValueChange = {},
+                inputBtnOnClicked = {},
+                modifier = Modifier.fillMaxSize().padding(padding),
+                artwork = DomainArtwork(name = "asdfasdf",minimalPrice = "12"),
+                currentUser = DomainUser(mode = 1),
+                updateArtworkSoldState = {}
+            )
+        }else{
+            ArtworkInfo(
+                artwork = DomainArtwork(minimalPrice = "12",
+                name = "asfasdfasf", review = "asfasdfasdfasdfasdklfasdklfkasdfjfklajsdklfjaklsdflkasdjfklasdjfklasdjfkljasklfkljlasfasdfasdfasdfasdklfasdklfkasdfjfklajsdklfjaklsdflkasdjfklasdjfklasdjfkljasklfkljlasfasdfasdfasdfasdklfasdklfkasdfjfklajsdklfjaklsdflkasdjfklasdjfklasdjfkljasklfkljlasfasdfasdfasdfasdklfasdklfkasdfjfklajsdklfjaklsdflkasdjfklasdjfklasdjfkljasklfkljlasfasdfasdfasdfasdklfasdklfkasdfjfklajsdklfjaklsdflkasdjfklasdjfklasdjfkljasklfkljlasfasdfasdfasdfasdklfasdklfkasdfjfklajsdklfjaklsdflkasdjfklasdjfklasdjfkljasklfkljl"),
+                destUser = DomainUser(name = "정은숙"),
+                modifier = Modifier.fillMaxSize().background(Color.White).padding(padding),
+                cardOnClick = {},
+                currentUser = DomainUser(name = "최윤석"),
+            )
+        }
     }
 }
