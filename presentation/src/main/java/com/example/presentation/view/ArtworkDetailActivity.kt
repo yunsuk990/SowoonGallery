@@ -47,6 +47,7 @@ import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -86,7 +87,7 @@ class ArtworkDetailActivity : ComponentActivity() {
                 viewModel.getLikedArtwork(artworkUid = artwork.key!!)
                 //viewModel.getLikedCountArtwork(artwork.key!!, artwork.category!!)
                 viewModel.getArtistInfo(artwork.artistUid!!)
-                viewModel.getArtistArtworks(artwork.artistUid!!, artwork.key!!)
+                viewModel.getArtistArtworks(artwork.artistUid!!)
             }
 
             SowoonTheme {
@@ -390,7 +391,7 @@ fun artistProfile(modifier: Modifier, artist: DomainUser, artistInfoBtnOnClick: 
                 modifier = Modifier.padding(start = 15.dp)
             ) {
                 Text(text = artist!!.name, fontSize = 14.sp, color = Color.Black)
-                Text(text = "American,b.1999", fontSize = 14.sp, color = Color.Gray)
+                Text(text = artist.artistProfile.career.graduate, fontSize = 14.sp, color = Color.Gray, maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
             Spacer(modifier = Modifier.weight(1f))
             Icon(painter = painterResource(id = R.drawable.forward), contentDescription = null)
@@ -416,14 +417,15 @@ fun userActionButton(
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 10.dp)
     ) {
+        val price = if(artwork.minimalPrice.isEmpty()) 0 else artwork.minimalPrice.toInt()
 
         Row(
             modifier = Modifier.padding(20.dp),
         ) {
             Column {
-                Text(text = if(artwork.sold) "판매완료 (가격제안 가능)" else "판매중 (가격제안 가능)", fontSize = 16.sp, color = Color.Black)
+                Text(text = if(artwork.sold) "판매완료" else "판매중 (가격제안 가능)", fontSize = 14.sp, color = Color.Black)
                 Spacer(modifier = Modifier.height(3.dp))
-                Text(text = DecimalFormat("#,###").format(artwork.minimalPrice.toInt() * 10000)+ "원", fontSize = 20.sp, fontWeight = FontWeight.Medium, color = Color.Black)
+                Text(text = DecimalFormat("#,###").format(price * 10000)+ "원", fontSize = 20.sp, fontWeight = FontWeight.Medium, color = Color.Black)
             }
             Spacer(modifier = Modifier.weight(1f))
             TextButton(
@@ -531,7 +533,8 @@ fun artworkActivityTest(){
         review = "this is made in 2024",
         category = "한국화",
         size = "20 * 30",
-        material = "acril"
+        material = "acril",
+        minimalPrice = "15"
     )
     Surface(modifier = Modifier.fillMaxSize()) {
         ArtworkDetailScreen(
@@ -546,12 +549,5 @@ fun artworkActivityTest(){
             bookmarkBtnOnClick = {},
             artistInfoBtnOnClick = {}
         ) { }
-//        artistOtherArtworks(
-//            modifier = Modifier,
-//            name = "정은숙",
-//            artistArtworks = listOf(artwork, artwork,artwork),
-//            userInfo = DomainUser(),
-//            isLoadingArtistArtworks = true
-//        )
     }
 }
