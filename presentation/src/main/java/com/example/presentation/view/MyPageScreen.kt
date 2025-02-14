@@ -224,7 +224,7 @@ fun userSection(modifier: Modifier, title: String, icon: Int, size: Int, onClick
                 onClick()
             }
     ){
-        Text(text = size.toString(), fontSize = 16.sp, color = Color.Black, fontWeight = FontWeight.Bold)
+        Text(text = "${size} 개", fontSize = 16.sp, color = Color.Black, fontWeight = FontWeight.Bold)
         Spacer(modifier = Modifier.height(8.dp))
         Row(
             verticalAlignment = Alignment.CenterVertically,
