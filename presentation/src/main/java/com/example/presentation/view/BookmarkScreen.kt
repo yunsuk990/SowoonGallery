@@ -1,6 +1,10 @@
 package com.example.presentation.view
 
-import androidx.compose.foundation.layout.Column
+import android.content.Intent
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
+import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
+import androidx.compose.foundation.lazy.staggeredgrid.rememberLazyStaggeredGridState
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -13,27 +17,66 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import androidx.navigation.compose.rememberNavController
+import com.example.domain.model.DomainArtwork
 import com.example.presentation.R
 import com.example.presentation.viewModel.MainViewModel
+import com.google.gson.Gson
 
 @Composable
 fun BookMarkScreen(viewModel: MainViewModel, navController: NavController) {
     val favoriteItem by viewModel.artworkFavoriteLiveData.collectAsState()
-
-    LaunchedEffect(key1 = favoriteItem){
+    val context = LocalContext.current
+    LaunchedEffect(Unit){
         viewModel.getFavoriteArtworksList()
     }
+    BookMarkRoot(
+        navController = navController,
+        favoriteItem = favoriteItem,
+        artworkOnClick = { artwork ->
+            context.startActivity(Intent(context, ArtworkDetailActivity::class.java).putExtra("artwork", Gson().toJson(artwork)))
+        }
+    )
+}
+
+@Composable
+fun BookMarkRoot(navController: NavController, favoriteItem: List<DomainArtwork>, artworkOnClick: (DomainArtwork) -> Unit) {
+
     Column {
         BookMarkScreenTopBar(navController)
-        artworkGridLayout(artworkList = favoriteItem)
-    }
+        Text("${favoriteItem.size} 개 작품 :", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color.Black, modifier = Modifier.padding(horizontal = 15.dp, vertical = 15.dp))
+        Divider(thickness = 1.dp, color = Color.LightGray)
+        BookMarkLikedGridLayout(item = favoriteItem, artworkOnClick = artworkOnClick)
 
+    }
+}
+
+@Composable
+fun BookMarkLikedGridLayout(item: List<DomainArtwork>, artworkOnClick: (DomainArtwork) -> Unit) {
+    LazyVerticalStaggeredGrid(
+        modifier = Modifier.padding(top = 20.dp, start = 15.dp, end = 15.dp).fillMaxHeight(1f),
+        columns = StaggeredGridCells.Fixed(2),
+        horizontalArrangement = Arrangement.spacedBy(15.dp),
+        verticalItemSpacing = 15.dp,
+        state = rememberLazyStaggeredGridState()
+    ) {
+        items(item.size){ index ->
+            artistArtworkCard(
+                artwork = item[index],
+                onClick = { artworkOnClick(item[index])}
+            )
+        }
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -62,5 +105,12 @@ fun BookMarkScreenTopBar(navController: NavController) {
 @Preview(showBackground = true, backgroundColor = 0xffffff)
 @Composable
 fun testFavorite(){
-
+    BookMarkRoot(
+        navController = rememberNavController(),
+        favoriteItem = listOf(
+            DomainArtwork(name = "asdfasdf", minimalPrice = "10"),
+            DomainArtwork(name = "asdfasdf", minimalPrice = "10"),
+            DomainArtwork(name = "asdfasdf", minimalPrice = "10")),
+        artworkOnClick = { artwork -> }
+    )
 }
