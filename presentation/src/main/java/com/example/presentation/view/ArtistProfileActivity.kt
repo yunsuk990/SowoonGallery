@@ -435,6 +435,10 @@ fun artistIntroduceScreen(artistInfo: DomainUser, userInfo: DomainUser, artistCa
 
 @Composable
 fun artistArtworksScreen(artworks: List<DomainArtwork>, lazyListState: LazyStaggeredGridState, artworkFilterChange: (ArtworkSort) -> Unit){
+    LaunchedEffect(Unit) {
+        artworkFilterChange(ArtworkSort.NONE)
+    }
+
     Column() {
         artworkDropDownMenu(artworks = artworks, artworkFilterChange = artworkFilterChange)
         artistArtworksGridLayout(artworks = artworks, lazyListState)
@@ -487,7 +491,7 @@ fun artistArtworkCard(artwork: DomainArtwork, onClick: () -> Unit){
             if(artwork.sold){
                 Text("판매완료", color = Color.Gray, fontSize = 12.sp)
             }else{
-                Text( text = DecimalFormat("#,###").format(artwork.minimalPrice.toInt() * 10000)+ "원", color = Color.Gray, fontSize = 12.sp)
+                Text( text = DecimalFormat("#,###").format(artwork.minimalPrice.toInt() * 10000)+ "원", color = Color.Gray, fontSize = 12.sp, lineHeight = 10.sp)
             }
         }
     }
@@ -525,7 +529,7 @@ fun artworkDropDownMenu(artworks: List<DomainArtwork>, artworkFilterChange: (Art
                 contentDescription = "정렬기준",
                 modifier = Modifier
                     .size(22.dp)
-                    .noRippleClickable {
+                    .clickable {
                         dropDownMenuExpanded = true
                     }
             )
