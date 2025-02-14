@@ -139,11 +139,11 @@ class ArtworkViewModel @Inject constructor(
         }
     }
 
-    fun getArtistArtworks(artistUid: String, key: String) {
+    fun getArtistArtworks(artistUid: String) {
         viewModelScope.launch {
             _isLoadingArtistArtworks.value = true
             var result = getArtworksUseCase.executeByUid(artistUid)
-            _artistArtworks.value = result.filter { it.key != key }
+            _artistArtworks.value = result
             Log.d("getArtistArtworks_viewModel", result.toString())
             _isLoadingArtistArtworks.value = false
         }
