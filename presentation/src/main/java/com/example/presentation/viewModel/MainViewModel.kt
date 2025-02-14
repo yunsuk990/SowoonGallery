@@ -75,6 +75,9 @@ class MainViewModel @Inject constructor(
     private val _isLoadingRecentArtworks = MutableStateFlow(true)
     val isLoadingRecentArtworks: StateFlow<Boolean> = _isLoadingRecentArtworks.asStateFlow()
 
+    private val _unreadMessageCount = MutableStateFlow<Int>(0)
+    val unreadMessageCount: StateFlow<Int> = _unreadMessageCount
+
     init {
         viewModelScope.launch {
             getAuthStateUseCase.execute()
@@ -108,7 +111,7 @@ class MainViewModel @Inject constructor(
     fun loadRecentArtworks(limit : Int = 10){
         viewModelScope.launch {
             _isLoadingRecentArtworks.value = true
-            _artistRecentArtworks.value = getRecentArtworksUseCase.execute(limit)
+            _artistRecentArtworks.value = getRecentArtworksUseCase.execute(limit).reversed()
             _isLoadingRecentArtworks.value = false
         }
     }
@@ -119,7 +122,12 @@ class MainViewModel @Inject constructor(
         uid?.let {
             viewModelScope.launch {
                 getUserChatListsUseCase.execute(uid).collect{ chatRoomLists ->
-                    _chatRoomsList.value = chatRoomLists
+                    var sum = 0
+                    chatRoomLists.forEach{ chatRoom ->
+                        sum += chatRoom.chatRoom.unreadMessages[uid]!!
+                    }
+                    _chatRoomsList.value = chatRoomLists.sortedByDescending{ it.chatRoom.lastMessage.timestamp }
+                    _unreadMessageCount.value = sum
                     Log.d("loadChatLists", chatRoomLists.toString())
                 }
 

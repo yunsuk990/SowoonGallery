@@ -11,22 +11,16 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.BottomNavigation
 import androidx.compose.material.BottomNavigationItem
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -61,10 +55,11 @@ class MainActivity : ComponentActivity() {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainScreen(viewModel: MainViewModel){
-    val navController = rememberNavController()
+    val navController = rememberNavController()//
+    val unreadMessage by viewModel.unreadMessageCount.collectAsState()
 
     Scaffold(
-        bottomBar = { BottomAppBar(navController) },
+        bottomBar = { BottomAppBar(navController, unreadMessage) },
     ) { innerPadding ->
         MyAppNavHost(
             navController = navController,
@@ -93,7 +88,7 @@ fun MyAppNavHost(
 }
 
 @Composable
-fun BottomAppBar(navController: NavHostController) {
+fun BottomAppBar(navController: NavHostController, unreadMessage: Int) {
     val backStackEntry by navController.currentBackStackEntryAsState()
     var items = listOf(Screen.Home, Screen.Profile, Screen.Chat, Screen.MyPage)
     val currentRoute = backStackEntry?.destination?.route
@@ -137,14 +132,47 @@ fun BottomAppBar(navController: NavHostController) {
                     )
                 },
                 icon = {
-                    Icon(
-                        painter = if(isSelected) painterResource(id = items[index].iconClicked) else painterResource(id = items[index].iconBorder),
-                        tint = if(isSelected) Color.Black else Color.LightGray,
-                        contentDescription = null,
-                        modifier = Modifier
-                            .size(35.dp)
-                            .padding(1.dp)
-                    )
+                    if(screen == Screen.Chat){
+                        if(unreadMessage > 0){
+                            BadgedBox(
+                                badge = {
+                                    Badge(
+                                        containerColor = colorResource(R.color.messageCount),
+                                        contentColor = Color.White
+                                    ){
+                                        Text(unreadMessage.toString())
+                                    }
+                                }
+                            ) {
+                                Icon(
+                                    painter = if(isSelected) painterResource(id = items[index].iconClicked) else painterResource(id = items[index].iconBorder),
+                                    tint = if(isSelected) Color.Black else Color.LightGray,
+                                    contentDescription = null,
+                                    modifier = Modifier
+                                        .size(35.dp)
+                                        .padding(1.dp)
+                                )
+                            }
+                        }else{
+                            Icon(
+                                painter = if(isSelected) painterResource(id = items[index].iconClicked) else painterResource(id = items[index].iconBorder),
+                                tint = if(isSelected) Color.Black else Color.LightGray,
+                                contentDescription = null,
+                                modifier = Modifier
+                                    .size(35.dp)
+                                    .padding(1.dp)
+                            )
+                        }
+                    }else{
+                        Icon(
+                            painter = if(isSelected) painterResource(id = items[index].iconClicked) else painterResource(id = items[index].iconBorder),
+                            tint = if(isSelected) Color.Black else Color.LightGray,
+                            contentDescription = null,
+                            modifier = Modifier
+                                .size(35.dp)
+                                .padding(1.dp)
+                        )
+                    }
                 },
                 alwaysShowLabel = true,
                 modifier = Modifier.padding(top = 5.dp, bottom = 5.dp)
