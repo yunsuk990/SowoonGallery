@@ -99,8 +99,6 @@ fun HomeRoot(
             isLoadingRecentArtworks = isLoadingRecentArtworks,
             navigateToArworkDetailScreen = navigateToArworkDetailScreen
         )
-        val alpha = calculateAlpha(scrollState.value)
-        ArtInfo(alpha)
     }
     if(imageTranslate){
         FullScreenArtwork(imageUrl = R.drawable.sowoon_bg) {
@@ -157,31 +155,12 @@ fun artworkHomeCard(artwork: DomainArtwork, modifier: Modifier, onClick: () -> U
                 imageWidth = coordinates.size.width },
             contentDescription = null,
         )
-//        Image(
-//            painter = painterResource(R.drawable.artist_profile),
-//            modifier = modifier.onGloballyPositioned { coordinates ->
-//                imageWidth = coordinates.size.width },
-//            contentScale = ContentScale.Crop,
-//            contentDescription = null,
-//        )
-
-
-//        Row(
-//            modifier = Modifier.width(with(LocalDensity.current){ imageWidth.toDp()}).padding(3.dp),
-//            verticalAlignment = Alignment.CenterVertically,
-//        ){
-//            Text(text = artwork.name!!, color = Color.Black, fontSize = 14.sp)
-//            Spacer(modifier = Modifier.weight(1f))
-//            Text(text = artwork.likedArtworks.size.toString(), color = Color.Black, fontSize = 14.sp)
-//            Image(painter = painterResource(R.drawable.heart_filled), contentDescription = null, modifier = Modifier.size(25.dp))
-//        }
     }
 }
 
 @Composable
 fun AdvertiseImages(advertiseImageState: List<String>, imageLaunch: () -> Unit, isLoadingAdvertiseImages: Boolean) {
     val pagerState = rememberPagerState(pageCount = {advertiseImageState.size})
-    val testList = listOf(R.drawable.sowoon_bg, R.drawable.logo_final, R.drawable.sowoon_bg)
     val context = LocalContext.current
 
     if(isLoadingAdvertiseImages){
@@ -246,15 +225,6 @@ fun AdvertiseImages(advertiseImageState: List<String>, imageLaunch: () -> Unit, 
     }
 }
 
-
-
-// Alpha 계산 로직
-fun calculateAlpha(scrollValue: Int): Float {
-    Log.d("alpha", scrollValue.toString())
-    val triggerStart = 300f  // Alpha 변화 시작 지점 (스크롤 값)
-    val triggerEnd = 500f    // Alpha 변화 종료 지점 (스크롤 값)
-    return ((scrollValue - triggerStart) / (triggerEnd - triggerStart)).coerceIn(0f, 1f)
-}
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3Api::class)
 @Composable
 fun HomeTopBar(isLoggedIn: Boolean){
