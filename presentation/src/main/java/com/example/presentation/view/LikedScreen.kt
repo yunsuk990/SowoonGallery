@@ -1,6 +1,8 @@
 package com.example.presentation.view
 
+import android.content.Intent
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -15,26 +17,47 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import androidx.navigation.compose.rememberNavController
+import com.example.domain.model.DomainArtwork
 import com.example.presentation.R
 import com.example.presentation.utils.noRippleClickable
 import com.example.presentation.viewModel.MainViewModel
+import com.google.gson.Gson
 
 @Composable
 fun LikedScreen(viewModel: MainViewModel, navController: NavController) {
     val likedItem by viewModel.artworkLikedLiveData.collectAsState()
+    val context = LocalContext.current
 
     LaunchedEffect(key1 = likedItem){
         viewModel.getLikedArtworksList()
     }
+
+    LikedRoot(
+        navController = navController,
+        likedItem = likedItem,
+        artworkOnClick = { artwork ->
+            context.startActivity(Intent(context, ArtworkDetailActivity::class.java).putExtra("artwork", Gson().toJson(artwork)))
+        }
+    )
+}
+
+@Composable
+fun LikedRoot(navController: NavController, likedItem: List<DomainArtwork>, artworkOnClick: (DomainArtwork) -> Unit) {
     Column {
         LikedTopBar(navController)
-        artworkGridLayout(artworkList = likedItem)
+        Text("${likedItem.size} 개 작품 :", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color.Black, modifier = Modifier.padding(horizontal = 15.dp, vertical = 15.dp))
+        Divider(thickness = 1.dp, color = Color.LightGray)
+        BookMarkLikedGridLayout(item = likedItem, artworkOnClick = artworkOnClick)
     }
-
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -63,4 +86,17 @@ fun LikedTopBar(navController: NavController) {
         actions = {},
     )
     Divider(thickness = 0.5.dp, color = Color.LightGray)
+}
+
+@Preview(showBackground = true, backgroundColor = 0xffffff)
+@Composable
+fun likedScreenTest(){
+    LikedRoot(
+        navController = rememberNavController(),
+        likedItem = listOf(
+            DomainArtwork(name = "asdfasdf", minimalPrice = "10"),
+            DomainArtwork(name = "asdfasdf", minimalPrice = "10"),
+            DomainArtwork(name = "asdfasdf", minimalPrice = "10")),
+        artworkOnClick = { artwork -> }
+    )
 }
