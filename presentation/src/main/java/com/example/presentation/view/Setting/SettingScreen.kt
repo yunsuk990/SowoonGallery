@@ -1,4 +1,4 @@
-package com.example.presentation.view
+package com.example.presentation.view.Setting
 
 import android.content.Intent
 import android.util.Log
@@ -26,6 +26,7 @@ import com.example.presentation.R
 import com.example.presentation.model.Screen
 import com.example.presentation.utils.LogOutToastMessage
 import com.example.presentation.utils.LoginToastMessage
+import com.example.presentation.view.StartActivity
 import com.example.presentation.viewModel.MainViewModel
 import com.google.gson.Gson
 
@@ -101,6 +102,7 @@ fun SettingRoot(
     Column(modifier = modifier) {
         Text(text = "Settings", color = Color.Black, fontSize = 16.sp, modifier = Modifier.padding(start = 15.dp, top = 20.dp))
         menuItem(
+            icon = R.drawable.setting_profile,
             title = "프로필 수정",
             onClick = {
                 if(userInfo.uid.isEmpty()){
@@ -110,18 +112,43 @@ fun SettingRoot(
                 }
             }
         )
-        menuItem("계정 관리"){}
-        menuItem("앱 관리"){}
-        menuItem("공지사항"){}
-        menuItem("문의하기"){}
-        menuItem("이벤트"){}
+        menuItem(
+            icon = R.drawable.alert,
+            title = "앱 관리", onClick = {
+                if(userInfo.uid.isEmpty()){
+                    requestLogin()
+                }else{
+                    context.startActivity(Intent(context, AppVersionActivity::class.java))
+                }
+            }
+        )
+        menuItem(
+            icon = R.drawable.notification,
+            title = "공지사항",
+            onClick = {
+                if(userInfo.uid.isEmpty()){
+                    requestLogin()
+                }else{
+                    context.startActivity(Intent(context, AnnounceActivity::class.java))
+                }
+            })
+        menuItem(
+            icon = R.drawable.help,
+            title = "문의하기",
+            onClick = {})
+        menuItem(
+            icon = R.drawable.alert,
+            title = "이벤트",
+            onClick = {})
+
+
         Spacer(modifier = Modifier.weight(1f))
         actionBtn()
     }
 }
 
 @Composable
-fun menuItem(title: String, onClick: () -> Unit){
+fun menuItem(icon: Int, title: String, onClick: () -> Unit){
 
     Column(
         modifier = Modifier.clickable {
@@ -134,7 +161,7 @@ fun menuItem(title: String, onClick: () -> Unit){
                 .padding(start = 10.dp, end = 10.dp, top = 25.dp, bottom = 25.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(painter = painterResource(id = R.drawable.alert), contentDescription = null)
+            Icon(painter = painterResource(id = icon), contentDescription = null)
             Spacer(modifier = Modifier.width(15.dp))
             Text(text = title, fontSize = 16.sp, color = Color.Black)
         }
@@ -197,7 +224,7 @@ fun SettingTopAppBar(navController: NavController){
 fun TestSettingScreen(){
     var navController = rememberNavController()
     Scaffold(
-        topBar = { SettingTopAppBar(navController)},
+        topBar = { SettingTopAppBar(navController) },
     ) { innerpadding ->
         SettingRoot(
             modifier = Modifier
