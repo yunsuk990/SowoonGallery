@@ -49,11 +49,13 @@ class DataSourceModule {
     fun provideAuthDataSource(
         firebaseAuth: FirebaseAuth,
         firebaseRtdb: FirebaseDatabase,
+        firebaseStorage: FirebaseStorage,
         @ApplicationContext context: Context
     ): AuthDataSource {
         return AuthDataSourceImpl(
             firebaseAuth,
             firebaseRtdb,
+            firebaseStorage,
             context
         )
     }
