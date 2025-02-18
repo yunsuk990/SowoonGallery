@@ -171,6 +171,63 @@ fun SignOutToastMessage(dismissOnClick: () -> Unit, confirmOnClick: () -> Unit){
     }
 }
 
+@Composable
+fun chatRoomExitToastMessage(dismissOnClick: () -> Unit, confirmOnClick: () -> Unit){
+    Dialog(
+        onDismissRequest = { dismissOnClick() },
+    ){
+        Card(
+            colors = CardDefaults.cardColors(
+                containerColor = Color.White
+            )
+        ) {
+            Column(
+                modifier = Modifier.padding(15.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text("구매 확정하기",
+                    color = Color.Black,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 16.sp,
+                    modifier = Modifier.padding(top = 15.dp)
+                )
+                Spacer(modifier = Modifier.padding(top = 10.dp))
+                Text("나가기 버튼 선택 시 모든 대화기록이\n삭제됩니다.", color = Color.Gray, fontSize = 14.sp, textAlign = TextAlign.Center)
+                Spacer(modifier = Modifier.padding(top = 25.dp))
+                Text("채팅방을 나가시겠어요?", color = Color.Gray, fontSize = 14.sp)
+
+                Row(
+                    modifier = Modifier.padding(top = 25.dp)
+                ) {
+                    Button(
+                        modifier = Modifier.weight(1f),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color.LightGray
+                        ),
+                        shape = RoundedCornerShape(10.dp),
+                        contentPadding = PaddingValues(vertical = 12.dp),
+                        onClick = { dismissOnClick() }
+                    ) {
+                        Text("취소", color = Color.Black, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                    }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Button(
+                        modifier = Modifier.weight(1f),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color.Black
+                        ),
+                        contentPadding = PaddingValues(vertical = 12.dp),
+                        shape = RoundedCornerShape(10.dp),
+                        onClick = { confirmOnClick() }
+                    ) {
+                        Text("확정하기", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                    }
+                }
+            }
+        }
+    }
+}
+
 
 @Preview()
 @Composable
@@ -188,4 +245,10 @@ fun testLogOutToastMessage(){
 @Composable
 fun testSignOutToastMessage(){
     SignOutToastMessage({}, {})
+}
+
+@Preview()
+@Composable
+fun testChatRoomExitToastMessage(){
+    chatRoomExitToastMessage({}, {})
 }
