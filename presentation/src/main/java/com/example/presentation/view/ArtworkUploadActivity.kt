@@ -1,8 +1,13 @@
 package com.example.presentation.view
 
+import android.Manifest
 import android.app.Activity
+import android.content.ContentValues
+import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
+import android.os.Environment
+import android.provider.MediaStore
 import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
@@ -43,10 +48,11 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import coil3.compose.AsyncImage
 import com.example.domain.model.DomainArtwork
 import com.example.presentation.R
@@ -88,7 +94,7 @@ class ArtworkUploadActivity : ComponentActivity() {
                                 viewModel.uploadNewArtwork(list)
                             }
                         },
-                        userUid = userUid
+                        userUid = userUid,
                     )
                 }
             }
@@ -131,19 +137,50 @@ class ArtworkUploadActivity : ComponentActivity() {
 fun ArtworkUploadScreen(
     uploadState: UploadState,
     uploadBtnOnClick: (List<Pair<Uri, DomainArtwork>>) -> Unit,
-    userUid: String?
+    userUid: String?,
 ) {
+    val CAMERAX_PERMISSIONS =  arrayOf(
+        Manifest.permission.CAMERA,
+    )
     val context = LocalContext.current
     val sheetState = rememberModalBottomSheetState(initialValue = ModalBottomSheetValue.Hidden)
     val scope = rememberCoroutineScope()
     var imageUri by remember { mutableStateOf<Uri?>(null) }
     var imageUris by remember { mutableStateOf<List<Uri>>(emptyList())}
-    val singlePhotoPickerLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.PickVisualMedia(),
-        onResult = { uri -> uri?.let { imageUri = it } }
-    )
 
     var currentUri by remember { mutableStateOf<Uri?>(null) }
+
+    val cameraLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.TakePicture()
+    ) { success ->
+        if (success && imageUri != null) {
+            currentUri = imageUri
+            imageUris = listOf(imageUri!!)
+            Log.d("CameraCapture", "사진 저장 완료: ${imageUri}")
+        }
+    }
+
+    fun hasRequiredPermissions(): Boolean {
+        return CAMERAX_PERMISSIONS.all {
+            ContextCompat.checkSelfPermission(
+                context.applicationContext,
+                it
+            ) == PackageManager.PERMISSION_GRANTED
+        }
+    }
+
+    fun createImageFile(): Uri? {
+        val resolver = context.contentResolver
+        val contentValues = ContentValues().apply {
+            put(
+                MediaStore.MediaColumns.DISPLAY_NAME,
+                "IMG_${System.currentTimeMillis()}.jpg"
+            )
+            put(MediaStore.MediaColumns.MIME_TYPE, "image/jpeg")
+            put(MediaStore.Images.Media.RELATIVE_PATH, Environment.DIRECTORY_PICTURES)
+        }
+        return resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues)
+    }
 
     // 이미지별 데이터를 Map으로 관리
     var artworkDataMap by remember { mutableStateOf(mutableMapOf<Uri, DomainArtwork>())}
@@ -155,12 +192,24 @@ fun ArtworkUploadScreen(
             if(uris.isNotEmpty()){
                 currentUri = uris.first()
             }
+            scope.launch {
+                sheetState.hide()
+            }
         }
     )
 
 
     ModalBottomSheetLayout(
-        sheetContent = { ModalBottomSheet(sheetState, singlePhotoPickerLauncher, mutliplePhotoPickerLauncher) },
+        sheetContent = {
+            artworkUploadModalBottom(
+                sheetState = sheetState,
+                singlePhotoPickerLauncher = null,
+                mutliplePhotoPickerLauncher = mutliplePhotoPickerLauncher,
+                cameraStart = {
+                    imageUri = createImageFile()
+                    cameraLauncher.launch(imageUri!!)
+                }
+        ) },
         sheetState = sheetState,
         modifier = Modifier.fillMaxSize()
     ) {
@@ -178,8 +227,14 @@ fun ArtworkUploadScreen(
                         .height(300.dp)
                         .background(color = colorResource(R.color.lightwhite))
                         .clickable {
-                            scope.launch {
-                                sheetState.show()
+                            if(!hasRequiredPermissions()){
+                                ActivityCompat.requestPermissions(
+                                    context as Activity, CAMERAX_PERMISSIONS, 0
+                                )
+                            }else{
+                                scope.launch {
+                                    sheetState.show()
+                                }
                             }
                         }
                 ){
@@ -396,19 +451,28 @@ private fun outLinedTextField(title:String, text: String, onValueChange: (String
 }
 
 @Composable
-fun ModalBottomSheet(
+fun artworkUploadModalBottom(
     sheetState: ModalBottomSheetState,
-    singlePhotoPickerLauncher: ManagedActivityResultLauncher<PickVisualMediaRequest, Uri?>,
-    mutliplePhotoPickerLauncher: ManagedActivityResultLauncher<PickVisualMediaRequest, List<@JvmSuppressWildcards Uri>>?
+    singlePhotoPickerLauncher: ManagedActivityResultLauncher<PickVisualMediaRequest, Uri?>?,
+    mutliplePhotoPickerLauncher: ManagedActivityResultLauncher<PickVisualMediaRequest, List<Uri>>?,
+    cameraStart: () -> Unit,
+    
 ) {
     val scope = rememberCoroutineScope()
     Column {
         Text(text = "사진 선택", fontSize = 16.sp, color = Color.Black, modifier = Modifier
             .fillMaxWidth()
             .clickable {
-                singlePhotoPickerLauncher.launch(
-                    PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
-                )
+                if(singlePhotoPickerLauncher == null){
+                    mutliplePhotoPickerLauncher?.launch(
+                        PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                    )
+                }else{
+                    singlePhotoPickerLauncher.launch(
+                        PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                    )
+                }
+
                 scope.launch {
                     sheetState.hide()
                 }
@@ -417,17 +481,7 @@ fun ModalBottomSheet(
         Text(text = "사진 촬영", fontSize = 16.sp, color = Color.Black, modifier = Modifier
             .fillMaxWidth()
             .clickable {
-                mutliplePhotoPickerLauncher?.launch(
-                    PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
-                )
-                scope.launch {
-                    sheetState.hide()
-                }
-            }
-            .padding(15.dp))
-        Text(text = "취소", fontSize = 16.sp, color = Color.Black, modifier = Modifier
-            .fillMaxWidth()
-            .clickable {
+                cameraStart()
                 scope.launch {
                     sheetState.hide()
                 }
