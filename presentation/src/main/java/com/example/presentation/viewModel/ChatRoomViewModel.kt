@@ -57,8 +57,10 @@ class ChatRoomViewModel @Inject constructor(
 
     }
 
-    fun exitChatRoom(sold: Boolean, artworkId: String){
-        exitChatRoomUseCase.execute(sold = sold, artworkId = artworkId)
+    fun exitChatRoom(artistUid: String, sold: Boolean, artworkId: String, destUid: String){
+        artistUid?.let {
+            exitChatRoomUseCase.execute(artistUid = artistUid, sold = sold, artworkId = artworkId, destUid = destUid)
+        }
     }
 
     fun checkChatRoom(destUid: String, artworkId: String) {
