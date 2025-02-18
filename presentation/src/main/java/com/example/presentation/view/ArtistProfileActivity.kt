@@ -246,7 +246,7 @@ fun ArtistProfileMenu(
     artworkFilterChange: (ArtworkSort) -> Unit
 ){
     val tabTitles = listOf("소개", "작품", "판매 작품")
-    val pagerState = rememberPagerState(pageCount = {tabTitles.size}, initialPage = 1)
+    val pagerState = rememberPagerState(pageCount = {tabTitles.size}, initialPage = 0)
     val coroutineScope = rememberCoroutineScope()
     Column() {
         TabRow(
@@ -294,7 +294,7 @@ fun ArtistProfileMenu(
             when(page){
                 0 -> artistIntroduceScreen(artistInfo, userInfo = userInfo, artistCareerOnChange = artistCareerOnChange)
                 1 -> artistArtworksScreen(artworks = artistArtwork, lazyListState = lazyListState, artworkFilterChange = artworkFilterChange)
-                2 -> artistSoldArtworksScreen()
+                2 -> artistSoldArtworksScreen(artistSoldArtworks = artistArtwork.filter { it.sold == true })
             }
         }
     }
@@ -489,7 +489,7 @@ fun artistArtworkCard(artwork: DomainArtwork, onClick: () -> Unit){
         ) {
             Text(artwork.name!!, color = Color.Black, fontSize = 14.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
             if(artwork.sold){
-                Text("판매완료", color = Color.Gray, fontSize = 12.sp)
+                Text("판매완료", color = Color.Gray, fontSize = 12.sp, lineHeight = 10.sp)
             }else{
                 Text( text = DecimalFormat("#,###").format(artwork.minimalPrice.toInt() * 10000)+ "원", color = Color.Gray, fontSize = 12.sp, lineHeight = 10.sp)
             }
@@ -558,7 +558,31 @@ fun DropDownMenu(dropDownMenuExpanded: Boolean, onDismissRequest: () -> Unit, on
 }
 
 @Composable
-fun artistSoldArtworksScreen(){}
+fun artistSoldArtworksScreen(artistSoldArtworks: List<DomainArtwork>){
+    val context = LocalContext.current
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Text("${artistSoldArtworks.size} 개 작품 :", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color.Black, modifier = Modifier.padding(horizontal = 15.dp, vertical = 15.dp))
+        Divider(thickness = 1.dp, color = Color.LightGray)
+        LazyVerticalStaggeredGrid(
+            modifier = Modifier
+                .padding(top = 20.dp, start = 15.dp, end = 15.dp)
+                .fillMaxHeight(1f),
+            columns = StaggeredGridCells.Fixed(2),
+            horizontalArrangement = Arrangement.spacedBy(15.dp),
+            verticalItemSpacing = 15.dp,
+            state = rememberLazyStaggeredGridState(),
+        ) {
+            items(artistSoldArtworks.size){ index ->
+                artistArtworkCard(
+                    artwork = artistSoldArtworks[index],
+                    onClick = {
+                        context.startActivity(Intent(context, ArtworkDetailActivity::class.java).putExtra("artwork", Gson().toJson(artistSoldArtworks[index])))
+                    }
+                )
+            }
+        }
+    }
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
