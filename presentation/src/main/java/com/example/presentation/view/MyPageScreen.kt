@@ -1,20 +1,22 @@
 package com.example.presentation.view
 
 import android.content.Intent
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
+import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
+import androidx.compose.foundation.lazy.staggeredgrid.rememberLazyStaggeredGridState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.*
 import androidx.compose.material.TabRowDefaults.tabIndicatorOffset
-import androidx.compose.material3.Divider
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -33,17 +35,19 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import coil3.compose.AsyncImage
+import com.example.domain.model.DomainArtwork
 import com.example.domain.model.DomainUser
 import com.example.presentation.R
 import com.example.presentation.model.Screen
 import com.example.presentation.utils.LoginToastMessage
 import com.example.presentation.utils.noRippleClickable
+import com.example.presentation.view.Setting.ProfileEditActivity
 import com.example.presentation.viewModel.MainViewModel
 import com.google.gson.Gson
+import java.text.DecimalFormat
 
 
 @Composable
@@ -55,6 +59,22 @@ fun MyPageScreen(
     val userInfo by viewModel.userInfoStateFlow.collectAsState()
     var requestLogin by remember { mutableStateOf(false) }
     val context = LocalContext.current
+    val artistSoldArtworks by viewModel.artistSoldArtworks.collectAsState()
+
+    LaunchedEffect(isLoggedInState) {
+        if(isLoggedInState){
+            Log.d("MyPageScreen", "arworksUid: ${userInfo.artworksUid}")
+            if(userInfo.mode == 1){
+                viewModel.getArtistSoldArtwork(userInfo.artworksUid)
+            }else{
+                viewModel.getArtistSoldArtwork(userInfo.purchasedArtworks)
+            }
+        }
+    }
+
+
+
+
     MyPageRoot(
         navController = navController,
         isLoggedInState = isLoggedInState,
@@ -68,7 +88,8 @@ fun MyPageScreen(
                 requestLogin = true
             }
         },
-        logOutBtnOnClick = { viewModel.logOut() }
+        logOutBtnOnClick = { viewModel.logOut() },
+        artistSoldArtworks = artistSoldArtworks
     )
     if(requestLogin){
         LoginToastMessage(
@@ -87,7 +108,8 @@ fun MyPageRoot(
     onBookMarkBtnClick: () -> Unit,
     onProfileImageClick: () -> Unit,
     logOutBtnOnClick: () -> Unit,
-    navController: NavHostController
+    navController: NavHostController,
+    artistSoldArtworks: List<DomainArtwork>
 ){
     Column(
         modifier = Modifier.fillMaxSize(),
@@ -102,7 +124,7 @@ fun MyPageRoot(
             onProfileImageClick = onProfileImageClick
         )
         Spacer(modifier = Modifier.height(30.dp))
-        profileMenu(userInfo, logOutBtnOnClick = logOutBtnOnClick)
+        profileMenu(userInfo, logOutBtnOnClick = logOutBtnOnClick, artistSoldArtworks = artistSoldArtworks)
     }
 }
 
@@ -238,7 +260,11 @@ fun userSection(modifier: Modifier, title: String, icon: Int, size: Int, onClick
 
 
 @Composable
-fun profileMenu(userInfo: DomainUser, logOutBtnOnClick: () -> Unit) {
+fun profileMenu(
+    userInfo: DomainUser,
+    logOutBtnOnClick: () -> Unit,
+    artistSoldArtworks: List<DomainArtwork>
+) {
     var selectedIndex by remember { mutableStateOf(0) }
     val tabTitles = if(userInfo.mode == 0) listOf("설정", "구매한 작품") else listOf("설정", "판매한 작품")
     Column {
@@ -273,7 +299,7 @@ fun profileMenu(userInfo: DomainUser, logOutBtnOnClick: () -> Unit) {
         }
         when(selectedIndex){
             0 -> settingScreen(userInfo, logOutBtnOnClick = logOutBtnOnClick)
-            1 -> differentArtworks()
+            1 -> differentArtworks(artistSoldArtworks = artistSoldArtworks)
         }
     }
 
@@ -285,8 +311,37 @@ fun settingScreen(userInfo: DomainUser, logOutBtnOnClick: () -> Unit) {
 }
 
 @Composable
-fun differentArtworks(){
+fun differentArtworks(artistSoldArtworks: List<DomainArtwork>) {
+    val context = LocalContext.current
+    var count = 0
+    artistSoldArtworks.map { count += it.minimalPrice.toInt() }
 
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(horizontal = 15.dp, vertical = 15.dp)){
+            Text("${artistSoldArtworks.size} 개 작품 :", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color.Black)
+            Spacer(modifier = Modifier.weight(1f))
+            Text("총 ${DecimalFormat("#,###").format(count * 10000)} 원", fontSize = 14.sp)
+        }
+        Divider(thickness = 1.dp, color = Color.LightGray)
+        LazyVerticalStaggeredGrid(
+            modifier = Modifier
+                .padding(top = 20.dp, start = 15.dp, end = 15.dp)
+                .fillMaxHeight(1f),
+            columns = StaggeredGridCells.Fixed(2),
+            horizontalArrangement = Arrangement.spacedBy(15.dp),
+            verticalItemSpacing = 15.dp,
+            state = rememberLazyStaggeredGridState(),
+        ) {
+            items(artistSoldArtworks.size){ index ->
+                artistArtworkCard(
+                    artwork = artistSoldArtworks[index],
+                    onClick = {
+                        context.startActivity(Intent(context, ArtworkDetailActivity::class.java).putExtra("artwork", Gson().toJson(artistSoldArtworks[index])))
+                    }
+                )
+            }
+        }
+    }
 }
 
 @Preview(showSystemUi = true)
@@ -297,7 +352,16 @@ fun myPageScreenPreview(){
         .background(Color.White)
         .fillMaxSize()) {
         Column(modifier = Modifier.background(Color.White)) {
-            MyPageRoot(isLoggedInState = true, DomainUser(name = "YunSuk", mode = 1), {}, {}, {}, {}, navController)
+            MyPageRoot(
+                isLoggedInState = true,
+                DomainUser(name = "YunSuk", mode = 1),
+                {},
+                {},
+                {},
+                {},
+                navController,
+                artistSoldArtworks = listOf()
+            )
 
         }
     }
