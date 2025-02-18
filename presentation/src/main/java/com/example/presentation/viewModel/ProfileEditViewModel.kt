@@ -48,11 +48,4 @@ class ProfileEditViewModel @Inject constructor(
             }
         }
     }
-
-
-    //UploadState 초기화
-    fun resetUploadState(){
-        _uploadState.value = UploadState.Idle
-    }
-
 }
