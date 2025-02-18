@@ -123,7 +123,9 @@ class ChatRoomActivity : ComponentActivity() {
                                     inputMessage = ""
                                 },
                                 updateArtworkSoldState = { state ->
-                                    viewModel.exitChatRoom(sold = state, artworkId = artwork.key!!)
+                                    destUser.uid?.let {
+                                        viewModel.exitChatRoom(artistUid = currentUserUid, sold = state, artworkId = artwork.key!!, destUid = destUser.uid)
+                                    }
                                 },
                                 modifier = Modifier.fillMaxSize().background(Color.White).padding(padding).noRippleClickable {
                                     keyboardController?.hide()
