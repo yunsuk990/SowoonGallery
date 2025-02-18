@@ -453,14 +453,17 @@ fun artworkInfo(
     likedBtnOnClick: () -> Unit,
 ){
     Column(modifier = modifier) {
-        Row {
+        Row(modifier = Modifier.fillMaxWidth()) {
             Column {
                 Text(text = artwork.name!!, fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Color.Black)
-                Text(text = artwork.madeIn.toString(), fontSize = 14.sp, color = Color.Gray, modifier = Modifier.padding(top = 5.dp))
+                Text(text = artwork.madeIn.toString(), fontSize = 14.sp, color = Color.Gray, modifier = Modifier.padding(top = 10.dp))
             }
             Spacer(modifier = Modifier.weight(1f))
-            artworkLikeBtn(likedState = likedState) {
-                likedBtnOnClick()
+            Column(horizontalAlignment = Alignment.CenterHorizontally){
+                artworkLikeBtn(likedState = likedState) {
+                    likedBtnOnClick()
+                }
+                Text(artwork.likedArtworks.size.toString(), color = Color.Black, fontSize = 16.sp, fontWeight = FontWeight.Bold)
             }
         }
         Divider(thickness = 0.5.dp, color = Color.LightGray, modifier = Modifier.padding(top = 15.dp, bottom = 15.dp))
@@ -538,7 +541,7 @@ fun artworkActivityTest(){
     )
     Surface(modifier = Modifier.fillMaxSize()) {
         ArtworkDetailScreen(
-            artwork = DomainArtwork(artistUid = "123"),
+            artwork = DomainArtwork(artistUid = "123", name = "하울의 움직이는 섬", madeIn = "2025"),
             artistInfo = DomainUser(name = "정은숙"),
             favoriteState = true,
             likedState = true,
