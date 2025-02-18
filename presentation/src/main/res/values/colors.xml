@@ -18,5 +18,7 @@
     <color name="placeholderColor">#EBEBEB</color>
     <color name="placeholderColorDark">#E0E0E0</color>
     <color name="check">#2efcff</color>
+    <color name="messageCount">#F03D1B</color>
+    <color name="soldOut">#185AE2</color>
 
 </resources>
