@@ -226,6 +226,7 @@ private fun LoginScreen(
                 registerUI(
                     registerBtnOnClick = { domainUser ->
                         domainUser.uid = uid
+                        domainUser.phoneNumber = phoneNumber
                         registerBtnOnClick(domainUser)
                     }
                 )
@@ -290,14 +291,12 @@ fun HandleAuthState(
 }
 
 @Composable
-fun SingleChoiceSegmentedButton(selectedIndex: Int, indexOnChange: (Int) -> Unit) {
+fun SingleChoiceSegmentedButton(selectedIndex: Int, indexOnChange: (Int) -> Unit, modifier: Modifier) {
     val options = listOf("남자", "여자")
 
 
     SingleChoiceSegmentedButtonRow(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 10.dp),
+        modifier = modifier,
     ) {
         options.forEachIndexed { index, label ->
             var bgcolor = if(selectedIndex == index) Color.LightGray else Color.White
@@ -353,7 +352,9 @@ fun registerUI(
             modifier = Modifier
         )
 
-        SingleChoiceSegmentedButton(selectedIndex, {index -> selectedIndex = index})
+        SingleChoiceSegmentedButton(selectedIndex, {index -> selectedIndex = index}, modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 10.dp))
 
         Spacer(modifier = Modifier.height(8.dp))
 
@@ -480,19 +481,19 @@ fun outLinedButton(buttonText: String, isEnabled: Boolean, onClick: () -> Unit){
 @Preview
 @Composable
 fun LoginActivityTest(){
-    Surface {
-        Column(
-            modifier = Modifier.fillMaxSize()
-        ) {
-            LoginScreen(
-                activityFinish = {},
-                registerBtnOnClick = {},
-                authState = AuthState.Loading,
-                verifyPhoneNumber = {},
-                verifyBtnOnClick = {},
-                resendVerifyPhoneNumber = {},
-            )
-        }
-
+    Surface(
+        modifier = Modifier
+            .fillMaxSize()
+            .noRippleClickable {}
+            .background(Color.White),
+    ) {
+        LoginScreen(
+            activityFinish = {},
+            registerBtnOnClick = { domainUser -> },
+            authState = AuthState.NewUser("1234"),
+            verifyBtnOnClick = { verifyNumber -> },
+            verifyPhoneNumber = { phoneNumber -> },
+            resendVerifyPhoneNumber = { phoneNumber -> }
+        )
     }
 }
