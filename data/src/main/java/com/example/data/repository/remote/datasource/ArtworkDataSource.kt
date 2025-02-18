@@ -2,7 +2,6 @@ package com.example.data.repository.remote.datasource
 
 import android.net.Uri
 import com.example.domain.model.DomainArtwork
-import com.example.domain.model.PriceWithUser
 import com.example.domain.model.Response
 import com.google.android.gms.tasks.Task
 import com.google.firebase.database.DataSnapshot
@@ -31,7 +30,7 @@ interface ArtworkDataSource {
 
     suspend fun getRecentArtworks(limit: Int ): List<DomainArtwork>
 
-    suspend fun uploadImageToStorage(imageUri: Uri): String
+    suspend fun uploadImageToStorage(imageUri: Uri, mode: Int): String
 
     suspend fun uploadImageToRTDB(artwork: DomainArtwork): Response<Boolean>
 
@@ -43,5 +42,7 @@ interface ArtworkDataSource {
 
     suspend fun getArtistArtworks(artistUid: String): List<DomainArtwork>
 
-    fun updateArtworkSoldState(artworkId: String, sold: Boolean)
+    fun updateArtworkSoldState(artistUid: String, artworkId: String, sold: Boolean, destUid: String)
+
+    suspend fun getArtistSoldArtworks(artworksUid: Map<String, Boolean>): List<DomainArtwork>
 }

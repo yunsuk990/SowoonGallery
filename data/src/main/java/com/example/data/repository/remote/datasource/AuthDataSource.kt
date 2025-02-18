@@ -38,4 +38,6 @@ interface AuthDataSource{
 
     suspend fun setArtistCareer(career: Career):Response<Boolean>
 
+    suspend fun removeUserProfileImage(imageUrl: String): Response<Boolean>
+
 }

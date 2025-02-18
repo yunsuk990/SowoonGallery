@@ -2,6 +2,7 @@ package com.example.domain.model
 
 data class DomainUser(
     var uid: String = "",
+    var phoneNumber: String = "",
     var name: String = "",
     var sex: Int = 0, //0:남자
     var age: Int = 0,
@@ -12,7 +13,6 @@ data class DomainUser(
     var artistProfile: DomainArtistProfile = DomainArtistProfile(),
     var artworksUid: Map<String, Boolean> = emptyMap(),
     var purchasedArtworks: Map<String, Boolean> = emptyMap(),
-    var selledArtworks: Map<String, Boolean> = emptyMap(),
     var favoriteArtworks: Map<String, Boolean> = emptyMap(),
     var likedArtworks: Map<String, Boolean> = emptyMap(),
 )

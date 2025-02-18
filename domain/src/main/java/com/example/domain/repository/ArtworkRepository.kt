@@ -38,4 +38,6 @@ interface ArtworkRepository {
 
     suspend fun getArtworkById(artworkId: String): DomainArtwork
 
+    suspend fun getArtistSoldArtworks(artworksUid: Map<String, Boolean>): List<DomainArtwork>
+
 }

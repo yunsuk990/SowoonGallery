@@ -1,25 +1,21 @@
 package com.example.data.repository.remote.datasourceimpl
 
 import android.net.Uri
-import android.os.Build
 import android.util.Log
-import androidx.annotation.RequiresApi
 import com.example.data.repository.remote.datasource.ArtworkDataSource
 import com.example.domain.model.*
 import com.google.android.gms.tasks.Task
-import com.google.android.gms.tasks.Tasks
 import com.google.firebase.database.DataSnapshot
-import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
 import com.google.firebase.storage.FirebaseStorage
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.tasks.await
-import java.time.LocalDate
-import java.time.format.DateTimeFormatter
 import javax.inject.Inject
 
 class ArtworkDataSourceImpl @Inject constructor(
@@ -31,6 +27,7 @@ class ArtworkDataSourceImpl @Inject constructor(
     private val usersRef = firebaseRtdb.getReference("users")
     private val artworkIdRef = firebaseRtdb.getReference("artworkIds")
     private val imageStorageRef = firebaseStorage.getReference("images")
+    private val profileStorageRef = firebaseStorage.getReference("profiles")
 
     //작품 전체 가져오기
     override suspend fun getAllArtworks(): List<DomainArtwork> {
@@ -114,10 +111,15 @@ class ArtworkDataSourceImpl @Inject constructor(
         }
     }
 
-    //작품 이미지 스토리지에 저장 및 URL 반환
-    override suspend fun uploadImageToStorage(imageUri: Uri): String {
-        val uploadTask = imageStorageRef.child("${System.currentTimeMillis()}.jpg").putFile(imageUri).await()
-        return uploadTask.storage.downloadUrl.await().toString()
+    //작품 이미지 스토리지에 저장 및 URL 반환 (이미지: 0, 프로필: 1)
+    override suspend fun uploadImageToStorage(imageUri: Uri, mode: Int): String {
+        if(mode == 0){
+            val uploadTask = imageStorageRef.child("${System.currentTimeMillis()}.jpg").putFile(imageUri).await()
+            return uploadTask.storage.downloadUrl.await().toString()
+        }else{
+            val uploadTask = profileStorageRef.child("${System.currentTimeMillis()}.jpg").putFile(imageUri).await()
+            return uploadTask.storage.downloadUrl.await().toString()
+        }
     }
 
     //작품 DB에 저장
@@ -127,7 +129,7 @@ class ArtworkDataSourceImpl @Inject constructor(
             val artworkId = imagesRef.push().key
             artwork.key = artworkId!!
             imagesRef.child(artworkId).setValue(artwork).await()
-            usersRef.child(artwork.artistUid!!).child("artworksUid").updateChildren(mapOf(artworkId to true)).await()
+            usersRef.child(artwork.artistUid!!).child("artworksUid").updateChildren(mapOf(artworkId to false)).await()
             artworkIdRef.child(artwork.category!!).child(artwork.key!!).setValue(true).await()
             Response.Success(true)
         }catch (e: Exception){
@@ -185,8 +187,36 @@ class ArtworkDataSourceImpl @Inject constructor(
         return artworkData
     }
 
-    override fun updateArtworkSoldState(artworkId: String, sold: Boolean) {
+    override fun updateArtworkSoldState(
+        artistUid: String,
+        artworkId: String,
+        sold: Boolean,
+        destUid: String
+    ) {
+        usersRef.child(artistUid).child("artworksUid").child(artworkId).setValue(sold)
         imagesRef.child(artworkId).child("sold").setValue(sold)
+
+        val updateMap = mapOf("purchasedArtworks/$artworkId" to true)
+
+        usersRef.child(destUid).updateChildren(updateMap)
     }
 
+    override suspend fun getArtistSoldArtworks(artworksUid: Map<String, Boolean>): List<DomainArtwork> = coroutineScope {
+        if (artworksUid.isEmpty()) return@coroutineScope emptyList()
+
+        // sold가 true인 UID만 필터링
+        val soldArtworksUid = artworksUid.filterValues { it }.keys
+
+        // Firebase에서 여러 UID를 한 번에 조회
+        val deferredArtworks = async {
+            val result = soldArtworksUid.mapNotNull { uid ->
+                val snapshot = imagesRef.child(uid).get().await()
+                snapshot.getValue(DomainArtwork::class.java)
+            }
+            result
+        }
+
+        // 결과 반환
+        deferredArtworks.await()
+    }
 }

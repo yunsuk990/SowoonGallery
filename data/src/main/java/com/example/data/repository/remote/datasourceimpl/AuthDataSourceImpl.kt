@@ -15,6 +15,7 @@ import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
+import com.google.firebase.storage.FirebaseStorage
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
@@ -26,8 +27,12 @@ import javax.inject.Inject
 class AuthDataSourceImpl @Inject constructor(
     private val firebaseAuth: FirebaseAuth,
     private val firebaseRtdb: FirebaseDatabase,
+    private val firebaseStorage: FirebaseStorage,
     @ApplicationContext private val context: Context
 ): AuthDataSource {
+
+
+    private val profileStorageRef = firebaseStorage.getReference("profiles")
 
     private val sharedPreferences: SharedPreferences = context.getSharedPreferences("users_prefs", Context.MODE_PRIVATE)
     private val usersRef = firebaseRtdb.getReference("users")
@@ -190,6 +195,17 @@ class AuthDataSourceImpl @Inject constructor(
             Response.Success(true)
         }catch (e: Exception){
             Response.Error(e.message.toString(), e)
+        }
+    }
+
+    override suspend fun removeUserProfileImage(imageUrl: String): Response<Boolean> {
+        return try {
+            val response = profileStorageRef.storage.getReferenceFromUrl(imageUrl).delete().await()
+            Log.d("removeUserProfileImage_dataSource", response.toString())
+            Response.Success(true)
+        }catch (e: Exception){
+            Log.d("removeUserProfileImage_dataSource", e.toString())
+            Response.Error(exception = e, message = e.message.toString())
         }
     }
 }

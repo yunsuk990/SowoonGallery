@@ -6,5 +6,5 @@ import javax.inject.Inject
 class ExitChatRoomUseCase @Inject constructor(
     private val firebaseRepository: FirebaseRepository
 ) {
-    fun execute(sold: Boolean, artworkId: String) = firebaseRepository.exitChatRoom(sold, artworkId)
+    fun execute(artistUid: String, sold: Boolean, artworkId: String, destUid: String) = firebaseRepository.exitChatRoom(artistUid, sold, artworkId, destUid)
 }

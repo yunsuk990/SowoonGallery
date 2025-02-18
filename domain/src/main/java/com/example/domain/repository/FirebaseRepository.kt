@@ -25,5 +25,5 @@ interface FirebaseRepository {
 
     suspend fun observeChatRoom(chatroomId: String): Flow<DomainChatRoom>
 
-    fun exitChatRoom(sold: Boolean, artworkId: String)
+    fun exitChatRoom(artistUid: String, sold: Boolean, artworkId: String, destUid: String)
 }

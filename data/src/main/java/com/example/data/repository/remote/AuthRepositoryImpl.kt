@@ -74,21 +74,25 @@ class AuthRepositoryImpl @Inject constructor(
 
         val updateFields = mutableMapOf<String, Any>()
         if(updateUser.name != currentUser.name) updateFields["name"] = updateUser.name
-        if(updateUser.age != currentUser.age) updateFields["age"] = updateUser.age
+        if(updateUser.birth != currentUser.birth) updateFields["birth"] = updateUser.birth
         if(updateUser.review != currentUser.review) updateFields["review"] = updateUser.review
 
-        val imageUrl = if(uri != null){
-            artworkDataSource.uploadImageToStorage(uri)
+        val imageUrl = if(uri != null && uri != Uri.EMPTY){
+            artworkDataSource.uploadImageToStorage(uri, mode = 1)
+        }else if(uri == Uri.EMPTY){
+            ""
         }else{
             null
         }
         imageUrl?.let {
+            authDataSource.removeUserProfileImage(currentUser.profileImage)
             updateFields["profileImage"] = it
         }
 
         return if(updateFields.isNotEmpty()){
             Log.d("uploadProfileImage_Repository", updateFields.toString())
             authDataSource.updateUserProfile(getUid()!!, updateFields)
+
         }else{
             Log.d("uploadProfileImage_Repository", updateFields.toString())
             Response.Success(true)

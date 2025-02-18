@@ -17,8 +17,8 @@ class FirebaseRepositoryImpl @Inject constructor(
     override suspend fun loadMessage(chatroomId: String, uid: String) = firebaseDataSource.loadMessage(chatroomId, uid)
     override suspend fun observeChatRoom(chatroomId: String): Flow<DomainChatRoom> = firebaseDataSource.observeChatRoom(chatroomId)
 
-    override fun exitChatRoom(sold: Boolean, artworkId: String) {
-        artworkDataSource.updateArtworkSoldState(artworkId, sold)
+    override fun exitChatRoom(artistUid: String, sold: Boolean, artworkId: String, destUid: String) {
+        artworkDataSource.updateArtworkSoldState(artistUid, artworkId, sold, destUid)
     }
 
     override suspend fun createChatRoom(uid: String, destUid: String, chatRoom: DomainChatRoom) = firebaseDataSource.createChatRoom(uid, destUid, chatRoom)
