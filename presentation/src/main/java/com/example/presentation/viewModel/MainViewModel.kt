@@ -30,7 +30,8 @@ class MainViewModel @Inject constructor(
     private val logOutUseCase: LogOutUseCase,
     private val getRecentArtworksUseCase: GetRecentArtworksUseCase,
     private val getCurrentUserUidUseCase: GetCurrentUserUidUseCase,
-    private val getArtworkById: GetArtworkByIdUseCase
+    private val getArtworkById: GetArtworkByIdUseCase,
+    private val getArtistSoldArtworkUseCase: GetArtistSoldArtworkUseCase
 ): ViewModel() {
 
 
@@ -77,6 +78,9 @@ class MainViewModel @Inject constructor(
 
     private val _unreadMessageCount = MutableStateFlow<Int>(0)
     val unreadMessageCount: StateFlow<Int> = _unreadMessageCount
+
+    private val _artistSoldArtworks = MutableStateFlow<List<DomainArtwork>>(emptyList())
+    val artistSoldArtworks: StateFlow<List<DomainArtwork>> = _artistSoldArtworks
 
     init {
         viewModelScope.launch {
@@ -217,4 +221,14 @@ class MainViewModel @Inject constructor(
     }
 
     fun deleteAccount() = viewModelScope.launch { deleteAccountUseCase.execute(userInfoStateFlow.value.uid) }
+
+
+    fun getArtistSoldArtwork(artworks: Map<String, Boolean>) {
+        artworks.isNotEmpty().let {
+            viewModelScope.launch {
+                _artistSoldArtworks.value = getArtistSoldArtworkUseCase.execute(artworks)
+                Log.d("getArtistSoldArtwork", "artworks: ${_artistSoldArtworks.value}")
+            }
+        }
+    }
 }
