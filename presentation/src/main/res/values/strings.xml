@@ -1,6 +1,7 @@
 <resources>
     <string name="title_activity_main">MainActivity</string>
     <string name="app_name">소운</string>
+    <string name="manager_email">yunsuk990@naver.com</string>
     <string name="title_activity_splash">SplashActivity</string>
     <string name="title_activity_home">HomeActivity</string>
     <string name="title_activity_login">LoginActivity</string>
@@ -15,4 +16,5 @@
     <string name="title_activity_account">AccountActivity</string>
     <string name="title_activity_app_version">AppVersionActivity</string>
     <string name="title_activity_announce">AnnounceActivity</string>
+    <string name="title_activity_question">QuestionActivity</string>
 </resources>
