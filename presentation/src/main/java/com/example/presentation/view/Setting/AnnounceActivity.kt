@@ -34,7 +34,7 @@ class AnnounceActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             SowoonTheme{
-
+                AnnounceScreen()
             }
         }
     }
