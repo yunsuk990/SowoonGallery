@@ -26,7 +26,7 @@ interface ArtworkDataSource {
 
     fun getLikedArtwork(uid: String, artworkUid: String): Task<DataSnapshot>
 
-    fun getLikedCountArtwork(artworkUid: String, category: String, listener: ValueEventListener)
+    fun getLikedCountArtwork(artworkUid: String, listener: ValueEventListener)
 
     suspend fun getRecentArtworks(limit: Int ): List<DomainArtwork>
 
