@@ -50,7 +50,7 @@ class ArtworkRepositoryImpl @Inject constructor(
 
     override fun getLikedArtwork(uid: String, artworkUid: String): Task<DataSnapshot> = artworkDataSource.getLikedArtwork(uid,artworkUid)
 
-    override fun getLikedCountArtwork(artworkUid: String, category: String, listener: ValueEventListener) = artworkDataSource.getLikedCountArtwork(artworkUid, category, listener)
+    override fun getLikedCountArtwork(artworkUid: String, listener: ValueEventListener) = artworkDataSource.getLikedCountArtwork(artworkUid, listener)
 
     override suspend fun uploadNewArtwork(artwork: DomainArtwork, imageUri: Uri): Response<Boolean> {
         //artworkUrl -> Storage에 업로드
