@@ -100,7 +100,7 @@ fun SettingRoot(
 ) {
     val context = LocalContext.current
     Column(modifier = modifier) {
-        Text(text = "Settings", color = Color.Black, fontSize = 16.sp, modifier = Modifier.padding(start = 15.dp, top = 20.dp))
+        Text(text = "Settings", color = Color.Black, fontSize = 16.sp, modifier = Modifier.padding(start = 15.dp, top = 20.dp, bottom = 15.dp))
         menuItem(
             icon = R.drawable.setting_profile,
             title = "프로필 수정",
@@ -135,7 +135,13 @@ fun SettingRoot(
         menuItem(
             icon = R.drawable.help,
             title = "문의하기",
-            onClick = {})
+            onClick = {
+                if(userInfo.uid.isEmpty()){
+                    requestLogin()
+                }else{
+                    context.startActivity(Intent(context, QuestionActivity::class.java).putExtra("userInfo", Gson().toJson(userInfo)))
+                }
+            })
         menuItem(
             icon = R.drawable.alert,
             title = "이벤트",
@@ -161,7 +167,7 @@ fun menuItem(icon: Int, title: String, onClick: () -> Unit){
                 .padding(start = 10.dp, end = 10.dp, top = 25.dp, bottom = 25.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(painter = painterResource(id = icon), contentDescription = null)
+            Icon(painter = painterResource(id = icon), modifier = Modifier.size(28.dp) , contentDescription = null)
             Spacer(modifier = Modifier.width(15.dp))
             Text(text = title, fontSize = 16.sp, color = Color.Black)
         }
