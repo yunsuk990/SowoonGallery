@@ -11,7 +11,7 @@ import javax.inject.Inject
 class GetLikedCountArtworkUseCase @Inject constructor(
     private val artworkRepository: ArtworkRepository
 ) {
-    fun execute(artworkUid: String, category: String, callback: (Int) -> Unit){
+    fun execute(artworkUid: String, callback: (Int) -> Unit){
         val listener = object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 val count = snapshot.childrenCount.toInt()
@@ -22,7 +22,7 @@ class GetLikedCountArtworkUseCase @Inject constructor(
                 callback(0)
             }
         }
-        artworkRepository.getLikedCountArtwork(artworkUid, category,listener)
+        artworkRepository.getLikedCountArtwork(artworkUid,listener)
     }
 
 }
