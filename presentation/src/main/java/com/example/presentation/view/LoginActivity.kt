@@ -328,6 +328,7 @@ fun registerUI(
 
     var userName by remember { mutableStateOf("") }
     var userOld by remember { mutableStateOf("") }
+    var userEmail by remember { mutableStateOf("") }
 
     var showDatePicker by remember { mutableStateOf(false) }
     val datePickerState = rememberDatePickerState()
@@ -357,6 +358,16 @@ fun registerUI(
             .padding(horizontal = 10.dp))
 
         Spacer(modifier = Modifier.height(8.dp))
+
+        outlineTextField(
+            text = userEmail,
+            labelText = "이메일",
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+            onValueChange = { newText -> userEmail = newText},
+            supportingText = {},
+            isError = false,
+            modifier = Modifier
+        )
 
         OutlinedTextField(
             value = selectedDate,
@@ -410,10 +421,10 @@ fun registerUI(
         )
         outLinedButton(
             buttonText = "가입하기",
-            isEnabled = userName.isNotEmpty() && userOld.isNotEmpty() && selectedDate.isNotEmpty() && userOld.isNotEmpty(),
+            isEnabled = userName.isNotEmpty() && userEmail.isNotEmpty() && userOld.isNotEmpty() && selectedDate.isNotEmpty() && userOld.isNotEmpty(),
             onClick = {
                 registerBtnOnClick(
-                    DomainUser(name = userName, age = userOld.toInt(), sex = selectedIndex, birth = selectedDate)
+                    DomainUser(name = userName, email = userEmail, age = userOld.toInt(), sex = selectedIndex, birth = selectedDate)
                 )
             }
         )
