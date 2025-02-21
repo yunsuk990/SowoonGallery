@@ -91,8 +91,8 @@ class ArtworkDataSourceImpl @Inject constructor(
     // 사용자가 좋아요한 작품들 가져오기
     override fun getLikedArtwork(uid: String, artworkUid: String): Task<DataSnapshot> = usersRef.child(uid).child("likedArtworks").child(artworkUid).get()
 
-    override fun getLikedCountArtwork(artworkUid: String, category: String, listener: ValueEventListener) {
-        imagesRef.child(category).child(artworkUid).child("likedArtworks").addValueEventListener(listener)
+    override fun getLikedCountArtwork(artworkUid: String, listener: ValueEventListener) {
+        imagesRef.child(artworkUid).child("likedArtworks").addValueEventListener(listener)
     }
 
     override suspend fun getRecentArtworks(limit: Int): List<DomainArtwork> {
