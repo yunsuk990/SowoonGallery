@@ -20,7 +20,7 @@ interface ArtworkRepository {
 
     fun getLikedArtwork(uid: String, artworkUid: String): Task<DataSnapshot>
 
-    fun getLikedCountArtwork(artworkUid: String, category: String, listener: ValueEventListener)
+    fun getLikedCountArtwork(artworkUid: String, listener: ValueEventListener)
 
     suspend fun uploadNewArtwork(artwork: DomainArtwork, imageUri: Uri): Response<Boolean>
 
