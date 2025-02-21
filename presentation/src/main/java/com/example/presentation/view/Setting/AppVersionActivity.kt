@@ -66,8 +66,8 @@ fun AppVersionScreen(versionName: String) {
                     Image(painter = painterResource(R.drawable.app_market), contentDescription = null, modifier = Modifier.size(65.dp))
                 }
                 Column(modifier = Modifier.padding(start = 15.dp), verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                    Text("소운", color = Color.Black, fontSize = 18.sp, fontWeight = FontWeight.Bold)
-                    Text("ver. $versionName", color = Color.Gray, fontSize = 16.sp)
+                    Text("소운", color = Color.Black, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                    Text("ver. $versionName", color = Color.Gray, fontSize = 14.sp)
                 }
             }
         }
