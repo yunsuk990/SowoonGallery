@@ -46,7 +46,6 @@ import com.google.gson.Gson
 fun HomeScreen(viewModel: MainViewModel, navController: NavHostController) {
     val isLoggedIn by viewModel.isLoggedInState.collectAsState()
     val advertiseImageState by viewModel.advertiseImagesState.collectAsState()
-    var imageTranslate by remember { mutableStateOf(false) }
     val artistRecentArtworks by viewModel.artistRecentArtworks.collectAsState()
     val isLoadingRecentArtworks by viewModel.isLoadingRecentArtworks.collectAsState()
     val isLoadingAdvertiseImages by viewModel.isLoadingAdvertiseImages.collectAsState()
@@ -60,12 +59,9 @@ fun HomeScreen(viewModel: MainViewModel, navController: NavHostController) {
     HomeRoot(
         isLoggedIn = isLoggedIn,
         advertiseImageState = advertiseImageState,
-        imageTranslate = imageTranslate,
         artistRecentArtworks = artistRecentArtworks,
         isLoadingRecentArtworks = isLoadingRecentArtworks,
         isLoadingAdvertiseImages = isLoadingAdvertiseImages,
-        imageDismiss = {imageTranslate = false},
-        imageLaunch = { imageTranslate = true},
         navigateToArworkDetailScreen = { index ->
             var intent = Intent(context, ArtworkDetailActivity::class.java).putExtra("artwork", Gson().toJson(artistRecentArtworks[index]))
             intent.putExtra("userInfo", Gson().toJson(userInfo))
@@ -78,21 +74,29 @@ fun HomeScreen(viewModel: MainViewModel, navController: NavHostController) {
 fun HomeRoot(
     isLoggedIn: Boolean,
     advertiseImageState: List<String>,
-    imageTranslate: Boolean,
     artistRecentArtworks: List<DomainArtwork>,
     isLoadingRecentArtworks: Boolean,
     isLoadingAdvertiseImages: Boolean,
-    imageDismiss: () -> Unit,
-    imageLaunch: () -> Unit,
     navigateToArworkDetailScreen: (Int) -> Unit,
 ) {
     val scrollState = rememberScrollState()
+    var currentURL by remember { mutableStateOf("") }
+    var imageTranslate by remember { mutableStateOf(false) }
 
     Column(
-        modifier = Modifier.fillMaxSize().verticalScroll(scrollState)
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(scrollState)
     ) {
         HomeTopBar(isLoggedIn = isLoggedIn)
-        AdvertiseImages(advertiseImageState = advertiseImageState, imageLaunch, isLoadingAdvertiseImages)
+        AdvertiseImages(
+            advertiseImageState = advertiseImageState,
+            imageLaunch = { page ->
+                currentURL = advertiseImageState[page]
+                imageTranslate = true
+            },
+            isLoadingAdvertiseImages = isLoadingAdvertiseImages
+        )
         RecentArtworks(
             modifier = Modifier.padding(start = 15.dp, top = 20.dp, bottom = 20.dp),
             artistRecentArtworks = artistRecentArtworks,
@@ -101,8 +105,8 @@ fun HomeRoot(
         )
     }
     if(imageTranslate){
-        FullScreenArtwork(imageUrl = R.drawable.sowoon_bg) {
-            imageDismiss()
+        FullScreenArtwork(imageUrl = currentURL) {
+            imageTranslate = false
         }
     }
 
@@ -123,20 +127,30 @@ fun RecentArtworks(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(15.dp),
             ) {
-                item(){artworkHomeCard(DomainArtwork(), modifier = Modifier.width(250.dp).height(180.dp).shimmerEffect())}
-                item(){artworkHomeCard(DomainArtwork(), modifier = Modifier.width(180.dp).height(180.dp).shimmerEffect())}
+                item(){artworkHomeCard(DomainArtwork(), modifier = Modifier
+                    .width(250.dp)
+                    .height(180.dp)
+                    .shimmerEffect())}
+                item(){artworkHomeCard(DomainArtwork(), modifier = Modifier
+                    .width(180.dp)
+                    .height(180.dp)
+                    .shimmerEffect())}
             }
         }else{
             Text("최근 작품", fontSize = 18.sp, color = Color.Black, fontWeight = FontWeight.Bold)
             Spacer(modifier = Modifier.height(15.dp))
             LazyRow(
-                modifier = Modifier.fillMaxWidth().height(180.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(180.dp),
                 horizontalArrangement = Arrangement.spacedBy(15.dp),
             ) {
                 items(artistRecentArtworks.size){ index ->
                     artworkHomeCard(
                         artwork = artistRecentArtworks[index],
-                        modifier = Modifier.height(180.dp).clip(RoundedCornerShape(5.dp)),
+                        modifier = Modifier
+                            .height(180.dp)
+                            .clip(RoundedCornerShape(5.dp)),
                         onClick = { navigateToArworkDetailScreen(index) }
                     )
                 }
@@ -148,7 +162,9 @@ fun RecentArtworks(
 @Composable
 fun artworkHomeCard(artwork: DomainArtwork, modifier: Modifier, onClick: () -> Unit = {}) {
     var imageWidth by remember { mutableStateOf(0) }
-    Column(modifier = Modifier.wrapContentSize().clickable { onClick() }) {
+    Column(modifier = Modifier
+        .wrapContentSize()
+        .clickable { onClick() }) {
         AsyncImage(
             model = artwork.url,
             modifier = modifier.onGloballyPositioned { coordinates ->
@@ -159,12 +175,15 @@ fun artworkHomeCard(artwork: DomainArtwork, modifier: Modifier, onClick: () -> U
 }
 
 @Composable
-fun AdvertiseImages(advertiseImageState: List<String>, imageLaunch: () -> Unit, isLoadingAdvertiseImages: Boolean) {
+fun AdvertiseImages(advertiseImageState: List<String>, imageLaunch: (Int) -> Unit, isLoadingAdvertiseImages: Boolean) {
     val pagerState = rememberPagerState(pageCount = {advertiseImageState.size})
     val context = LocalContext.current
 
     if(isLoadingAdvertiseImages){
-        Box(modifier = Modifier.fillMaxWidth().height(250.dp).shimmerEffect()){}
+        Box(modifier = Modifier
+            .fillMaxWidth()
+            .height(250.dp)
+            .shimmerEffect()){}
         Column(
             modifier = Modifier.fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally
@@ -176,14 +195,19 @@ fun AdvertiseImages(advertiseImageState: List<String>, imageLaunch: () -> Unit, 
                 horizontalArrangement = Arrangement.Center
             ) {
                 repeat(3) { iteration ->
-                    Box(modifier = Modifier.padding(2.dp).clip(CircleShape).size(8.dp))
+                    Box(modifier = Modifier
+                        .padding(2.dp)
+                        .clip(CircleShape)
+                        .size(8.dp))
                 }
             }
         }
     }else{
         HorizontalPager(
             state = pagerState,
-            modifier = Modifier.fillMaxWidth().wrapContentHeight(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .wrapContentHeight(),
         ) { page ->
 //      Log.d("AsyncImages", advertiseImageState[page])
             AsyncImage(
@@ -198,9 +222,9 @@ fun AdvertiseImages(advertiseImageState: List<String>, imageLaunch: () -> Unit, 
                     .fillMaxWidth()
                     .height(250.dp)
                     .clickable {
-                        imageLaunch()
+                        imageLaunch(page)
                     },
-                contentScale = ContentScale.FillHeight
+                contentScale = ContentScale.Crop
             )
         }
         Row(
@@ -258,16 +282,13 @@ fun HomeTopBar(isLoggedIn: Boolean){
 @Preview(showBackground = true)
 @Composable
 fun HomeScreenTest(){
-    Scaffold {
+    Surface {
         Column {
             HomeRoot(
                 isLoggedIn = false,
                 advertiseImageState = listOf(),
-                imageTranslate = false,
                 artistRecentArtworks = listOf(DomainArtwork(likedArtworks = mapOf("a" to true)), DomainArtwork(likedArtworks = mapOf("a" to true, "b" to true))),
                 isLoadingRecentArtworks = true,
-                imageDismiss = {},
-                imageLaunch = {},
                 navigateToArworkDetailScreen = {},
                 isLoadingAdvertiseImages = true
             )
