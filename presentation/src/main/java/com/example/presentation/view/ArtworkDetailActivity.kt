@@ -50,6 +50,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.max
 import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
 import com.example.domain.model.DomainArtwork
@@ -57,6 +58,7 @@ import com.example.domain.model.DomainUser
 import com.example.presentation.R
 import com.example.presentation.utils.FullScreenArtwork
 import com.example.presentation.utils.LoginToastMessage
+import com.example.presentation.utils.noRippleClickable
 import com.example.presentation.utils.shimmerEffect
 import com.example.presentation.view.ui.theme.SowoonTheme
 import com.example.presentation.viewModel.ArtworkViewModel
@@ -85,7 +87,7 @@ class ArtworkDetailActivity : ComponentActivity() {
                 // artwork.key가 변경될 때마다 실행됩니다.
                 viewModel.getFavoriteArtwork(artworkUid = artwork.key!!)
                 viewModel.getLikedArtwork(artworkUid = artwork.key!!)
-                //viewModel.getLikedCountArtwork(artwork.key!!, artwork.category!!)
+                viewModel.getLikedCountArtwork(artwork.key!!)
                 viewModel.getArtistInfo(artwork.artistUid!!)
                 viewModel.getArtistArtworks(artwork.artistUid!!)
             }
@@ -97,7 +99,7 @@ class ArtworkDetailActivity : ComponentActivity() {
                 val artistArtworks by viewModel.artistArtworks.collectAsState()
                 val userInfo by viewModel.userInfo.collectAsState()
                 val isLoadingArtistArtworks by viewModel.isLoadingArtistArtworks.collectAsState()
-                //val artworkLikedCountState by viewModel.artworkLikedCountState.observeAsState(0)
+                val artworkLikedCountState by viewModel.artworkLikedCountState.observeAsState(0)
                 var requestLogin by remember { mutableStateOf(false) }
 
 
@@ -114,6 +116,7 @@ class ArtworkDetailActivity : ComponentActivity() {
                         userInfo = userInfo,
                         artistArtworks = artistArtworks,
                         isLoadingArtistArtworks = isLoadingArtistArtworks,
+                        artworkLikedCount = artworkLikedCountState,
                         likedBtnOnClick = {
                             if (viewModel.userUid != null) {
                                 viewModel.setLikedArtwork(artworkLikedState, artwork.key!!)
@@ -177,6 +180,7 @@ fun ArtworkDetailScreen(
     favoriteState: Boolean,
     likedState: Boolean,
     userInfo: DomainUser,
+    artworkLikedCount: Int,
     artistArtworks: List<DomainArtwork>,
     isLoadingArtistArtworks: Boolean,
     likedBtnOnClick: () -> Unit,
@@ -219,6 +223,7 @@ fun ArtworkDetailScreen(
                     modifier = Modifier.padding(start = 15.dp, end = 15.dp, top = 15.dp),
                     artwork = artwork,
                     likedState = likedState,
+                    artworkLikedCount = artworkLikedCount,
                     likedBtnOnClick = { likedBtnOnClick() },
                 )
             }
@@ -450,20 +455,39 @@ fun artworkInfo(
     modifier: Modifier,
     artwork: DomainArtwork,
     likedState: Boolean,
+    artworkLikedCount: Int,
     likedBtnOnClick: () -> Unit,
 ){
     Column(modifier = modifier) {
-        Row(modifier = Modifier.fillMaxWidth()) {
-            Column {
-                Text(text = artwork.name!!, fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Color.Black)
-                Text(text = artwork.madeIn.toString(), fontSize = 14.sp, color = Color.Gray, modifier = Modifier.padding(top = 10.dp))
+        Row(modifier = Modifier.fillMaxWidth().wrapContentSize()) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = artwork.name!!,
+                    fontSize = 22.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.Black,
+                    overflow = TextOverflow.Visible
+                )
+                Text(
+                    text = artwork.madeIn.toString(),
+                    fontSize = 14.sp,
+                    color = Color.Gray,
+                    modifier = Modifier.padding(top = 10.dp)
+                )
             }
-            Spacer(modifier = Modifier.weight(1f))
-            Column(horizontalAlignment = Alignment.CenterHorizontally){
-                artworkLikeBtn(likedState = likedState) {
-                    likedBtnOnClick()
-                }
-                Text(artwork.likedArtworks.size.toString(), color = Color.Black, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+
+
+
+            Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center){
+                Icon(
+                    if(!likedState) Icons.Filled.FavoriteBorder else Icons.Filled.Favorite,
+                    contentDescription = "좋아요",
+                    tint = if(likedState) Color.Red else Color.Black,
+                    modifier = Modifier.size(30.dp).noRippleClickable {
+                        likedBtnOnClick()
+                    }
+                )
+                Text(artworkLikedCount.toString(), color = Color.Black, fontSize = 16.sp, fontWeight = FontWeight.Bold)
             }
         }
         Divider(thickness = 0.5.dp, color = Color.LightGray, modifier = Modifier.padding(top = 15.dp, bottom = 15.dp))
@@ -541,11 +565,12 @@ fun artworkActivityTest(){
     )
     Surface(modifier = Modifier.fillMaxSize()) {
         ArtworkDetailScreen(
-            artwork = DomainArtwork(artistUid = "123", name = "하울의 움직이는 섬", madeIn = "2025"),
+            artwork = DomainArtwork(artistUid = "123", name = "하울의 움직이는 섬하울의 움직이는 섬dlasdf", madeIn = "2025"),
             artistInfo = DomainUser(name = "정은숙"),
             favoriteState = true,
             likedState = true,
             userInfo = DomainUser(),
+            artworkLikedCount = 1,
             artistArtworks = listOf(artwork, artwork,artwork),
             isLoadingArtistArtworks = true,
             likedBtnOnClick = {},

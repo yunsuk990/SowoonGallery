@@ -133,8 +133,8 @@ class ArtworkViewModel @Inject constructor(
         }
     }
 
-    fun getLikedCountArtwork(artworkUid: String, category: String){
-        getLikedCountArtworkUsecase.execute(artworkUid, category){ countVal ->
+    fun getLikedCountArtwork(artworkUid: String){
+        getLikedCountArtworkUsecase.execute(artworkUid){ countVal ->
             _artworkLikedCountState.value = countVal
         }
     }
