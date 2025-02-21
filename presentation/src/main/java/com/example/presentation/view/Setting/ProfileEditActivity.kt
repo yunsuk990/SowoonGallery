@@ -12,7 +12,6 @@ import android.telephony.PhoneNumberUtils
 import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
-import androidx.activity.compose.ManagedActivityResultLauncher
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.result.PickVisualMediaRequest
@@ -32,6 +31,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.ModalBottomSheetLayout
 import androidx.compose.material.ModalBottomSheetState
@@ -59,8 +59,11 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.min
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Popup
 import androidx.core.app.ActivityCompat
@@ -141,6 +144,7 @@ class ProfileEditActivity : ComponentActivity() {
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileEditScreen(userInfo: DomainUser, onUploadBtnClick: (Uri?, DomainUser) -> Unit) {
     var photoGalleryUri by remember { mutableStateOf<Uri?>(null) }
@@ -163,6 +167,7 @@ fun ProfileEditScreen(userInfo: DomainUser, onUploadBtnClick: (Uri?, DomainUser)
     val context = LocalContext.current
 
     var name by remember { mutableStateOf(userInfo.name) }
+    var email by remember { mutableStateOf(userInfo.email) }
     var review by remember { mutableStateOf(userInfo.review) }
     var mode by remember { mutableStateOf(userMode) }
     var selectedDate by remember { mutableStateOf(userInfo.birth) }
@@ -235,7 +240,9 @@ fun ProfileEditScreen(userInfo: DomainUser, onUploadBtnClick: (Uri?, DomainUser)
 
     ) {
         Box(modifier = Modifier.fillMaxSize()){
-            Column() {
+            Column(
+                modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(bottom = 75.dp)
+            ) {
                 ProfileEditTopBar()
                 Column(
                     modifier = Modifier.padding(horizontal = 20.dp, vertical = 20.dp),
@@ -243,15 +250,80 @@ fun ProfileEditScreen(userInfo: DomainUser, onUploadBtnClick: (Uri?, DomainUser)
                 ) {
                     ProfileImage(photoGalleryUri = photoGalleryUri, profileUrl = profileUrl, onClick = { scope.launch { sheetState.show() }} )
                     Spacer(modifier = Modifier.height(30.dp))
-                    profileInfo(
-                        name = name,
-                        nameChange = { name = it },
-                        review = review,
-                        reviewChange = { review = it },
-                        mode = mode,
-                        selectedDate = selectedDate,
-                        selectedDateChange = { newData -> selectedDate = newData},
-                        phoneNumber = userInfo.phoneNumber
+
+                    var showDatePicker by remember { mutableStateOf(false) }
+                    val datePickerState = rememberDatePickerState()
+                    datePickerState.selectedDateMillis?.let {
+                        val formatter = SimpleDateFormat("yyyy/MM/dd", Locale.getDefault())
+                        selectedDate = (formatter.format(Date(it)))
+                    }
+
+                    userInputTextField(
+                        value = mode,
+                        onValueChange = {},
+                        label = "Mode",
+                        enabled = false
+                    )
+                    userInputTextField(
+                        value = PhoneNumberUtils.formatNumber(userInfo.phoneNumber, "KR"), label = "전화번호",
+                        onValueChange = {},
+                        minLines = 1,
+                        enabled = false
+                    )
+                    userInputTextField(
+                        value = name,
+                        onValueChange = {newName -> name = newName},
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
+                        label = "이름")
+
+                    userInputTextField(
+                        value = email,
+                        onValueChange = { newText -> email = newText},
+                        label = "이메일",
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                        minLines = 1,
+                        enabled = true
+                    )
+
+                    OutlinedTextField(
+                        value = selectedDate,
+                        onValueChange = {},
+                        readOnly = true,
+                        colors = TextFieldDefaults.colors(cursorColor = Color.Black, unfocusedContainerColor = Color.White, focusedIndicatorColor = Color.Black, focusedLabelColor = Color.Black, focusedContainerColor = Color.White, disabledContainerColor = Color.White),
+                        label = {  Text(text = "태어난 날짜", color = Color.Black) },
+                        textStyle = TextStyle(fontSize = 16.sp),
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 5.dp),
+                        leadingIcon = {
+                            IconButton( onClick = { showDatePicker = true}) { Icon(Icons.Filled.DateRange, contentDescription = null) }
+                        },
+                    )
+
+                    if(showDatePicker){
+                        Popup(
+                            onDismissRequest = { showDatePicker = false },
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .shadow(elevation = 4.dp)
+
+                            ) {
+                                DatePicker(
+                                    state = datePickerState,
+                                    showModeToggle = false,
+                                    colors = DatePickerDefaults.colors(
+                                        containerColor = colorResource(R.color.lightwhite),
+                                    ),
+                                    title = {}
+                                )
+                            }
+                        }
+                    }
+                    userInputTextField(
+                        value = review,
+                        onValueChange = {newText -> review = newText},
+                        label = "자기소개",
+                        minLines = 8,
                     )
                 }
             }
@@ -331,71 +403,6 @@ fun uploadButton(modifier: Modifier, photoGalleryUri: Uri?, onClick: () -> Unit)
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun profileInfo(
-    name: String,
-    nameChange: (String) -> Unit,
-    review: String,
-    reviewChange: (String) -> Unit,
-    mode: String,
-    selectedDate: String,
-    selectedDateChange: (String) -> Unit,
-    phoneNumber: String,
-) {
-    var showDatePicker by remember { mutableStateOf(false) }
-    val datePickerState = rememberDatePickerState()
-    datePickerState.selectedDateMillis?.let {
-        val formatter = SimpleDateFormat("yyyy/MM/dd", Locale.getDefault())
-        selectedDateChange(formatter.format(Date(it)))
-    }
-
-    userInputTextField(mode, {}, "Mode", enabled = false)
-    userInputTextField(
-        value = PhoneNumberUtils.formatNumber(phoneNumber, "KR"), label = "전화번호",
-        onValueChange = {},
-        minLines = 1,
-        enabled = false
-    )
-    userInputTextField(name, nameChange, "이름")
-
-    OutlinedTextField(
-        value = selectedDate,
-        onValueChange = {},
-        readOnly = true,
-        colors = TextFieldDefaults.colors(cursorColor = Color.Black, unfocusedContainerColor = Color.White, focusedIndicatorColor = Color.Black, focusedLabelColor = Color.Black, focusedContainerColor = Color.White, disabledContainerColor = Color.White),
-        label = {  Text(text = "태어난 날짜", color = Color.Black) },
-        textStyle = TextStyle(fontSize = 16.sp),
-        modifier = Modifier.fillMaxWidth().padding(vertical = 5.dp),
-        leadingIcon = {
-            IconButton( onClick = { showDatePicker = true}) { Icon(Icons.Filled.DateRange, contentDescription = null) }
-        },
-    )
-
-    if(showDatePicker){
-        Popup(
-            onDismissRequest = { showDatePicker = false },
-        ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .shadow(elevation = 4.dp)
-
-            ) {
-                DatePicker(
-                    state = datePickerState,
-                    showModeToggle = false,
-                    colors = DatePickerDefaults.colors(
-                        containerColor = colorResource(R.color.lightwhite),
-                    ),
-                    title = {}
-                )
-            }
-        }
-    }
-    userInputTextField(review, reviewChange, "자기소개", minLines = 8)
-}
-
 @Preview(showSystemUi = true)
 @Composable
 fun ProfileEditTest(){
@@ -422,7 +429,7 @@ fun ProfileEditTest(){
 }
 
 @Composable
-fun userInputTextField(value: String, onValueChange: (String) -> Unit, label: String, minLines: Int = 1, enabled: Boolean = true){
+fun userInputTextField(value: String, keyboardOptions: KeyboardOptions = KeyboardOptions(), onValueChange: (String) -> Unit, label: String, minLines: Int = 1, enabled: Boolean = true){
     OutlinedTextField(
         value = value,
         enabled = enabled,
@@ -441,11 +448,13 @@ fun userInputTextField(value: String, onValueChange: (String) -> Unit, label: St
             disabledContainerColor = Color.White,
             disabledTextColor = Color.Gray,
         ),
+        keyboardOptions = keyboardOptions,
         onValueChange = { onValueChange(it) },
         label = {
             Text(text = label)
         },
         minLines = minLines,
+        maxLines = minLines,
         modifier = Modifier.fillMaxWidth().padding(vertical = 5.dp)
     )
 }
