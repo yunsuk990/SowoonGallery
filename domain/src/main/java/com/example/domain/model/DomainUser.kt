@@ -10,6 +10,7 @@ data class DomainUser(
     var profileImage: String = "",
     var mode: Int = 0,  //Artist:1 또는 User:0 또는 Manager:2
     var review: String = "",
+    var email: String = "",
     var artistProfile: DomainArtistProfile = DomainArtistProfile(),
     var artworksUid: Map<String, Boolean> = emptyMap(),
     var purchasedArtworks: Map<String, Boolean> = emptyMap(),
