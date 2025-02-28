@@ -1,5 +1,6 @@
 package com.example.presentation.viewModel
 
+import android.app.Notification
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -10,6 +11,7 @@ import com.example.domain.usecase.authUseCase.GetUserInfoUseCase
 import com.example.domain.usecase.chatUseCase.ChatUseCases
 import com.example.domain.usecase.chatUseCase.ExitChatRoomUseCase
 import com.example.domain.usecase.chatUseCase.ObserveChatRoomUseCase
+import com.example.domain.usecase.chatUseCase.SendFCMMessageUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -26,7 +28,8 @@ class ChatRoomViewModel @Inject constructor(
     private val getArtworkByIdUseCase: GetArtworkByIdUseCase,
     private val getUserInfoUseCase: GetUserInfoUseCase,
     private val observeChatRoomUseCase: ObserveChatRoomUseCase,
-    private val exitChatRoomUseCase: ExitChatRoomUseCase
+    private val exitChatRoomUseCase: ExitChatRoomUseCase,
+    private val sendFCMMessageUseCase: SendFCMMessageUseCase
 ): ViewModel() {
 
     //채팅방 유효성 검사
@@ -89,8 +92,18 @@ class ChatRoomViewModel @Inject constructor(
         }
     }
 
+    suspend fun sendFcm(destUser: DomainUser, message: String){
+        var notificationModel = NotificationModel(
+            token = destUser.pushToken,
+            notification = Notification(
+                body = message,
+                title = destUser.name
+            )
+        )
+        sendFCMMessageUseCase.execute(notificationModel)
+    }
 
-    fun sendMessage(message: String, opponentUid: String, artworkId: String){
+    fun sendMessage(message: String, artworkId: String, destUser: DomainUser){
         var messageModel = DomainMessage(
             message = message,
             senderUid = currentUserUid.value,
@@ -99,23 +112,23 @@ class ChatRoomViewModel @Inject constructor(
         viewModelScope.launch {
             if(chatRoom.value != null){
                 val updatedUnreadMessages = chatRoom.value!!.unreadMessages.toMutableMap().apply {
-                    this[opponentUid] = (this[opponentUid] ?: 0) + 1  // 상대방 읽지 않은 메시지 증가
+                    this[destUser.uid] = (this[destUser.uid] ?: 0) + 1  // 상대방 읽지 않은 메시지 증가
                 }
                 _chatRoom.value?.unreadMessages = updatedUnreadMessages
                 chatUsecases.sendMessage.execute(chatRoom.value!!, messageModel)
             }else{
                 var chatModel = DomainChatRoom(
                     artworkId = artworkId,
-                    users = mapOf(currentUserUid.value to true,  opponentUid to true),
+                    users = mapOf(currentUserUid.value to true,  destUser.uid to true),
                     createdAt = SimpleDateFormat("yyyy.MM.dd/HH:mm").format(Date()),
                     lastMessage = messageModel,
                     unreadMessages = mutableMapOf(
-                        opponentUid to 1,
+                        destUser.uid to 1,
                         currentUserUid.value to 0
                     )
                 )
                 //채팅방 새로 만들고 메세지 보내기
-                val response = chatUsecases.createChatRoom.execute(uid = currentUserUid.value, destUid = opponentUid, chatRoom = chatModel)
+                val response = chatUsecases.createChatRoom.execute(uid = currentUserUid.value, destUid = destUser.uid, chatRoom = chatModel)
                 when(response){
                     is Response.Success -> {
                         observeChatRoom(response.data!!.roomId) // 실시간 감지 시작
@@ -124,6 +137,10 @@ class ChatRoomViewModel @Inject constructor(
                     is Response.Error -> { _chatRoom.value = null}
                 }
             }
+            sendFcm(
+                destUser = destUser,
+                message = message
+            )
         }
     }
 
