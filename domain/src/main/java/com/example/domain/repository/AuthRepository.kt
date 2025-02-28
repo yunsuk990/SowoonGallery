@@ -30,6 +30,8 @@ interface AuthRepository {
     fun getUid(): String?
     fun clearUid()
 
+    fun registerMessagingToken(uid: String)
+
     suspend fun updateProfileInfo(
         uri: Uri?,
         currentUser: DomainUser,

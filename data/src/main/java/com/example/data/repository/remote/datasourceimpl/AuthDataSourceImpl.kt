@@ -15,6 +15,7 @@ import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
+import com.google.firebase.messaging.FirebaseMessaging
 import com.google.firebase.storage.FirebaseStorage
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.channels.awaitClose
@@ -22,12 +23,14 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.tasks.await
+import java.util.Objects
 import javax.inject.Inject
 
 class AuthDataSourceImpl @Inject constructor(
     private val firebaseAuth: FirebaseAuth,
     private val firebaseRtdb: FirebaseDatabase,
     private val firebaseStorage: FirebaseStorage,
+    private val firebaseMessaging: FirebaseMessaging,
     @ApplicationContext private val context: Context
 ): AuthDataSource {
 
@@ -67,6 +70,15 @@ class AuthDataSourceImpl @Inject constructor(
     override fun getUid(): String? = sharedPreferences.getString(KEY_UID, null)
 
     override fun clearUid() = sharedPreferences.edit().remove(KEY_UID).apply()
+
+    override fun registerMessagingToken(uid: String) {
+        firebaseMessaging.token.addOnCompleteListener{
+            var token = HashMap<String, Any>()
+            token.put("pushToken", it.result)
+            Log.d("registerMessagingToken_dataSourceImpl", it.result.toString())
+            usersRef.child(uid).updateChildren(token)
+        }
+    }
 
     override fun signOut() {
         clearUid()

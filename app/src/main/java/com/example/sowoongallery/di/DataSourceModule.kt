@@ -9,6 +9,7 @@ import com.example.data.repository.remote.datasourceimpl.AuthDataSourceImpl
 import com.example.data.repository.remote.datasourceimpl.FirebaseDataSourceImpl
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.messaging.FirebaseMessaging
 import com.google.firebase.storage.FirebaseStorage
 import dagger.Module
 import dagger.Provides
@@ -25,10 +26,11 @@ class DataSourceModule {
     fun provideFirebaseDataSource(
         firebaseAuth: FirebaseAuth,
         firebaseRtdb: FirebaseDatabase,
-        firebaseStorage: FirebaseStorage
+        firebaseStorage: FirebaseStorage,
+        @ApplicationContext context: Context
     ): FirebaseDataSource {
         return FirebaseDataSourceImpl(
-            firebaseAuth, firebaseRtdb, firebaseStorage
+            firebaseAuth, firebaseRtdb, firebaseStorage, context
         )
     }
 
@@ -50,12 +52,14 @@ class DataSourceModule {
         firebaseAuth: FirebaseAuth,
         firebaseRtdb: FirebaseDatabase,
         firebaseStorage: FirebaseStorage,
+        firebaseMessaging: FirebaseMessaging,
         @ApplicationContext context: Context
     ): AuthDataSource {
         return AuthDataSourceImpl(
             firebaseAuth,
             firebaseRtdb,
             firebaseStorage,
+            firebaseMessaging,
             context
         )
     }

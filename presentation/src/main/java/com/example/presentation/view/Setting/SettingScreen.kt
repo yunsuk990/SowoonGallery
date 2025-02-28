@@ -113,17 +113,7 @@ fun SettingRoot(
             }
         )
         menuItem(
-            icon = R.drawable.alert,
-            title = "앱 관리", onClick = {
-                if(userInfo.uid.isEmpty()){
-                    requestLogin()
-                }else{
-                    context.startActivity(Intent(context, AppVersionActivity::class.java))
-                }
-            }
-        )
-        menuItem(
-            icon = R.drawable.notification,
+            icon = R.drawable.release,
             title = "공지사항",
             onClick = {
                 if(userInfo.uid.isEmpty()){
@@ -132,6 +122,17 @@ fun SettingRoot(
                     context.startActivity(Intent(context, AnnounceActivity::class.java))
                 }
             })
+        menuItem(
+            icon = R.drawable.notification,
+            title = "알림 설정",
+            onClick = {
+                if(userInfo.uid.isEmpty()){
+                    requestLogin()
+                }else{
+                    context.startActivity(Intent(context, NotificationActivity::class.java))
+                }
+            }
+        )
         menuItem(
             icon = R.drawable.help,
             title = "문의하기",
@@ -144,8 +145,14 @@ fun SettingRoot(
             })
         menuItem(
             icon = R.drawable.alert,
-            title = "이벤트",
-            onClick = {})
+            title = "앱 관리", onClick = {
+                if(userInfo.uid.isEmpty()){
+                    requestLogin()
+                }else{
+                    context.startActivity(Intent(context, AppVersionActivity::class.java))
+                }
+            }
+        )
 
 
         Spacer(modifier = Modifier.weight(1f))

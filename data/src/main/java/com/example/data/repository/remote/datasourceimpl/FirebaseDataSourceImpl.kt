@@ -1,26 +1,39 @@
 package com.example.data.repository.remote.datasourceimpl
 
+import android.content.Context
 import android.util.Log
 import com.example.data.repository.remote.datasource.FirebaseDataSource
 import com.example.domain.model.*
+import com.google.auth.oauth2.GoogleCredentials
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
 import com.google.firebase.storage.FirebaseStorage
+import com.google.gson.Gson
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.tasks.await
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import okhttp3.RequestBody
+import okhttp3.RequestBody.Companion.toRequestBody
+import org.json.JSONObject
 import javax.inject.Inject
 
 class FirebaseDataSourceImpl @Inject constructor(
     private val firebaseAuth: FirebaseAuth,
     private val firebaseRtdb: FirebaseDatabase,
-    private val firestore: FirebaseStorage
+    private val firestore: FirebaseStorage,
+    @ApplicationContext private val context: Context
 ): FirebaseDataSource {
 
+    private var cachedToken: String? = null
     private val usersRef = firebaseRtdb.getReference("users")
     private val profileRef = firestore.getReference("profile")
     private val advertiseRef = firestore.getReference("advertise")
@@ -28,6 +41,7 @@ class FirebaseDataSourceImpl @Inject constructor(
     private val chatRoomRef = firebaseRtdb.getReference("chatrooms")
     private val chatRoomIdRef = firebaseRtdb.getReference("usersChatRooms")
     private val messageRef = firebaseRtdb.getReference("messages")
+    private val fcmUrl = "https://fcm.googleapis.com/v1/projects/sowoon-849bd/messages:send"
 
     //채팅방 생성
     override suspend fun createChatRoom(uid: String, destUid: String, chatRoom: DomainChatRoom): Response<DomainChatRoom> {
@@ -109,8 +123,76 @@ class FirebaseDataSourceImpl @Inject constructor(
         awaitClose { chatRoomRef.removeEventListener(listener) }
     }.flowOn(Dispatchers.IO)
 
+    override suspend fun sendFCMMessage(notificationModel: NotificationModel) {
+        withContext(Dispatchers.IO) {
+            try {
+                val json = JSONObject().apply {
+                    put("message", JSONObject().apply {
+                        put("token", notificationModel.token)
+                        put("notification", JSONObject().apply {
+                            put("body", notificationModel.notification.body)
+                            put("title", notificationModel.notification.title)
+                        })
+                        put("data", JSONObject().apply {
+                            put("channelId", "fcm_default_channel")
+                            put("groupKey", "chatting")
+                        })
+                        put("android", JSONObject().apply {
+                            put("notification", JSONObject().apply {
+                                put("channelId", "fcm_default_channel")
+                            })
+                        })
+                    })
+                }
+                Log.d("sendFCMMessage", "json: ${json}")
+                val accessToken = getFirebaseToken()
+
+                Log.d("sendFcmMessage_dataSourceImpl", "accessToken: ${accessToken}")
+
+                val requestBody = RequestBody.create(
+                    "application/json".toMediaType(),
+                    json.toString()
+                )
+
+                val request = Request.Builder()
+                    .url(fcmUrl)
+                    .addHeader("Authorization", "Bearer $accessToken")
+                    .addHeader("Content-Type", "application/json")
+                    .post(requestBody)
+                    .build()
+                val response = OkHttpClient().newCall(request).execute()
+                response.isSuccessful
+            } catch (e: Exception) {
+                false
+            }
+        }
+    }
+
+    suspend fun getFirebaseToken(): String {
+        return withContext(Dispatchers.IO) {
+            try {
+                if (cachedToken == null) {
+                    val SCOPES = "https://www.googleapis.com/auth/firebase.messaging"
+                    val credentials = GoogleCredentials
+                        .fromStream(context.assets.open("fcm_service_account.json"))
+                        .createScoped(listOf(SCOPES))
+                    credentials.refreshIfExpired()
+                    cachedToken = credentials.accessToken.tokenValue
+                    Log.d("Repository", "Firebase Access Token: $cachedToken")
+                }
+                cachedToken!!
+            } catch (e: Exception) {
+                Log.e("Repository", "Firebase 인증 오류: ${e.message}", e)
+                throw e
+            }
+        }
+    }
+
+
+
     //메시지 가져오기
-    override suspend fun loadMessage(chatroomId: String, uid: String) = callbackFlow  {
+    override suspend fun loadMessage(chatroomId:
+                                     String, uid: String) = callbackFlow  {
         var ref = messageRef.child(chatroomId)
 
         val valueListener = object : ValueEventListener {

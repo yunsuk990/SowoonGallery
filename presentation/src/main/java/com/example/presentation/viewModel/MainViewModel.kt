@@ -1,9 +1,9 @@
 package com.example.presentation.viewModel
 
+import android.content.Context
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.domain.model.*
 import com.example.domain.usecase.*
 import com.example.domain.usecase.artworkUseCase.*
@@ -11,7 +11,6 @@ import com.example.domain.usecase.authUseCase.*
 import com.example.domain.usecase.chatUseCase.GetUserChatListsUseCase
 import com.example.presentation.model.ArtworkSort
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -31,12 +30,13 @@ class MainViewModel @Inject constructor(
     private val getRecentArtworksUseCase: GetRecentArtworksUseCase,
     private val getCurrentUserUidUseCase: GetCurrentUserUidUseCase,
     private val getArtworkById: GetArtworkByIdUseCase,
-    private val getArtistSoldArtworkUseCase: GetArtistSoldArtworkUseCase
+    private val getArtistSoldArtworkUseCase: GetArtistSoldArtworkUseCase,
+    private val saveMessagingToken: SaveMessagingToken
 ): ViewModel() {
 
 
     //로그인 상태
-    private var _isLoggedInState = MutableStateFlow<Boolean>(false)
+    private var _isLoggedInState = MutableStateFlow<Boolean>(true)
     var isLoggedInState: StateFlow<Boolean> = _isLoggedInState.asStateFlow()
 
     //User 정보
@@ -101,15 +101,18 @@ class MainViewModel @Inject constructor(
                     _isLoggedInState.value = userInfo?.uid != null
 
                     // 로그인된 경우 채팅 목록 가져오기
-                    userInfo?.uid?.let { loadChatLists(it) }
+                    userInfo?.uid?.let {
+                        saveMessagingToken.execute(it)
+                        loadChatLists(it)
+                    }
                 }
         }
-        getCurrentUserUidUseCase.execute()?.let { uid -> loadChatLists(uid) }
+
+        //getCurrentUserUidUseCase.execute()?.let { uid -> loadChatLists(uid) }
         // 카테고리 작품들 가져오기
         advertiseImages()
         //loadArtworks()
     }
-
 
     //최근 작품들 가져오기
     fun loadRecentArtworks(limit : Int = 10){

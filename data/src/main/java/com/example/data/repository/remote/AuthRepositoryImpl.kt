@@ -29,6 +29,8 @@ class AuthRepositoryImpl @Inject constructor(
     override fun getUid(): String? = authDataSource.getUid()
     override fun clearUid() = authDataSource.clearUid()
 
+    override fun registerMessagingToken(uid: String) = authDataSource.registerMessagingToken(uid)
+
     override fun getUserInfo(uid: String): Flow<DomainUser?> = authDataSource.getUserInfo(uid)
     override suspend fun getUserInfoOnce(uid: String): DomainUser = authDataSource.getUserInfoOnce(uid)
 

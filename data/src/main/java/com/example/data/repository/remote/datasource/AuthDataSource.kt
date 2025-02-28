@@ -29,6 +29,8 @@ interface AuthDataSource{
     fun getUid(): String?
     fun clearUid()
 
+    fun registerMessagingToken(uid: String)
+
     suspend fun getUserInfoOnce(uid: String): DomainUser
 
     //프로필 이미지 url Realtime Database에 저장하기
@@ -39,5 +41,6 @@ interface AuthDataSource{
     suspend fun setArtistCareer(career: Career):Response<Boolean>
 
     suspend fun removeUserProfileImage(imageUrl: String): Response<Boolean>
+
 
 }

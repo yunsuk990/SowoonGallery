@@ -13,6 +13,7 @@ data class DomainUser(
     var email: String = "",
     var artistProfile: DomainArtistProfile = DomainArtistProfile(),
     var artworksUid: Map<String, Boolean> = emptyMap(),
+    var pushToken: String = "",
     var purchasedArtworks: Map<String, Boolean> = emptyMap(),
     var favoriteArtworks: Map<String, Boolean> = emptyMap(),
     var likedArtworks: Map<String, Boolean> = emptyMap(),

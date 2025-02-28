@@ -117,8 +117,8 @@ class ChatRoomActivity : ComponentActivity() {
                                 inputBtnOnClicked = {
                                     viewModel.sendMessage(
                                         message = inputMessage,
-                                        opponentUid = destUser.uid,
-                                        artworkId = artwork.key!!
+                                        artworkId = artwork.key!!,
+                                        destUser = destUser
                                     )
                                     inputMessage = ""
                                 },

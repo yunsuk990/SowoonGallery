@@ -21,6 +21,8 @@ class FirebaseRepositoryImpl @Inject constructor(
         artworkDataSource.updateArtworkSoldState(artistUid, artworkId, sold, destUid)
     }
 
+    override suspend fun sendFCMMessage(notificationModel: NotificationModel) = firebaseDataSource.sendFCMMessage(notificationModel)
+
     override suspend fun createChatRoom(uid: String, destUid: String, chatRoom: DomainChatRoom) = firebaseDataSource.createChatRoom(uid, destUid, chatRoom)
 
 

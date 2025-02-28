@@ -5,7 +5,6 @@ plugins {
     id("com.google.dagger.hilt.android")
     id("com.google.gms.google-services")
 }
-
 android {
     namespace = "com.example.sowoongallery"
     compileSdk = 34
@@ -36,6 +35,12 @@ android {
     kotlinOptions {
         jvmTarget = "17"
     }
+
+    packaging {
+        resources {
+            excludes += "**/*"
+        }
+    }
 }
 
 dependencies {
@@ -54,6 +59,7 @@ dependencies {
     implementation("com.google.firebase:firebase-auth:23.0.0")
     implementation("com.google.firebase:firebase-database:21.0.0")
     implementation("com.google.firebase:firebase-storage:21.0.1")
+    implementation("com.google.firebase:firebase-messaging-ktx:23.0.0")
 
     //hilt
     implementation("com.google.dagger:hilt-android:2.52")

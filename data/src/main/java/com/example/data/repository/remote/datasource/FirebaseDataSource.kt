@@ -34,4 +34,6 @@ interface FirebaseDataSource {
     fun markMessageAsRead(chatroomId: String, userUid: String)
 
     suspend fun observeChatRoom(chatRoomId: String): Flow<DomainChatRoom>
+
+    suspend fun sendFCMMessage(notificationModel: NotificationModel)
 }
