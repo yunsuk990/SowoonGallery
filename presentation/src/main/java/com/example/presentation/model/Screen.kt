@@ -10,4 +10,5 @@ sealed class Screen(val route: String, val title: String, val iconClicked: Int, 
     object MyPage : Screen("my", "MY",R.drawable.person_filled, R.drawable.person_border)
     object Chat : Screen("chat", "채팅",R.drawable.chat_filled, R.drawable.chat_border)
     object Setting : Screen("setting", "설정",R.drawable.setting, R.drawable.setting_border)
+    object Banner : Screen("banner", "체험",0,0)
 }

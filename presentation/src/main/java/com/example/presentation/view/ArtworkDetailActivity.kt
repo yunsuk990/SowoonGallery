@@ -45,6 +45,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -56,6 +57,7 @@ import coil3.compose.AsyncImage
 import com.example.domain.model.DomainArtwork
 import com.example.domain.model.DomainUser
 import com.example.presentation.R
+import com.example.presentation.utils.AutoResizedText
 import com.example.presentation.utils.FullScreenArtwork
 import com.example.presentation.utils.LoginToastMessage
 import com.example.presentation.utils.noRippleClickable
@@ -267,7 +269,7 @@ fun ArtworkDetailScreen(
         /** 이미지 확대 Dialog */
         if (isZoomDialogOpen) {
             FullScreenArtwork(
-                imageUrl = artwork.url!!,
+                imageUrls = listOf(artwork.url!!),
                 onClose = { isZoomDialogOpen = false }
             )
         }
@@ -427,23 +429,40 @@ fun userActionButton(
         Row(
             modifier = Modifier.padding(20.dp),
         ) {
-            Column {
-                Text(text = if(artwork.sold) "판매완료" else "판매중 (가격제안 가능)", fontSize = 14.sp, color = Color.Black)
+            Column(modifier = Modifier.weight(1f)) {
+                AutoResizedText(
+                    text = if (artwork.sold) "판매완료" else "판매중 (가격제안 가능)",
+                    style = TextStyle(
+                        fontSize = 14.sp,
+                    ),
+                    modifier = Modifier,
+                    color = Color.Black,
+                )
                 Spacer(modifier = Modifier.height(3.dp))
-                Text(text = DecimalFormat("#,###").format(price * 10000)+ "원", fontSize = 20.sp, fontWeight = FontWeight.Medium, color = Color.Black)
+                Text(text = DecimalFormat("#,###").format(price * 10000)+ "원", fontSize = 20.sp, fontWeight = FontWeight.Medium, color = Color.Black, overflow = TextOverflow.Visible)
             }
-            Spacer(modifier = Modifier.weight(1f))
-            TextButton(
-                onClick = { actionBtnOnClick() },
-                shape = RoundedCornerShape(5.dp),
-                border = BorderStroke(0.5.dp,color=Color.Black),
-                colors = ButtonDefaults.buttonColors(containerColor = Color.Black),
-                contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 15.dp, bottom = 15.dp)
-            ) {
-                if(userInfo.uid == artwork.artistUid){
-                    Text(text = "판매 확정하기", fontSize = 14.sp, color = Color.White)
-                }else{
-                    Text(text = "메세지로 거래하기", fontSize = 14.sp, color = Color.White)
+            if(!artwork.sold){
+                TextButton(
+                    onClick = { actionBtnOnClick() },
+                    shape = RoundedCornerShape(5.dp),
+                    border = BorderStroke(0.5.dp,color = Color.Black),
+                    modifier = Modifier.wrapContentSize(),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color.Black),
+                    contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 15.dp, bottom = 15.dp)
+                ) {
+                    if(userInfo.uid == artwork.artistUid){
+                        AutoResizedText(
+                            text = "판매 확정하기", style = TextStyle(fontSize = 14.sp),
+                            modifier = Modifier,
+                            color = Color.White
+                        )
+                    }else{
+                        AutoResizedText(
+                            text = "메세지로 거래하기", style = TextStyle(fontSize = 14.sp),
+                            modifier = Modifier,
+                            color = Color.White
+                        )
+                    }
                 }
             }
         }

@@ -25,6 +25,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
+import androidx.compose.ui.text.PlatformTextStyle
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -35,6 +37,7 @@ import androidx.navigation.NavController
 import coil3.compose.AsyncImage
 import com.example.domain.model.*
 import com.example.presentation.R
+import com.example.presentation.utils.AutoResizedText
 import com.example.presentation.viewModel.MainViewModel
 import com.google.gson.Gson
 import java.text.SimpleDateFormat
@@ -120,10 +123,9 @@ fun chatRoom(chatRoom: DomainChatRoomWithUser, onChatRoomClick: (DomainChatRoomW
                     fontWeight = FontWeight.SemiBold,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.width(200.dp)
+                    modifier = Modifier.weight(1f).padding(end = 10.dp)
                 )
-                Spacer(modifier = Modifier.weight(1f))
-                Text(time, color = Color.Gray, fontSize = 12.sp)
+                Text(time, color = Color.Gray, fontSize = 12.sp, overflow = TextOverflow.Visible)
             }
             Row(){
                 Text(
@@ -132,15 +134,23 @@ fun chatRoom(chatRoom: DomainChatRoomWithUser, onChatRoomClick: (DomainChatRoomW
                     fontSize = 15.sp,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.width(200.dp)
+                    modifier = Modifier.weight(1f).padding(end = 15.dp)
                 )
-                Spacer(modifier = Modifier.weight(1f))
 
                 if(chatRoom.chatRoom.unreadMessages[userUid] != 0){
                     Box(
-                        modifier = Modifier.padding(end = 3.dp).size(25.dp).clip(CircleShape).background(colorResource(R.color.red))
+                        modifier = Modifier.size(22.dp).clip(CircleShape).background(colorResource(R.color.red)),
+                        contentAlignment = Alignment.Center,
                     ){
-                        Text(chatRoom.chatRoom.unreadMessages[userUid].toString(), fontWeight = FontWeight.Bold, fontSize = 12.sp, color = Color.White, modifier = Modifier.align(Alignment.Center))
+                        AutoResizedText(
+                            text = chatRoom.chatRoom.unreadMessages[userUid].toString(),
+                            style = TextStyle(
+                                color = Color.White,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 10.sp
+                            ),
+                            modifier = Modifier.align(Alignment.Center)
+                        )
                     }
                 }
             }
@@ -171,7 +181,7 @@ fun ChattingScreenTest(){
                 chatRoomsList = listOf(
                     DomainChatRoomWithUser(
                         destUser = DomainUser(),
-                        chatRoom = DomainChatRoom(lastMessage = DomainMessage(message = "asdfasdfasdfasdfasdfasdfasdfasdfasdfasdfasdfasdfasdfasdfasdfasdf", timestamp = "2021.12.10/13:03")),
+                        chatRoom = DomainChatRoom(unreadMessages = mapOf("123" to 1), lastMessage = DomainMessage(message = "asdfasdfasdfasdfasdfasdfasdfasdfasdfasdfasdfasdfasdfasdfasdfasdf", timestamp = "2021.12.10/13:03")),
                         artwork = DomainArtwork(name = "yunsukasdfasdfasdfasasdfasdasdfasdfasdfasdf")
                 ),
                     DomainChatRoomWithUser(
