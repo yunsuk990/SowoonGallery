@@ -30,17 +30,22 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
+import androidx.navigation.compose.rememberNavController
 import coil3.compose.AsyncImage
 import coil3.request.CachePolicy
 import coil3.request.ImageRequest
 import coil3.request.crossfade
 import com.example.domain.model.DomainArtwork
 import com.example.presentation.R
-import com.example.presentation.utils.ArtInfo
+import com.example.presentation.model.Screen
+import com.example.presentation.utils.Banner
 import com.example.presentation.utils.FullScreenArtwork
 import com.example.presentation.utils.shimmerEffect
 import com.example.presentation.viewModel.MainViewModel
 import com.google.gson.Gson
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 @Composable
 fun HomeScreen(viewModel: MainViewModel, navController: NavHostController) {
@@ -57,6 +62,7 @@ fun HomeScreen(viewModel: MainViewModel, navController: NavHostController) {
     }
 
     HomeRoot(
+        navController = navController,
         isLoggedIn = isLoggedIn,
         advertiseImageState = advertiseImageState,
         artistRecentArtworks = artistRecentArtworks,
@@ -72,6 +78,7 @@ fun HomeScreen(viewModel: MainViewModel, navController: NavHostController) {
 
 @Composable
 fun HomeRoot(
+    navController: NavHostController,
     isLoggedIn: Boolean,
     advertiseImageState: List<String>,
     artistRecentArtworks: List<DomainArtwork>,
@@ -103,11 +110,27 @@ fun HomeRoot(
             isLoadingRecentArtworks = isLoadingRecentArtworks,
             navigateToArworkDetailScreen = navigateToArworkDetailScreen
         )
+
+        Text("체험", fontSize = 18.sp, color = Color.Black, modifier = Modifier.padding(start = 15.dp, end = 15.dp, top = 20.dp), fontWeight = FontWeight.Bold)
+        Banner(title = "도자기 컵 페인팅 체험", modifier = Modifier.padding(horizontal = 15.dp, vertical = 15.dp), imageId = R.drawable.sowoon_banner_exp1,
+            onClick = {
+                navController.navigate(Screen.Banner.route) {
+                    launchSingleTop = true
+                    restoreState = true
+                }
+            })
+        Banner(title = "그림 페인팅 체험", modifier = Modifier.padding(horizontal = 15.dp, vertical = 15.dp), imageId = R.drawable.sowoon_banner_exp2,
+            onClick = {
+                navController.navigate(Screen.Banner.route) {
+                    launchSingleTop = true
+                    restoreState = true
+                }
+            })
+
+
     }
     if(imageTranslate){
-        FullScreenArtwork(imageUrl = currentURL) {
-            imageTranslate = false
-        }
+        FullScreenArtwork(imageUrls = advertiseImageState, onClose = {imageTranslate = false})
     }
 
 }
@@ -176,7 +199,7 @@ fun artworkHomeCard(artwork: DomainArtwork, modifier: Modifier, onClick: () -> U
 
 @Composable
 fun AdvertiseImages(advertiseImageState: List<String>, imageLaunch: (Int) -> Unit, isLoadingAdvertiseImages: Boolean) {
-    val pagerState = rememberPagerState(pageCount = {advertiseImageState.size})
+    val pagerState = rememberPagerState(pageCount = {advertiseImageState.size}, initialPage = 0)
     val context = LocalContext.current
 
     if(isLoadingAdvertiseImages){
@@ -209,14 +232,14 @@ fun AdvertiseImages(advertiseImageState: List<String>, imageLaunch: (Int) -> Uni
                 .fillMaxWidth()
                 .wrapContentHeight(),
         ) { page ->
-//      Log.d("AsyncImages", advertiseImageState[page])
             AsyncImage(
-                model = ImageRequest.Builder(context)
-                    .data(advertiseImageState[page])
-                    .crossfade(true)
-                    .diskCachePolicy(CachePolicy.ENABLED)
-                    .memoryCachePolicy(CachePolicy.ENABLED)
-                    .build(),
+                model = advertiseImageState[page],
+//                        ImageRequest.Builder(context)
+//                    .data(advertiseImageState[page])
+//                    .crossfade(true)
+//                    .diskCachePolicy(CachePolicy.ENABLED)
+//                    .memoryCachePolicy(CachePolicy.ENABLED)
+//                    .build(),
                 contentDescription = null,
                 modifier = Modifier
                     .fillMaxWidth()
@@ -244,6 +267,19 @@ fun AdvertiseImages(advertiseImageState: List<String>, imageLaunch: (Int) -> Uni
                         .background(color)
                         .size(8.dp)
                 )
+            }
+        }
+
+        val animationScope = rememberCoroutineScope()
+
+        with(pagerState){
+            LaunchedEffect(pagerState.currentPage) {
+                if(advertiseImageState.size > 1){
+                    delay(2000L)
+                    animationScope.launch {
+                        pagerState.animateScrollToPage((pagerState.currentPage + 1)%advertiseImageState.size)
+                    }
+                }
             }
         }
     }
@@ -285,6 +321,7 @@ fun HomeScreenTest(){
     Surface {
         Column {
             HomeRoot(
+                navController = rememberNavController(),
                 isLoggedIn = false,
                 advertiseImageState = listOf(),
                 artistRecentArtworks = listOf(DomainArtwork(likedArtworks = mapOf("a" to true)), DomainArtwork(likedArtworks = mapOf("a" to true, "b" to true))),
