@@ -17,4 +17,6 @@
     <string name="title_activity_app_version">AppVersionActivity</string>
     <string name="title_activity_announce">AnnounceActivity</string>
     <string name="title_activity_question">QuestionActivity</string>
+    <string name="title_activity_banner">BannerActivity</string>
+    <string name="title_activity_notification">NotificationActivity</string>
 </resources>
