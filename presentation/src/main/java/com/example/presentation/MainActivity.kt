@@ -2,6 +2,7 @@ package com.example.presentation
 
 
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
@@ -28,6 +29,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.example.presentation.model.Screen
 import com.example.presentation.view.*
+import com.example.presentation.view.Setting.SettingScreen
 import com.example.presentation.view.ui.theme.SowoonTheme
 import com.example.presentation.viewModel.MainViewModel
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
@@ -45,6 +47,11 @@ class MainActivity : ComponentActivity() {
                 color = Color.White,
                 darkIcons = !isSystemInDarkTheme()
             )
+            if (intent.extras != null) {
+                for (key in intent.extras!!.keySet()) {
+                    Log.d("FCM", "Key: $key, Value: ${intent.extras!!.get(key)}")
+                }
+            }
             SowoonTheme {
                 MainScreen(viewModel = viewModel)
             }
@@ -84,6 +91,7 @@ fun MyAppNavHost(
         composable(Screen.MyPage.route) { MyPageScreen(viewModel, navController) }
         composable(Screen.Setting.route) { SettingScreen(viewModel, navController) }
         composable(Screen.Chat.route) { ChattingScreen(viewModel, navController) }
+        composable(Screen.Banner.route) { BannerScreen(viewModel, navController) }
     }
 }
 
