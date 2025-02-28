@@ -13,6 +13,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import com.example.domain.model.Notification
 
 @Composable
 fun LoginToastMessage(dismissOnClick: () -> Unit, confirmOnClick: () -> Unit){
@@ -228,6 +229,60 @@ fun chatRoomExitToastMessage(dismissOnClick: () -> Unit, confirmOnClick: () -> U
     }
 }
 
+
+@Composable
+fun NotificationToastMessage(dismissOnClick: () -> Unit, confirmOnClick: () -> Unit){
+    Dialog(
+        onDismissRequest = { dismissOnClick() }
+    ) {
+        Card(
+            colors = CardDefaults.cardColors(
+                containerColor = Color.White
+            )
+        ) {
+            Column(
+                modifier = Modifier.padding(15.dp)
+            ) {
+                Text(text = "알림 권한 변경이 필요해요. ", modifier = Modifier.fillMaxWidth().padding(top = 15.dp), fontSize = 16.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
+                Text("스마트폰 설정 > 애플리케이션 > 소운 > 알림", color = Color.Gray, fontSize = 14.sp, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth().padding(top = 10.dp))
+                Row(
+                    modifier = Modifier.padding(top = 25.dp)
+                ) {
+                    Button(
+                        onClick = { dismissOnClick()},
+                        shape = RoundedCornerShape(10.dp),
+                        modifier = Modifier.weight(1f),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color.LightGray,
+                        ),
+                        contentPadding = PaddingValues(vertical = 12.dp)
+                    ) {
+                        Text("취소", color = Color.Black, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                    }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Button(
+                        onClick = { confirmOnClick() },
+                        shape = RoundedCornerShape(10.dp),
+                        modifier = Modifier.weight(1f),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color.Black,
+                        ),
+                        contentPadding = PaddingValues(vertical = 12.dp)
+                    ) {
+                        Text("확인", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                    }
+                }
+            }
+        }
+    }
+}
+
+
+@Preview()
+@Composable
+fun testNotificationToastMessage(){
+    NotificationToastMessage({}, {})
+}
 
 @Preview()
 @Composable
