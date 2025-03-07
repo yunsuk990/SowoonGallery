@@ -31,7 +31,9 @@ class MainViewModel @Inject constructor(
     private val getCurrentUserUidUseCase: GetCurrentUserUidUseCase,
     private val getArtworkById: GetArtworkByIdUseCase,
     private val getArtistSoldArtworkUseCase: GetArtistSoldArtworkUseCase,
-    private val saveMessagingToken: SaveMessagingToken
+    private val saveMessagingToken: SaveMessagingToken,
+    private val getMostViewedCategoryUseCase: GetMostViewedCategoryUseCase,
+    private val saveRecentCategoryUseCase: SaveRecentCategoryUseCase,
 ): ViewModel() {
 
 
@@ -59,12 +61,11 @@ class MainViewModel @Inject constructor(
     private var _artworkLikedLiveData = MutableStateFlow<List<DomainArtwork>>(emptyList())
     var artworkLikedLiveData: StateFlow<List<DomainArtwork>> = _artworkLikedLiveData.asStateFlow()
 
-
+    //소개 사진
     private val _advertiseImagesState = MutableStateFlow<List<String>>(emptyList())
     var advertiseImagesState: StateFlow<List<String>> = _advertiseImagesState.asStateFlow()
     private val _isLoadingAdvertiseImages = MutableStateFlow(true)
     val isLoadingAdvertiseImages: StateFlow<Boolean> = _isLoadingAdvertiseImages
-
 
     //채팅방 리스트
     private val _chatRoomsList = MutableStateFlow<List<DomainChatRoomWithUser>>(emptyList())
@@ -76,11 +77,17 @@ class MainViewModel @Inject constructor(
     private val _isLoadingRecentArtworks = MutableStateFlow(true)
     val isLoadingRecentArtworks: StateFlow<Boolean> = _isLoadingRecentArtworks.asStateFlow()
 
+    //유저 안읽은 메세지
     private val _unreadMessageCount = MutableStateFlow<Int>(0)
     val unreadMessageCount: StateFlow<Int> = _unreadMessageCount
 
+    //작가 판매 작품
     private val _artistSoldArtworks = MutableStateFlow<List<DomainArtwork>>(emptyList())
     val artistSoldArtworks: StateFlow<List<DomainArtwork>> = _artistSoldArtworks
+
+    //최근 본 작품과 비슷한 작품들
+    private val _recommendArtworks = MutableStateFlow<List<DomainArtwork>>(emptyList())
+    val recommendArtworks: StateFlow<List<DomainArtwork>> = _recommendArtworks
 
     init {
         viewModelScope.launch {
@@ -107,11 +114,8 @@ class MainViewModel @Inject constructor(
                     }
                 }
         }
-
-        //getCurrentUserUidUseCase.execute()?.let { uid -> loadChatLists(uid) }
-        // 카테고리 작품들 가져오기
+        //소개 사진 가져오기
         advertiseImages()
-        //loadArtworks()
     }
 
     //최근 작품들 가져오기
@@ -146,6 +150,14 @@ class MainViewModel @Inject constructor(
         getArtworkById.execute(artworkId)
     }
 
+    fun getMostViewedCategory(){
+        val category = getMostViewedCategoryUseCase.execute()
+        _recommendArtworks.value = artworkAllLiveData.value.filter {
+            it.category == category
+        }.take(20)
+    }
+
+    fun saveRecentCategory(category: String) = saveRecentCategoryUseCase.execute(category)
 
     // 카테고리 작품들 가져오기
     fun loadArtworks() = viewModelScope.launch {
@@ -187,6 +199,7 @@ class MainViewModel @Inject constructor(
             ArtworkSort.BOOKMARK -> _artworkLiveData.value = _artworkLiveData.value.sortedByDescending { it.favoriteUser.size }
             ArtworkSort.DATE -> _artworkLiveData.value = _artworkLiveData.value.sortedBy { it.upload_at }
             ArtworkSort.LIKE -> _artworkLiveData.value = _artworkLiveData.value.sortedByDescending { it.likedArtworks.size }
+            ArtworkSort.PRICE -> _artworkLiveData.value = _artworkLiveData.value.sortedByDescending { it.minimalPrice }
         }
         Log.d("sortArtworks", _artworkLiveData.value.toString())
     }
@@ -218,9 +231,7 @@ class MainViewModel @Inject constructor(
 
     fun logOut(){
         logOutUseCase.execute()
-        _userInfoStateFlow.value = DomainUser()
         _chatRoomsList.value = emptyList()
-        _isLoggedInState.value = false
     }
 
     fun deleteAccount() = viewModelScope.launch { deleteAccountUseCase.execute(userInfoStateFlow.value.uid) }
