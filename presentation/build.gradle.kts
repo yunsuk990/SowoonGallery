@@ -89,6 +89,7 @@ dependencies {
     implementation("com.google.firebase:firebase-auth:23.0.0")
     implementation("com.google.firebase:firebase-database:21.0.0")
     implementation("com.google.firebase:firebase-messaging-ktx:23.0.0")
+    implementation("com.google.android.gms:play-services-ads:23.0.0")
 
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.6")
     implementation("androidx.navigation:navigation-compose:2.8.0")
@@ -104,9 +105,6 @@ dependencies {
     implementation("com.google.dagger:hilt-android:2.52")
     kapt("com.google.dagger:hilt-android-compiler:2.52")
 
-    //chart
-    implementation ("com.github.PhilJay:MPAndroidChart:v3.1.0")
-
     //viewModel Hilt 및 탐색
     implementation ("androidx.hilt:hilt-navigation-compose:1.2.0")
 
@@ -115,4 +113,8 @@ dependencies {
 
     //shimmer
     implementation ("com.facebook.shimmer:shimmer:0.5.0")
+
+    implementation ("com.google.android.gms:play-services-auth-api-phone:18.1.0")
+
+    implementation("net.engawapg.lib:zoomable:1.5.1")
 }
