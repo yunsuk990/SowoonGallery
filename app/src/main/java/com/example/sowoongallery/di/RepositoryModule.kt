@@ -42,7 +42,7 @@ object RepositoryModule {
     @Singleton
     fun provideAuthRepository(
         authDataSource: AuthDataSource,
-        artworkDataSource: ArtworkDataSource
+        artworkDataSource: ArtworkDataSource,
     ): AuthRepository {
         return AuthRepositoryImpl(authDataSource,artworkDataSource)
     }
