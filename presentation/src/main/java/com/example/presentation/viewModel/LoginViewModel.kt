@@ -112,7 +112,7 @@ class LoginViewModel @Inject constructor(
             .setTimeout(60L, TimeUnit.SECONDS) // Timeout and unit
             .setActivity(activity) // Activity (for callback binding)
             .setCallbacks(callbacks) // OnVerificationStateChangedCallbacks
-        if(resendToken.value!= null){
+        if(resendToken.value != null){
             options.setForceResendingToken(resendToken.value!!)
         }
         PhoneAuthProvider.verifyPhoneNumber(options.build())
@@ -154,9 +154,5 @@ class LoginViewModel @Inject constructor(
             _storedVerificationId.value = verificationId
             _resendToken.value = token
         }
-    }
-
-    fun resetAuthState() {
-        _authState.value = null // 또는 기본 상태로 초기화
     }
 }
