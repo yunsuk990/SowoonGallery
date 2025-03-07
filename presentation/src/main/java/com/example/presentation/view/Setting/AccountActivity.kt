@@ -3,29 +3,41 @@ package com.example.presentation.view.Setting
 import android.app.Activity
 import android.os.Bundle
 import android.telephony.PhoneNumberUtils
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
+import androidx.activity.viewModels
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -33,67 +45,159 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.navigation.NavController
+import androidx.compose.ui.unit.sp
 import com.example.domain.model.DomainUser
 import com.example.presentation.R
+import com.example.presentation.model.UploadState
+import com.example.presentation.utils.SignOutToastMessage
 import com.example.presentation.view.ui.theme.SowoonTheme
+import com.example.presentation.viewModel.AccountViewModel
 import com.google.gson.Gson
+import dagger.hilt.android.AndroidEntryPoint
 
+@AndroidEntryPoint
 class AccountActivity : ComponentActivity() {
+
+    private val viewModel: AccountViewModel by viewModels()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         val intent = intent.getStringExtra("userInfo")
         val userInfo = Gson().fromJson(intent, DomainUser::class.java)
+        viewModel.userInfo(userInfo)
 
         setContent {
             SowoonTheme {
-                AccountScreen(userInfo = userInfo)
+                val uploadState by viewModel.uploadState.collectAsState()
+                AccountScreen(
+                    userInfo = userInfo,
+                    updateBtnOnClick = { domainUser ->
+                        viewModel.updateUserProfile(domainUser)
+                    },
+                    signOut = {
+                        viewModel.signOut()
+                    }
+                )
+                when(uploadState){
+                    is UploadState.Success -> {
+                        Toast.makeText(this, "프로필을 수정하였습니다.", Toast.LENGTH_SHORT).show()
+                        finish()
+                    }
+                    is UploadState.Error -> {
+                        Toast.makeText(this, (uploadState as UploadState.Error).message, Toast.LENGTH_SHORT).show()
+                        finish()
+                    }
+                    is UploadState.Loading -> {
+                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                            CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+                        }
+                    }
+                    else -> {}
+                }
             }
         }
     }
 }
 
 @Composable
-fun AccountScreen(userInfo: DomainUser){
+fun AccountScreen(
+    userInfo: DomainUser,
+    updateBtnOnClick: (DomainUser) -> Unit,
+    signOut: () -> Unit
+){
+
+    var email by remember { mutableStateOf(userInfo.email) }
+    var dialogOpen by remember { mutableStateOf(false) }
+
     Column(
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.White)
     ) {
        AccountTopAppBar()
-       Row(
-           modifier = Modifier.fillMaxWidth().padding(horizontal = 15.dp, vertical = 15.dp),
-           horizontalArrangement = Arrangement.spacedBy(8.dp),
-           verticalAlignment = Alignment.CenterVertically
+       Column(
+           modifier = Modifier
+               .fillMaxWidth()
+               .padding(horizontal = 15.dp, vertical = 25.dp),
+           verticalArrangement = Arrangement.spacedBy(15.dp)
        ) {
            textField(
                value = PhoneNumberUtils.formatNumber(userInfo.phoneNumber, "KR"),
                label = "전화번호",
-               modifier = Modifier.weight(5f)
+               onValueChange = {},
+               modifier = Modifier.fillMaxWidth(),
+               enabled = false
            )
-           Button(
-               shape = RoundedCornerShape(8.dp),
-               onClick = {},
-               colors = ButtonDefaults.buttonColors(containerColor = Color.Black),
-               modifier = Modifier.weight(2f),
-               contentPadding = PaddingValues(vertical = 10.dp)
-           ) { Text("변경하기") }
+           Row(
+               horizontalArrangement = Arrangement.spacedBy(10.dp),
+               verticalAlignment = Alignment.CenterVertically
+           ){
+               textField(
+                   value = email,
+                   label = "이메일",
+                   onValueChange = { email = it },
+                   modifier = Modifier
+                       .fillMaxWidth()
+                       .weight(1f),
+                   enabled = true
+               )
+               Button(
+                   shape = RoundedCornerShape(8.dp),
+                   onClick = {
+                       updateBtnOnClick(
+                           userInfo.copy(email = email)
+                       )
+                   },
+                   colors = ButtonDefaults.buttonColors(containerColor = Color.Black),
+                   modifier = Modifier,
+                   contentPadding = PaddingValues(vertical = 10.dp, horizontal = 15.dp)
+               ) { Text("변경하기") }
+           }
+           Spacer(modifier = Modifier.weight(1f))
+           OutlinedButton(
+               modifier = Modifier.fillMaxWidth(),
+               colors = ButtonDefaults.buttonColors(
+                   containerColor = Color.Black
+               ),
+               shape = RoundedCornerShape(30.dp),
+               contentPadding = PaddingValues(vertical = 15.dp),
+               onClick = {
+                   dialogOpen = true
+               },
+           ) { Text("탈퇴하기", fontSize = 16.sp, color = Color.White) }
        }
-
+        if(dialogOpen){
+            SignOutToastMessage(
+                dismissOnClick = { dialogOpen = false},
+                confirmOnClick = {
+                    signOut()
+                    dialogOpen = false
+                }
+            )
+        }
     }
 }
 
 
 @Composable
-fun textField(value: String, label: String, modifier: Modifier) {
+fun textField(value: String, onValueChange: (String) -> Unit, label: String, modifier: Modifier, enabled: Boolean) {
     OutlinedTextField(
         value = value,
-        onValueChange = {},
-        enabled = false,
+        onValueChange = {  onValueChange(it) },
+        enabled = enabled,
         colors = OutlinedTextFieldDefaults.colors(
+            cursorColor = Color.Black,
             disabledContainerColor = Color.White,
             disabledLabelColor = Color.Black,
             disabledTextColor = Color.Black,
             disabledBorderColor = Color.Black,
+            focusedContainerColor = Color.White,
+            focusedLabelColor = Color.Black,
+            focusedBorderColor = Color.Black,
+            unfocusedBorderColor = Color.Black,
+            unfocusedTextColor = Color.Black,
+            unfocusedLabelColor = Color.Black,
         ),
         label = { Text(text = label) },
         modifier = modifier
@@ -131,6 +235,10 @@ fun AccountTopAppBar(){
 @Composable
 fun GreetingPreview3() {
     SowoonTheme {
-        AccountScreen(userInfo =  DomainUser(phoneNumber = "01099016074"))
+        AccountScreen(
+            userInfo = DomainUser(phoneNumber = "01099016074"),
+            updateBtnOnClick = { },
+            signOut = {   }
+        )
     }
 }
