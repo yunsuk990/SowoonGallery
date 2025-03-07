@@ -60,6 +60,8 @@ dependencies {
     implementation("com.google.firebase:firebase-database:21.0.0")
     implementation("com.google.firebase:firebase-storage:21.0.1")
     implementation("com.google.firebase:firebase-messaging-ktx:23.0.0")
+    implementation("com.google.android.gms:play-services-ads:23.0.0")
+
 
     //hilt
     implementation("com.google.dagger:hilt-android:2.52")
