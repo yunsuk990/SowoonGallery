@@ -32,12 +32,10 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import coil3.compose.AsyncImage
-import coil3.request.CachePolicy
-import coil3.request.ImageRequest
-import coil3.request.crossfade
 import com.example.domain.model.DomainArtwork
 import com.example.presentation.R
 import com.example.presentation.model.Screen
+import com.example.presentation.utils.AdView
 import com.example.presentation.utils.Banner
 import com.example.presentation.utils.FullScreenArtwork
 import com.example.presentation.utils.shimmerEffect
@@ -87,7 +85,6 @@ fun HomeRoot(
     navigateToArworkDetailScreen: (Int) -> Unit,
 ) {
     val scrollState = rememberScrollState()
-    var currentURL by remember { mutableStateOf("") }
     var imageTranslate by remember { mutableStateOf(false) }
 
     Column(
@@ -98,8 +95,7 @@ fun HomeRoot(
         HomeTopBar(isLoggedIn = isLoggedIn)
         AdvertiseImages(
             advertiseImageState = advertiseImageState,
-            imageLaunch = { page ->
-                currentURL = advertiseImageState[page]
+            imageLaunch = {
                 imageTranslate = true
             },
             isLoadingAdvertiseImages = isLoadingAdvertiseImages
@@ -111,17 +107,23 @@ fun HomeRoot(
             navigateToArworkDetailScreen = navigateToArworkDetailScreen
         )
 
+        //Admob 광고
+//        AdView(
+//            modifier = Modifier.fillMaxWidth()
+//        )
+        
+
         Text("체험", fontSize = 18.sp, color = Color.Black, modifier = Modifier.padding(start = 15.dp, end = 15.dp, top = 20.dp), fontWeight = FontWeight.Bold)
         Banner(title = "도자기 컵 페인팅 체험", modifier = Modifier.padding(horizontal = 15.dp, vertical = 15.dp), imageId = R.drawable.sowoon_banner_exp1,
             onClick = {
-                navController.navigate(Screen.Banner.route) {
+                navController.navigate("${Screen.Banner.route}/0") {
                     launchSingleTop = true
                     restoreState = true
                 }
             })
         Banner(title = "그림 페인팅 체험", modifier = Modifier.padding(horizontal = 15.dp, vertical = 15.dp), imageId = R.drawable.sowoon_banner_exp2,
             onClick = {
-                navController.navigate(Screen.Banner.route) {
+                navController.navigate("${Screen.Banner.route}/1") {
                     launchSingleTop = true
                     restoreState = true
                 }
@@ -198,7 +200,7 @@ fun artworkHomeCard(artwork: DomainArtwork, modifier: Modifier, onClick: () -> U
 }
 
 @Composable
-fun AdvertiseImages(advertiseImageState: List<String>, imageLaunch: (Int) -> Unit, isLoadingAdvertiseImages: Boolean) {
+fun AdvertiseImages(advertiseImageState: List<String>, imageLaunch: () -> Unit, isLoadingAdvertiseImages: Boolean) {
     val pagerState = rememberPagerState(pageCount = {advertiseImageState.size}, initialPage = 0)
     val context = LocalContext.current
 
@@ -245,7 +247,7 @@ fun AdvertiseImages(advertiseImageState: List<String>, imageLaunch: (Int) -> Uni
                     .fillMaxWidth()
                     .height(250.dp)
                     .clickable {
-                        imageLaunch(page)
+                        imageLaunch()
                     },
                 contentScale = ContentScale.Crop
             )
