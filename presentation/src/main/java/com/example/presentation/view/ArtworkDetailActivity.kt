@@ -164,7 +164,9 @@ class ArtworkDetailActivity : ComponentActivity() {
                             },
                             confirmOnClick = {
                                 requestLogin = false
-                                startActivity(Intent(this, StartActivity::class.java))
+                                startActivity(Intent(this, StartActivity::class.java)
+                                    .setFlags(
+                                        Intent.FLAG_ACTIVITY_NO_HISTORY))
                             }
                         )
                     }
@@ -397,7 +399,7 @@ fun artistProfile(modifier: Modifier, artist: DomainUser, artistInfoBtnOnClick: 
             Column(
                 modifier = Modifier.padding(start = 15.dp)
             ) {
-                Text(text = artist!!.name, fontSize = 14.sp, color = Color.Black)
+                Text(text = artist.name, fontSize = 14.sp, color = Color.Black)
                 Text(text = artist.artistProfile.career.graduate, fontSize = 14.sp, color = Color.Gray, maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
             Spacer(modifier = Modifier.weight(1f))
