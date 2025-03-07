@@ -23,10 +23,12 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.example.presentation.model.Screen
 import com.example.presentation.view.*
 import com.example.presentation.view.Setting.SettingScreen
@@ -59,7 +61,6 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainScreen(viewModel: MainViewModel){
     val navController = rememberNavController()//
@@ -91,7 +92,11 @@ fun MyAppNavHost(
         composable(Screen.MyPage.route) { MyPageScreen(viewModel, navController) }
         composable(Screen.Setting.route) { SettingScreen(viewModel, navController) }
         composable(Screen.Chat.route) { ChattingScreen(viewModel, navController) }
-        composable(Screen.Banner.route) { BannerScreen(viewModel, navController) }
+        composable("${Screen.Banner.route}/{item_id}", arguments = listOf(navArgument("item_id"){type = NavType.IntType})){ backStackEntry ->
+            val itemId = backStackEntry.arguments?.getInt("item_id") ?: 0
+            Log.d("Screen", itemId.toString())
+            BannerScreen(navController, itemId)
+        }
     }
 }
 
