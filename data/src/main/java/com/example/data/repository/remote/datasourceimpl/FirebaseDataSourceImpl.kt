@@ -149,10 +149,7 @@ class FirebaseDataSourceImpl @Inject constructor(
 
                 Log.d("sendFcmMessage_dataSourceImpl", "accessToken: ${accessToken}")
 
-                val requestBody = RequestBody.create(
-                    "application/json".toMediaType(),
-                    json.toString()
-                )
+                val requestBody = json.toString().toRequestBody("application/json".toMediaType())
 
                 val request = Request.Builder()
                     .url(fcmUrl)
