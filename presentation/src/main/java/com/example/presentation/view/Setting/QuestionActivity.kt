@@ -83,6 +83,7 @@ class QuestionActivity : ComponentActivity() {
 @Composable
 fun QuestionActivityScreen(userInfo: DomainUser, btnOnClick: (Intent) -> Unit) {
 
+    var context = LocalContext.current
     var questionText by remember { mutableStateOf("") }
     var managerEmail = stringResource(id = R.string.manager_email)
 
@@ -120,16 +121,16 @@ fun QuestionActivityScreen(userInfo: DomainUser, btnOnClick: (Intent) -> Unit) {
             Button(
                 onClick = {
                     val email = userInfo.email
-
-                    val uri = Uri.parse("mailto:$managerEmail") // 받는 사람
-
-                    val intent = Intent(Intent.ACTION_SENDTO, uri)
-
-                    intent.putExtra(Intent.EXTRA_TEXT, "$questionText")
-                    intent.putExtra(Intent.EXTRA_SUBJECT, "Sowoon 문의: ")
-                    intent.putExtra(Intent.EXTRA_EMAIL, arrayOf(email))
-                    btnOnClick(intent)
-
+                    if(email.isEmpty()){
+                        Toast.makeText(context, "계정설정에서 이메일을 설정해주세요.", Toast.LENGTH_SHORT).show()
+                    }else{
+                        val uri = Uri.parse("mailto:$managerEmail") // 받는 사람
+                        val intent = Intent(Intent.ACTION_SENDTO, uri)
+                        intent.putExtra(Intent.EXTRA_TEXT, "$questionText")
+                        intent.putExtra(Intent.EXTRA_SUBJECT, "Sowoon 문의: ")
+                        intent.putExtra(Intent.EXTRA_EMAIL, arrayOf(email))
+                        btnOnClick(intent)
+                    }
                 },
                 modifier = Modifier.fillMaxWidth(),
                 colors = ButtonDefaults.buttonColors(
