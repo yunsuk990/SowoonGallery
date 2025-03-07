@@ -17,6 +17,8 @@ import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
 import com.google.firebase.messaging.FirebaseMessaging
 import com.google.firebase.storage.FirebaseStorage
+import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
@@ -42,6 +44,7 @@ class AuthDataSourceImpl @Inject constructor(
 
     companion object {
         private const val KEY_UID = "USER_UID"
+        private const val KEY_RECENT_CATEGORY = "RECENT_CATEGORY"
     }
 
     override fun getAuthStateFlow(): Flow<String?> = callbackFlow {
@@ -66,6 +69,37 @@ class AuthDataSourceImpl @Inject constructor(
         sharedPreferences.edit().putString(KEY_UID, firebaseAuth.currentUser?.uid.toString()).apply()
     }
 
+    override fun saveRecentCategory(category: String) {
+        val categoryMap = getRecentCategoryData().toMutableMap()
+        var flag = false
+        categoryMap[category] = categoryMap.getOrDefault(category, 0) + 1
+        for(value in categoryMap.values){
+            if(value <= 10) flag = true
+        }
+        if(!flag){
+            for((key, value) in categoryMap){
+                categoryMap[key] = value % 10
+                Log.d("saveRecentCategory_DataSourceImpl", "key: $key, value: $value")
+            }
+        }
+        sharedPreferences.edit().putString(KEY_RECENT_CATEGORY, Gson().toJson(categoryMap)).apply()
+    }
+
+    override fun getRecentCategoryData(): Map<String, Int>{
+        val json = sharedPreferences.getString(KEY_RECENT_CATEGORY, "")
+        Log.d("getRecentCategoryData", json.toString())
+        return Gson().fromJson(json, object : TypeToken<Map<String, Int>>() {}.type) ?: emptyMap()
+    }
+
+    override fun getMostViewedCategory(): String? {
+        val categoryMap = getRecentCategoryData()
+        return categoryMap.maxByOrNull { it.value }?.key
+    }
+
+    override fun deleteRecentCategory(){
+        sharedPreferences.edit().remove(KEY_RECENT_CATEGORY).apply()
+    }
+
 
     override fun getUid(): String? = sharedPreferences.getString(KEY_UID, null)
 
@@ -80,8 +114,9 @@ class AuthDataSourceImpl @Inject constructor(
         }
     }
 
-    override fun signOut() {
+    override fun logOut() {
         clearUid()
+        deleteRecentCategory()
         firebaseAuth.signOut()
     }
 

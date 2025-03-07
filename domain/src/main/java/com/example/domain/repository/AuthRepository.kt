@@ -4,14 +4,11 @@ import android.net.Uri
 import com.example.domain.model.Career
 import com.example.domain.model.DomainUser
 import com.example.domain.model.Response
-import com.google.android.gms.tasks.Task
-import com.google.firebase.auth.AuthResult
 import com.google.firebase.auth.PhoneAuthCredential
-import com.google.firebase.database.DataSnapshot
 import kotlinx.coroutines.flow.Flow
 
 interface AuthRepository {
-    fun signOut()
+    fun logOut()
     fun clear()
     fun getAuthStateFlow(): Flow<String?>
     //사용자 가입 처리
@@ -29,6 +26,8 @@ interface AuthRepository {
     fun saveUid()
     fun getUid(): String?
     fun clearUid()
+    fun getMostViewedCategory(): String?
+    fun saveRecentCategory(category: String)
 
     fun registerMessagingToken(uid: String)
 

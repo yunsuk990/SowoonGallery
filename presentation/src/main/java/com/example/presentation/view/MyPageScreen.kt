@@ -60,26 +60,33 @@ fun MyPageScreen(
     var requestLogin by remember { mutableStateOf(false) }
     val context = LocalContext.current
     val artistSoldArtworks by viewModel.artistSoldArtworks.collectAsState()
+    val mostViewedArtworks by viewModel.recommendArtworks.collectAsState()
 
     LaunchedEffect(isLoggedInState) {
         if(isLoggedInState){
             Log.d("MyPageScreen", "arworksUid: ${userInfo.artworksUid}")
             if(userInfo.mode == 1){
+                //판매한 작품(작가)
                 viewModel.getArtistSoldArtwork(userInfo.artworksUid)
             }else{
+                //구매한 작품(사용자)
+                viewModel.getMostViewedCategory()
                 viewModel.getArtistSoldArtwork(userInfo.purchasedArtworks)
             }
         }
+    }
+    LaunchedEffect(mostViewedArtworks) {
+        Log.d("mostViewArtwroks", mostViewedArtworks.toString())
     }
 
 
 
 
     MyPageRoot(
-        navController = navController,
         isLoggedInState = isLoggedInState,
         userInfo = userInfo,
-        onLikedBtnClick = { navController.navigate(Screen.Favorite.route) { launchSingleTop = true }} ,
+        onSettingBtnClick = { navController.navigate(Screen.Setting.route) { launchSingleTop = true }},
+        onLikedBtnClick = { navController.navigate(Screen.Favorite.route) { launchSingleTop = true }},
         onBookMarkBtnClick = { navController.navigate(Screen.BookMark.route) { launchSingleTop = true }} ,
         onProfileImageClick = {
             if(isLoggedInState){
@@ -88,13 +95,14 @@ fun MyPageScreen(
                 requestLogin = true
             }
         },
-        logOutBtnOnClick = { viewModel.logOut() },
+        mostViewedArtworks = mostViewedArtworks,
         artistSoldArtworks = artistSoldArtworks
     )
     if(requestLogin){
         LoginToastMessage(
             dismissOnClick = { requestLogin = false},
-            confirmOnClick = { context.startActivity(Intent(context, StartActivity::class.java))}
+            confirmOnClick = { context.startActivity(Intent(context, StartActivity::class.java).setFlags(
+                Intent.FLAG_ACTIVITY_NO_HISTORY))}
         )
     }
 
@@ -104,12 +112,12 @@ fun MyPageScreen(
 fun MyPageRoot(
     isLoggedInState: Boolean,
     userInfo: DomainUser,
+    onSettingBtnClick: () -> Unit,
     onLikedBtnClick: () -> Unit,
     onBookMarkBtnClick: () -> Unit,
     onProfileImageClick: () -> Unit,
-    logOutBtnOnClick: () -> Unit,
-    navController: NavHostController,
-    artistSoldArtworks: List<DomainArtwork>
+    artistSoldArtworks: List<DomainArtwork>,
+    mostViewedArtworks: List<DomainArtwork>
 ){
     Column(
         modifier = Modifier.fillMaxSize(),
@@ -118,13 +126,13 @@ fun MyPageRoot(
         profileUser(
             isLoggedInState = isLoggedInState,
             userInfo = userInfo,
-            navController = navController,
             onLikedBtnClick = onLikedBtnClick,
             onBookMarkBtnClick = onBookMarkBtnClick,
-            onProfileImageClick = onProfileImageClick
+            onProfileImageClick = onProfileImageClick,
+            onSettingBtnClick = onSettingBtnClick
         )
         Spacer(modifier = Modifier.height(30.dp))
-        profileMenu(userInfo, logOutBtnOnClick = logOutBtnOnClick, artistSoldArtworks = artistSoldArtworks)
+        profileMenu(userInfo, artistSoldArtworks = artistSoldArtworks, mostViewedArtworks = mostViewedArtworks)
     }
 }
 
@@ -135,8 +143,9 @@ fun profileUser(
     onLikedBtnClick: () -> Unit,
     onBookMarkBtnClick: () -> Unit,
     onProfileImageClick: () -> Unit,
-    navController: NavHostController
+    onSettingBtnClick: () -> Unit
 ) {
+    val context = LocalContext.current
     val modeText = when(userInfo.mode){
         0 -> "User"
         1 -> "Artist"
@@ -188,10 +197,7 @@ fun profileUser(
                     .padding(end = 16.dp) // 우측 여백 추가
                     .size(32.dp)
                     .noRippleClickable {
-                        navController.navigate("setting") {
-                            launchSingleTop = true
-                            restoreState = true
-                        }
+                        onSettingBtnClick()
                     }
             )
         }
@@ -213,7 +219,15 @@ fun profileUser(
                 modifier = Modifier.padding(top = 10.dp)
             )
         }else{
-            Text(text = "로그인", textDecoration = TextDecoration.Underline, fontSize = 20.sp, color = Color.Black, modifier = Modifier.padding(top = 25.dp))
+            Text(text = "로그인",
+                textDecoration = TextDecoration.Underline,
+                fontSize = 20.sp,
+                color = Color.Black,
+                modifier = Modifier.padding(top = 25.dp).clickable {
+                    context.startActivity(Intent(context, StartActivity::class.java).setFlags(
+                        Intent.FLAG_ACTIVITY_NO_HISTORY))
+                }
+            )
         }
         Row(
             modifier = Modifier.padding(top = 15.dp, start = 20.dp, end = 20.dp),
@@ -262,11 +276,11 @@ fun userSection(modifier: Modifier, title: String, icon: Int, size: Int, onClick
 @Composable
 fun profileMenu(
     userInfo: DomainUser,
-    logOutBtnOnClick: () -> Unit,
-    artistSoldArtworks: List<DomainArtwork>
+    artistSoldArtworks: List<DomainArtwork>,
+    mostViewedArtworks: List<DomainArtwork>
 ) {
     var selectedIndex by remember { mutableStateOf(0) }
-    val tabTitles = if(userInfo.mode == 0) listOf("설정", "구매한 작품") else listOf("설정", "판매한 작품")
+    val tabTitles = if(userInfo.mode == 0) listOf("관심 작품", "구매한 작품") else listOf("설정", "판매한 작품")
     Column {
         TabRow(
             selectedTabIndex = selectedIndex,
@@ -298,20 +312,38 @@ fun profileMenu(
             }
         }
         when(selectedIndex){
-            0 -> settingScreen(userInfo, logOutBtnOnClick = logOutBtnOnClick)
-            1 -> differentArtworks(artistSoldArtworks = artistSoldArtworks)
+            0 -> MostViewedArtworksScreen(artworkList = mostViewedArtworks)
+            1 -> DifferentArtworks(artistSoldArtworks = artistSoldArtworks)
         }
     }
 
 }
 
 @Composable
-fun settingScreen(userInfo: DomainUser, logOutBtnOnClick: () -> Unit) {
-
+fun MostViewedArtworksScreen(artworkList: List<DomainArtwork>){
+    val context = LocalContext.current
+    LazyVerticalStaggeredGrid(
+        modifier = Modifier
+            .padding(top = 20.dp, start = 15.dp, end = 15.dp)
+            .fillMaxHeight(1f),
+        columns = StaggeredGridCells.Fixed(2),
+        horizontalArrangement = Arrangement.spacedBy(15.dp),
+        verticalItemSpacing = 15.dp,
+        state = rememberLazyStaggeredGridState(),
+    ) {
+        items(artworkList.size){ index ->
+            artistArtworkCard(
+                artwork = artworkList[index],
+                onClick = {
+                    context.startActivity(Intent(context, ArtworkDetailActivity::class.java).putExtra("artwork", Gson().toJson(artworkList[index])))
+                }
+            )
+        }
+    }
 }
 
 @Composable
-fun differentArtworks(artistSoldArtworks: List<DomainArtwork>) {
+fun DifferentArtworks(artistSoldArtworks: List<DomainArtwork>) {
     val context = LocalContext.current
     var count = 0
     artistSoldArtworks.map { count += it.minimalPrice.toInt() }
@@ -346,21 +378,20 @@ fun differentArtworks(artistSoldArtworks: List<DomainArtwork>) {
 
 @Preview(showSystemUi = true)
 @Composable
-fun myPageScreenPreview(){
-    val navController = rememberNavController()
+fun MyPageScreenPreview(){
     Surface(modifier = Modifier
         .background(Color.White)
         .fillMaxSize()) {
         Column(modifier = Modifier.background(Color.White)) {
             MyPageRoot(
                 isLoggedInState = true,
-                DomainUser(name = "YunSuk", mode = 1),
+                DomainUser(name = "YunSuk", mode = 0),
                 {},
                 {},
                 {},
                 {},
-                navController,
-                artistSoldArtworks = listOf()
+                artistSoldArtworks = listOf(),
+                mostViewedArtworks = listOf()
             )
 
         }
