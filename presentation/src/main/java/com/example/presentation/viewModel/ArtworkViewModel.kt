@@ -69,6 +69,7 @@ class ArtworkViewModel @Inject constructor(
             ArtworkSort.BOOKMARK -> _artistArtworks.value = _artistArtworks.value.sortedByDescending { it.favoriteUser.size }
             ArtworkSort.DATE -> _artistArtworks.value = _artistArtworks.value.sortedBy { it.upload_at }
             ArtworkSort.LIKE -> _artistArtworks.value = _artistArtworks.value.sortedByDescending { it.likedArtworks.size }
+            ArtworkSort.PRICE -> _artistArtworks.value = _artistArtworks.value.sortedByDescending { it.minimalPrice }
         }
 
     }
