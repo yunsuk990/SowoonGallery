@@ -53,7 +53,8 @@ fun  SettingScreen(viewModel: MainViewModel, navController: NavHostController){
             actionBtn = {
                 if(userInfo.uid.isEmpty()){
                     actionButton(text = "로그인", onClick = {
-                        context.startActivity(Intent(context, StartActivity::class.java))
+                        context.startActivity(Intent(context, StartActivity::class.java).setFlags(
+                            Intent.FLAG_ACTIVITY_NO_HISTORY))
                     })
                 }else{
                     actionButton(text = "로그아웃", onClick = {
@@ -68,9 +69,8 @@ fun  SettingScreen(viewModel: MainViewModel, navController: NavHostController){
                 dismissOnClick = { requestLogin = false },
                 confirmOnClick = {
                     requestLogin = false
-                    context.startActivity(Intent(context, StartActivity::class.java).apply {
-                        flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-                    })
+                    context.startActivity(Intent(context, StartActivity::class.java).setFlags(
+                        Intent.FLAG_ACTIVITY_NO_HISTORY))
                 }
             )
         }
@@ -113,14 +113,21 @@ fun SettingRoot(
             }
         )
         menuItem(
-            icon = R.drawable.release,
-            title = "공지사항",
+            icon = R.drawable.lock,
+            title = "계정 관리",
             onClick = {
                 if(userInfo.uid.isEmpty()){
                     requestLogin()
                 }else{
-                    context.startActivity(Intent(context, AnnounceActivity::class.java))
+                    context.startActivity(Intent(context, AccountActivity::class.java).putExtra("userInfo", Gson().toJson(userInfo)))
                 }
+            }
+        )
+        menuItem(
+            icon = R.drawable.release,
+            title = "공지사항",
+            onClick = {
+                context.startActivity(Intent(context, AnnounceActivity::class.java))
             })
         menuItem(
             icon = R.drawable.notification,
@@ -146,15 +153,9 @@ fun SettingRoot(
         menuItem(
             icon = R.drawable.alert,
             title = "앱 관리", onClick = {
-                if(userInfo.uid.isEmpty()){
-                    requestLogin()
-                }else{
-                    context.startActivity(Intent(context, AppVersionActivity::class.java))
-                }
+                context.startActivity(Intent(context, AppVersionActivity::class.java))
             }
         )
-
-
         Spacer(modifier = Modifier.weight(1f))
         actionBtn()
     }
