@@ -19,4 +19,5 @@
     <string name="title_activity_question">QuestionActivity</string>
     <string name="title_activity_banner">BannerActivity</string>
     <string name="title_activity_notification">NotificationActivity</string>
+    <string name="booking_1">https://booking.naver.com/booking/6/bizes/1358685/items/6565792</string>
 </resources>
