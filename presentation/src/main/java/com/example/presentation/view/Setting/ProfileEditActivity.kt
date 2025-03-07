@@ -333,7 +333,7 @@ fun ProfileEditScreen(userInfo: DomainUser, onUploadBtnClick: (Uri?, DomainUser)
                     .align(Alignment.BottomCenter),
                 photoGalleryUri = photoGalleryUri,
                 onClick = {
-                    val updateUserInfo = userInfo.copy(name = name, review = review, profileImage = photoGalleryUri.toString(), birth = selectedDate)
+                    val updateUserInfo = userInfo.copy(name = name, review = review, email = email, profileImage = photoGalleryUri.toString(), birth = selectedDate)
                     Log.d("uploadButton", updateUserInfo.toString())
                     onUploadBtnClick(photoGalleryUri, updateUserInfo)
                 }
