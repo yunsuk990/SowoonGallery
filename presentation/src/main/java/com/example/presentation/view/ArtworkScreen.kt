@@ -68,7 +68,15 @@ fun ArtworkScreen(viewModel: MainViewModel) {
                 selectedIndex = index
                 viewModel.sortCategoryArtworks(title)
             }
-            artworkGridLayout(artworkList)
+            artworkGridLayout(
+                artworkList = artworkList,
+                artworkOnClick = { artwork ->
+                    viewModel.saveRecentCategory(artwork.category!!)
+                    var intent = Intent(context, ArtworkDetailActivity::class.java)
+                    intent.putExtra("artwork", Gson().toJson(artwork))
+                    context.startActivity(intent)
+                }
+            )
         }
         if(userInfo.mode == 1){
             addArtworkForArtists(Modifier.align(Alignment.BottomEnd), onClick = {
@@ -94,7 +102,7 @@ fun artworkCategoryRow(list: List<String>, selectedIndex: Int, onClick: (Int, St
 }
 
 @Composable
-fun artworkGridLayout(artworkList: List<DomainArtwork>){
+fun artworkGridLayout(artworkList: List<DomainArtwork>, artworkOnClick: (DomainArtwork) -> Unit){
     val context = LocalContext.current
     LazyVerticalStaggeredGrid(
         columns = StaggeredGridCells.Fixed(2),
@@ -102,11 +110,7 @@ fun artworkGridLayout(artworkList: List<DomainArtwork>){
             artworkList?.let { list ->
                 if(list.isNotEmpty()){
                     items(artworkList!!.size) {
-                        artworkCard(artwork = artworkList!![it]){
-                            var intent = Intent(context, ArtworkDetailActivity::class.java)
-                            intent.putExtra("artwork", Gson().toJson(artworkList!![it]))
-                            context.startActivity(intent)
-                        }
+                        artworkCard(artwork = artworkList[it]){ artworkOnClick(artworkList[it]) }
                     }
                 }
             }
@@ -170,7 +174,7 @@ fun ProfileTopBar(onSortByChanged: (ArtworkSort) -> Unit) {
 fun FilterDropDownMenu(onSortByChanged: (ArtworkSort) -> Unit){
     var dropDownMenuExpanded by remember { mutableStateOf(false) }
     var title by remember { mutableStateOf("") }
-    var list = listOf(ArtworkSort.DATE, ArtworkSort.LIKE, ArtworkSort.BOOKMARK)
+    var list = listOf(ArtworkSort.DATE, ArtworkSort.LIKE, ArtworkSort.BOOKMARK, ArtworkSort.PRICE)
     Row(
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -210,8 +214,8 @@ fun FilterDropDownMenu(onSortByChanged: (ArtworkSort) -> Unit){
 fun profileScreenTest(){
     val artworkList = arrayListOf<DomainArtwork>()
     val list = arrayListOf("전체", "한국화", "수채화", "아크릴화", "도자기")
-    Scaffold {
-        Box(modifier = Modifier.fillMaxSize()) {
+    Scaffold { padding ->
+        Box(modifier = Modifier.fillMaxSize().padding(padding)) {
             Column(
                 modifier = Modifier
                     .background(Color.White)
@@ -219,7 +223,7 @@ fun profileScreenTest(){
             ) {
                 ProfileTopBar() {}
                 artworkCategoryRow(list,0) { index, title -> }
-                artworkGridLayout(artworkList)
+                artworkGridLayout(artworkList, artworkOnClick = {})
             }
             addArtworkForArtists(Modifier.align(Alignment.BottomEnd), onClick = {})
         }
