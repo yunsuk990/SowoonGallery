@@ -52,7 +52,6 @@ class SplashActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         askNotificationPermission()
-
         setContent {
             SowoonTheme {
                 SplashScreen()
@@ -115,6 +114,8 @@ class SplashActivity : ComponentActivity() {
                 Log.d("askNotificationPermission","NOGRANTED")
                 requestPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
             }
+        }else{
+            startActivity1()
         }
     }
 
