@@ -106,6 +106,9 @@ class MainViewModel @Inject constructor(
 
                     // 로그인 여부는 userInfoStateFlow로 판단
                     _isLoggedInState.value = userInfo?.uid != null
+                    if(!_isLoggedInState.value){
+                        _artistSoldArtworks.value = emptyList()
+                    }
 
                     // 로그인된 경우 채팅 목록 가져오기
                     userInfo?.uid?.let {
@@ -129,17 +132,16 @@ class MainViewModel @Inject constructor(
 
     //채팅방 목록 가져오기 -> 리스너로 구현
     fun loadChatLists(uid: String?){
-        //uid 가져오는 속도 체크
         uid?.let {
             viewModelScope.launch {
                 getUserChatListsUseCase.execute(uid).collect{ chatRoomLists ->
+                    Log.d("loadChatLists", chatRoomLists.toString())
                     var sum = 0
                     chatRoomLists.forEach{ chatRoom ->
-                        sum += chatRoom.chatRoom.unreadMessages[uid]!!
+                        sum += chatRoom.chatRoom.unreadMessages[uid] ?: 0
                     }
                     _chatRoomsList.value = chatRoomLists.sortedByDescending{ it.chatRoom.lastMessage.timestamp }
                     _unreadMessageCount.value = sum
-                    Log.d("loadChatLists", chatRoomLists.toString())
                 }
 
             }
@@ -233,9 +235,6 @@ class MainViewModel @Inject constructor(
         logOutUseCase.execute()
         _chatRoomsList.value = emptyList()
     }
-
-    fun deleteAccount() = viewModelScope.launch { deleteAccountUseCase.execute(userInfoStateFlow.value.uid) }
-
 
     fun getArtistSoldArtwork(artworks: Map<String, Boolean>) {
         artworks.isNotEmpty().let {
