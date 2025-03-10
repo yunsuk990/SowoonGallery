@@ -43,7 +43,8 @@ object RepositoryModule {
     fun provideAuthRepository(
         authDataSource: AuthDataSource,
         artworkDataSource: ArtworkDataSource,
+        firebaseDataSource: FirebaseDataSource
     ): AuthRepository {
-        return AuthRepositoryImpl(authDataSource,artworkDataSource)
+        return AuthRepositoryImpl(authDataSource,artworkDataSource,firebaseDataSource)
     }
 }
