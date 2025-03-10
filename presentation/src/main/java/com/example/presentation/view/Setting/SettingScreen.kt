@@ -2,6 +2,8 @@ package com.example.presentation.view.Setting
 
 import android.content.Intent
 import android.util.Log
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -15,6 +17,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -24,6 +27,7 @@ import androidx.navigation.compose.rememberNavController
 import com.example.domain.model.DomainUser
 import com.example.presentation.R
 import com.example.presentation.model.Screen
+import com.example.presentation.utils.AutoResizedText
 import com.example.presentation.utils.LogOutToastMessage
 import com.example.presentation.utils.LoginToastMessage
 import com.example.presentation.view.StartActivity
@@ -31,13 +35,19 @@ import com.example.presentation.viewModel.MainViewModel
 import com.google.gson.Gson
 
 @Composable
-fun  SettingScreen(viewModel: MainViewModel, navController: NavHostController){
+fun SettingScreen(viewModel: MainViewModel, navController: NavHostController){
 
     val userInfo by viewModel.userInfoStateFlow.collectAsState()
     Log.d("SettingScreen", "userInfo: $userInfo")
     val context = LocalContext.current
     var requestLogin by remember { mutableStateOf(false) }
     var requestLogOut by remember { mutableStateOf(false) }
+
+    val loginActivityLauncher = rememberLauncherForActivityResult( ActivityResultContracts.StartActivityForResult()) { result ->
+            navController.navigate("home") {
+                popUpTo(navController.graph.startDestinationId) { inclusive = true }
+            }
+        }
 
     Scaffold(
         topBar = { SettingTopAppBar(navController = navController) },
@@ -53,8 +63,11 @@ fun  SettingScreen(viewModel: MainViewModel, navController: NavHostController){
             actionBtn = {
                 if(userInfo.uid.isEmpty()){
                     actionButton(text = "로그인", onClick = {
-                        context.startActivity(Intent(context, StartActivity::class.java).setFlags(
-                            Intent.FLAG_ACTIVITY_NO_HISTORY))
+                        loginActivityLauncher.launch(
+                            Intent(context, StartActivity::class.java).setFlags(
+                                Intent.FLAG_ACTIVITY_NO_HISTORY
+                            )
+                        )
                     })
                 }else{
                     actionButton(text = "로그아웃", onClick = {
@@ -69,8 +82,11 @@ fun  SettingScreen(viewModel: MainViewModel, navController: NavHostController){
                 dismissOnClick = { requestLogin = false },
                 confirmOnClick = {
                     requestLogin = false
-                    context.startActivity(Intent(context, StartActivity::class.java).setFlags(
-                        Intent.FLAG_ACTIVITY_NO_HISTORY))
+                    loginActivityLauncher.launch(
+                        Intent(context, StartActivity::class.java).setFlags(
+                            Intent.FLAG_ACTIVITY_NO_HISTORY
+                        )
+                    )
                 }
             )
         }
@@ -200,7 +216,12 @@ fun actionButton(
         onClick = {
             onClick()
         },
-    ) { Text(text, fontSize = 16.sp, color = Color.White) }
+    ) { AutoResizedText(
+        text = text, style = TextStyle(
+            fontSize = 14.sp,
+        ), color = Color.White,
+        modifier = Modifier
+    )}
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
