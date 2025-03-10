@@ -30,11 +30,13 @@ interface ArtworkDataSource {
 
     suspend fun getRecentArtworks(limit: Int ): List<DomainArtwork>
 
-    suspend fun uploadImageToStorage(imageUri: Uri, mode: Int): String
+    suspend fun uploadImageToStorage(key: String, imageUri: Uri, mode: Int): String
 
     suspend fun uploadImageToRTDB(artwork: DomainArtwork): Response<Boolean>
 
     suspend fun removeUserFromLikedArtworks(uid: String): Boolean
+
+    suspend fun removeUserFromBookmarkArtworks(uid: String): Boolean
 
     suspend fun getFavoritesArtwork(uid: String): Flow<List<DomainArtwork>>
 
