@@ -54,7 +54,7 @@ class ArtworkRepositoryImpl @Inject constructor(
 
     override suspend fun uploadNewArtwork(artwork: DomainArtwork, imageUri: Uri): Response<Boolean> {
         //artworkUrl -> Storage에 업로드
-        val artworkUrl = artworkDataSource.uploadImageToStorage(imageUri = imageUri, mode = 0)
+        val artworkUrl = artworkDataSource.uploadImageToStorage(key = artwork.key!!, imageUri = imageUri, mode = 0)
         val updateArtwork = artwork.copy(url = artworkUrl)
         return artworkDataSource.uploadImageToRTDB(updateArtwork)
     }
@@ -66,7 +66,7 @@ class ArtworkRepositoryImpl @Inject constructor(
                 val uploadResults = artworkList.map { (uri, artwork) ->
                     // 각 이미지에 대해 비동기적으로 업로드 작업 실행
                     async {
-                        val artworkUrl = artworkDataSource.uploadImageToStorage(uri, mode = 0)
+                        val artworkUrl = artworkDataSource.uploadImageToStorage(key = artwork.key!!, imageUri = uri, mode = 0)
                         val updatedArtwork = artwork.copy(url = artworkUrl)
                         artworkDataSource.uploadImageToRTDB(updatedArtwork)
                     }
