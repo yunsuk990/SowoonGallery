@@ -6,7 +6,9 @@ import android.icu.text.DecimalFormat
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -103,7 +105,9 @@ class ArtworkDetailActivity : ComponentActivity() {
                 val isLoadingArtistArtworks by viewModel.isLoadingArtistArtworks.collectAsState()
                 val artworkLikedCountState by viewModel.artworkLikedCountState.observeAsState(0)
                 var requestLogin by remember { mutableStateOf(false) }
-
+                val loginActivityLauncher = rememberLauncherForActivityResult( ActivityResultContracts.StartActivityForResult()) { result ->
+                    finish()
+                }
 
                 Surface(
                     modifier = Modifier
@@ -164,9 +168,9 @@ class ArtworkDetailActivity : ComponentActivity() {
                             },
                             confirmOnClick = {
                                 requestLogin = false
-                                startActivity(Intent(this, StartActivity::class.java)
-                                    .setFlags(
-                                        Intent.FLAG_ACTIVITY_NO_HISTORY))
+                                loginActivityLauncher.launch(Intent(this, StartActivity::class.java)
+                                    .setFlags(Intent.FLAG_ACTIVITY_NO_HISTORY)
+                                )
                             }
                         )
                     }
