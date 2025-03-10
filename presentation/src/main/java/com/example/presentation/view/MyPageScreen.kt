@@ -2,6 +2,8 @@ package com.example.presentation.view
 
 import android.content.Intent
 import android.util.Log
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -61,6 +63,11 @@ fun MyPageScreen(
     val context = LocalContext.current
     val artistSoldArtworks by viewModel.artistSoldArtworks.collectAsState()
     val mostViewedArtworks by viewModel.recommendArtworks.collectAsState()
+    val loginActivityLauncher = rememberLauncherForActivityResult( ActivityResultContracts.StartActivityForResult()) { result ->
+        navController.navigate(Screen.Home.route) {
+            popUpTo(navController.graph.startDestinationId) { inclusive = true }
+        }
+    }
 
     LaunchedEffect(isLoggedInState) {
         if(isLoggedInState){
@@ -70,10 +77,10 @@ fun MyPageScreen(
                 viewModel.getArtistSoldArtwork(userInfo.artworksUid)
             }else{
                 //구매한 작품(사용자)
-                viewModel.getMostViewedCategory()
                 viewModel.getArtistSoldArtwork(userInfo.purchasedArtworks)
             }
         }
+        viewModel.getMostViewedCategory()
     }
     LaunchedEffect(mostViewedArtworks) {
         Log.d("mostViewArtwroks", mostViewedArtworks.toString())
@@ -95,14 +102,24 @@ fun MyPageScreen(
                 requestLogin = true
             }
         },
+        loginBtnClick = {
+            loginActivityLauncher.launch(Intent(context, StartActivity::class.java)
+                .setFlags(
+                Intent.FLAG_ACTIVITY_NO_HISTORY)
+            )
+        },
         mostViewedArtworks = mostViewedArtworks,
         artistSoldArtworks = artistSoldArtworks
     )
     if(requestLogin){
         LoginToastMessage(
             dismissOnClick = { requestLogin = false},
-            confirmOnClick = { context.startActivity(Intent(context, StartActivity::class.java).setFlags(
-                Intent.FLAG_ACTIVITY_NO_HISTORY))}
+            confirmOnClick = {
+                loginActivityLauncher.launch(Intent(context, StartActivity::class.java)
+                    .setFlags(
+                        Intent.FLAG_ACTIVITY_NO_HISTORY)
+                )
+            }
         )
     }
 
@@ -116,8 +133,9 @@ fun MyPageRoot(
     onLikedBtnClick: () -> Unit,
     onBookMarkBtnClick: () -> Unit,
     onProfileImageClick: () -> Unit,
+    loginBtnClick: () -> Unit,
     artistSoldArtworks: List<DomainArtwork>,
-    mostViewedArtworks: List<DomainArtwork>
+    mostViewedArtworks: List<DomainArtwork>,
 ){
     Column(
         modifier = Modifier.fillMaxSize(),
@@ -129,7 +147,8 @@ fun MyPageRoot(
             onLikedBtnClick = onLikedBtnClick,
             onBookMarkBtnClick = onBookMarkBtnClick,
             onProfileImageClick = onProfileImageClick,
-            onSettingBtnClick = onSettingBtnClick
+            onSettingBtnClick = onSettingBtnClick,
+            loginBtnClick = loginBtnClick
         )
         Spacer(modifier = Modifier.height(30.dp))
         profileMenu(userInfo, artistSoldArtworks = artistSoldArtworks, mostViewedArtworks = mostViewedArtworks)
@@ -143,7 +162,8 @@ fun profileUser(
     onLikedBtnClick: () -> Unit,
     onBookMarkBtnClick: () -> Unit,
     onProfileImageClick: () -> Unit,
-    onSettingBtnClick: () -> Unit
+    onSettingBtnClick: () -> Unit,
+    loginBtnClick: () -> Unit
 ) {
     val context = LocalContext.current
     val modeText = when(userInfo.mode){
@@ -195,7 +215,7 @@ fun profileUser(
                 modifier = Modifier
                     .align(Alignment.TopEnd) // 오른쪽 끝 정렬
                     .padding(end = 16.dp) // 우측 여백 추가
-                    .size(32.dp)
+                    .size(38.dp)
                     .noRippleClickable {
                         onSettingBtnClick()
                     }
@@ -223,10 +243,7 @@ fun profileUser(
                 textDecoration = TextDecoration.Underline,
                 fontSize = 20.sp,
                 color = Color.Black,
-                modifier = Modifier.padding(top = 25.dp).clickable {
-                    context.startActivity(Intent(context, StartActivity::class.java).setFlags(
-                        Intent.FLAG_ACTIVITY_NO_HISTORY))
-                }
+                modifier = Modifier.padding(top = 25.dp).clickable { loginBtnClick() }
             )
         }
         Row(
@@ -280,7 +297,7 @@ fun profileMenu(
     mostViewedArtworks: List<DomainArtwork>
 ) {
     var selectedIndex by remember { mutableStateOf(0) }
-    val tabTitles = if(userInfo.mode == 0) listOf("관심 작품", "구매한 작품") else listOf("설정", "판매한 작품")
+    val tabTitles = if(userInfo.mode == 0) listOf("추천 작품", "구매한 작품") else listOf("추천 작품", "판매한 작품")
     Column {
         TabRow(
             selectedTabIndex = selectedIndex,
@@ -386,6 +403,7 @@ fun MyPageScreenPreview(){
             MyPageRoot(
                 isLoggedInState = true,
                 DomainUser(name = "YunSuk", mode = 0),
+                {},
                 {},
                 {},
                 {},
