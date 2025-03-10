@@ -9,57 +9,72 @@ import android.media.RingtoneManager
 import android.os.Build
 import android.util.Log
 import androidx.core.app.NotificationCompat
+import androidx.core.app.TaskStackBuilder
+import com.example.domain.model.DomainArtwork
+import com.example.domain.model.DomainUser
+import com.example.domain.repository.AuthRepository
+import com.example.domain.usecase.authUseCase.SaveMessagingNewToken
+import com.example.domain.usecase.authUseCase.SaveMessagingToken
+import com.example.presentation.MainActivity
 import com.example.presentation.R
 import com.example.presentation.view.ChatRoomActivity
+import com.google.firebase.messaging.Constants
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
+import com.google.gson.Gson
+import javax.inject.Inject
 
 class MyFirebaseMessagingService: FirebaseMessagingService() {
-    override fun getStartCommandIntent(p0: Intent): Intent {
-        return super.getStartCommandIntent(p0)
-    }
+
+    @Inject
+    lateinit var sendTokenUseCase: SaveMessagingNewToken
 
     override fun handleIntent(intent: Intent) {
-        super.handleIntent(intent)
-    }
-
-    override fun onDeletedMessages() {
-        super.onDeletedMessages()
+        val new = intent.apply {
+            val temp = extras?.apply {
+                remove(Constants.MessageNotificationKeys.ENABLE_NOTIFICATION)
+                remove("gcm.notification.e")
+            }
+            replaceExtras(temp)
+        }
+        super.handleIntent(new)
     }
 
     override fun onMessageReceived(p0: RemoteMessage) {
         // FCM 메시지를 수신했을 때 호출됩니다.
-        if (p0.getNotification() != null) {
-            // 알림 메시지를 처리합니다.
-            val title: String = p0.notification!!.title.toString()
-            val body: String = p0.notification!!.body.toString()
-            Log.d("onMessageReceived", "title: ${title}, body: ${body}, all: ${p0.notification}")
-            sendNotification(title = title, body = body)
-        }
-    }
-
-    override fun onMessageSent(p0: String) {
-        super.onMessageSent(p0)
+        // 알림 메시지를 처리합니다.
+        val data: Map<String, String> = p0.data
+        Log.d("onMessageReceived", "title: ${data["title"]}, body: ${data["body"]}, data: ${data}")
+        sendNotification(title = data["title"]!!, body = data["body"]!!, data = data)
     }
 
     override fun onNewToken(p0: String) {
         super.onNewToken(p0)
+        Log.d("onNewToken", "Refreshed token: $p0")
+        sendTokenUseCase.execute(token = p0)
     }
 
-    override fun onSendError(p0: String, p1: Exception) {
-        super.onSendError(p0, p1)
-    }
+    private fun sendNotification(title: String, body: String, data: Map<String, String>) {
+        val artwork: DomainArtwork = Gson().fromJson(data["artwork"], DomainArtwork::class.java)
+        val destUser: DomainUser = Gson().fromJson(data["destUser"], DomainUser::class.java)
 
+        Log.d("sendNotification", "artwork: ${data["artwork"]}, destUser: ${data["destUser"]}")
+        val mainIntent = Intent(this, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        }
+        val chatIntent = Intent(applicationContext, ChatRoomActivity::class.java)
+            .putExtra("artwork", Gson().toJson(artwork))
+            .putExtra("destUser", Gson().toJson(destUser))
 
-    private fun sendNotification(title: String, body: String) {
-        val intent = Intent(this, ChatRoomActivity::class.java)
-        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
+        val stackBuilder = TaskStackBuilder.create(this).apply {
+            addNextIntent(mainIntent)
+            addNextIntent(chatIntent)
+        }
+
         val requestCode = 0
-        val pendingIntent = PendingIntent.getActivity(
-            this,
+        val pendingIntent = stackBuilder.getPendingIntent(
             requestCode,
-            intent,
-            PendingIntent.FLAG_IMMUTABLE,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
         val channelId = "fcm_default_channel"
@@ -74,7 +89,7 @@ class MyFirebaseMessagingService: FirebaseMessagingService() {
             .setSound(defaultSoundUri)
             .setContentIntent(pendingIntent)
 
-        val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        val notificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
 
         // Since android Oreo notification channel is needed.
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
