@@ -7,6 +7,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.domain.model.DomainUser
 import com.example.domain.model.Response
 import com.example.domain.usecase.SaveUserProfileImageUseCase
+import com.example.domain.usecase.authUseCase.DeleteAccountUseCase
 import com.example.presentation.model.UploadState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -17,16 +18,17 @@ import javax.inject.Inject
 
 @HiltViewModel
 class AccountViewModel @Inject constructor(
-    private val saveUserProfileImageUseCase: SaveUserProfileImageUseCase
+    private val saveUserProfileImageUseCase: SaveUserProfileImageUseCase,
+    private val deleteAccountUseCase: DeleteAccountUseCase
 ): ViewModel() {
 
-    private val _userInfoStateFlow = MutableStateFlow<DomainUser?>(DomainUser())
-    val userInfoStateFlow: StateFlow<DomainUser?> = _userInfoStateFlow
+    private val _userInfoStateFlow = MutableStateFlow<DomainUser>(DomainUser())
+    val userInfoStateFlow: StateFlow<DomainUser> = _userInfoStateFlow
 
     private val _uploadState = MutableStateFlow<UploadState>(UploadState.Idle)
     var uploadState: StateFlow<UploadState> = _uploadState.asStateFlow()
 
-    fun userInfo(user: DomainUser?){
+    fun userInfo(user: DomainUser){
         _userInfoStateFlow.value = user
     }
 
@@ -46,8 +48,10 @@ class AccountViewModel @Inject constructor(
         }
     }
 
-    fun signOut(){
-
+    fun signOut(user: DomainUser = userInfoStateFlow.value){
+        viewModelScope.launch {
+            deleteAccountUseCase.execute(user)
+        }
     }
 
 }
