@@ -60,6 +60,7 @@ fun ChattingScreen(viewModel: MainViewModel, navController: NavController) {
             context.startActivity(Intent(context, ChatRoomActivity::class.java)
                 .putExtra("artwork", Gson().toJson(chatRoom.artwork, DomainArtwork::class.java))
                 .putExtra("destUser", Gson().toJson(chatRoom.destUser, DomainUser::class.java))
+                .putExtra("chatRoom", Gson().toJson(chatRoom, DomainChatRoomWithUser::class.java))
             )
         })
     }
@@ -98,6 +99,8 @@ fun chatRoom(chatRoom: DomainChatRoomWithUser, onChatRoomClick: (DomainChatRoomW
         else -> koreanDateFormat.format(lastday) // 날짜만 표시 ("MM.dd")
     }
 
+    val destUserName = if(chatRoom.destUser == null) "탈퇴한 사용자" else chatRoom.destUser!!.name
+
 
     Row(
         modifier = Modifier.clickable {
@@ -119,7 +122,7 @@ fun chatRoom(chatRoom: DomainChatRoomWithUser, onChatRoomClick: (DomainChatRoomW
         }
         Column(modifier = Modifier.padding(start = 10.dp, top = 5.dp)) {
             Row(modifier = Modifier.padding(bottom = 5.dp)) {
-                Text(text = chatRoom.artwork.name!!, color = Color.Black, fontSize = 15.sp,
+                Text(text = destUserName, color = Color.Black, fontSize = 15.sp,
                     fontWeight = FontWeight.SemiBold,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
