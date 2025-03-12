@@ -77,6 +77,7 @@ class AccountActivity : ComponentActivity() {
                     },
                     signOut = {
                         viewModel.signOut()
+                        finish()
                     }
                 )
                 when(uploadState){
