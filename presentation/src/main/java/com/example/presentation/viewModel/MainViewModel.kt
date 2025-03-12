@@ -11,6 +11,7 @@ import com.example.domain.usecase.authUseCase.*
 import com.example.domain.usecase.chatUseCase.GetUserChatListsUseCase
 import com.example.presentation.model.ArtworkSort
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -89,31 +90,31 @@ class MainViewModel @Inject constructor(
     private val _recommendArtworks = MutableStateFlow<List<DomainArtwork>>(emptyList())
     val recommendArtworks: StateFlow<List<DomainArtwork>> = _recommendArtworks
 
+    val job: Job? = null
+
     init {
         viewModelScope.launch {
             getAuthStateUseCase.execute()
                 .distinctUntilChanged()
                 .flatMapLatest { uid ->
                     Log.d("getAuthStateUseCase", uid.toString())
-                    if(uid != null){
+                    if(!uid.isNullOrEmpty()){
                         getUserInfoUseCase.execute(uid)
                     }else{
                         flowOf(null)
                     }
-                }.collect { userInfo ->
+                }.collectLatest { userInfo ->
                     _userInfoStateFlow.value = userInfo ?: DomainUser()
+                    _isLoggedInState.value = !userInfo?.uid.isNullOrEmpty()
                     Log.d("userInfoStateFlow", userInfoStateFlow.value.toString())
 
-                    // 로그인 여부는 userInfoStateFlow로 판단
-                    _isLoggedInState.value = userInfo?.uid != null
                     if(!_isLoggedInState.value){
                         _artistSoldArtworks.value = emptyList()
                     }
 
-                    // 로그인된 경우 채팅 목록 가져오기
-                    userInfo?.uid?.let {
-                        saveMessagingToken.execute(it)
-                        loadChatLists(it)
+                    userInfo?.uid?.let { uid ->
+                        saveMessagingToken.execute(userInfo.uid)
+                        loadChatLists(userInfo.uid)
                     }
                 }
         }
@@ -134,16 +135,18 @@ class MainViewModel @Inject constructor(
     fun loadChatLists(uid: String?){
         uid?.let {
             viewModelScope.launch {
-                getUserChatListsUseCase.execute(uid).collect{ chatRoomLists ->
-                    Log.d("loadChatLists", chatRoomLists.toString())
-                    var sum = 0
-                    chatRoomLists.forEach{ chatRoom ->
-                        sum += chatRoom.chatRoom.unreadMessages[uid] ?: 0
-                    }
-                    _chatRoomsList.value = chatRoomLists.sortedByDescending{ it.chatRoom.lastMessage.timestamp }
-                    _unreadMessageCount.value = sum
+                getUserChatListsUseCase.execute(uid)
+                    .distinctUntilChanged()
+                    .collectLatest{ chatRoomLists ->
+                        _chatRoomsList.value = emptyList()
+                        Log.d("loadChatLists", chatRoomLists.toString())
+                        var sum = 0
+                        chatRoomLists.forEach { chatRoom ->
+                            sum += chatRoom.chatRoom.unreadMessages[uid] ?: 0
+                        }
+                        _chatRoomsList.value = chatRoomLists.sortedByDescending{ it.chatRoom.lastMessage.timestamp }
+                        _unreadMessageCount.value = sum
                 }
-
             }
         }
     }
