@@ -4,7 +4,7 @@ plugins {
 }
 
 android {
-    namespace = "com.example.data"
+    namespace = "com.yschoi.data"
     compileSdk = 34
 
     defaultConfig {

@@ -6,15 +6,15 @@ plugins {
     id("com.google.gms.google-services")
 }
 android {
-    namespace = "com.example.sowoongallery"
+    namespace = "com.yschoi.sowoongallery"
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "com.example.sowoongallery"
+        applicationId = "com.yschoi.sowoongallery"
         minSdk = 24
-        targetSdk = 33
-        versionCode = 1
-        versionName = "1.0"
+        targetSdk = 34
+        versionCode = 2
+        versionName = "1.1"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }

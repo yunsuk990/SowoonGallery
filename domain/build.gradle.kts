@@ -5,7 +5,7 @@ plugins {
 }
 
 android {
-    namespace = "com.example.domain"
+    namespace = "com.yschoi.domain"
     compileSdk = 34
 
     defaultConfig {

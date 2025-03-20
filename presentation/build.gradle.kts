@@ -8,7 +8,7 @@ plugins {
 }
 
 android {
-    namespace = "com.example.presentation"
+    namespace = "com.yschoi.presentation"
     compileSdk = 34
 
     defaultConfig {
