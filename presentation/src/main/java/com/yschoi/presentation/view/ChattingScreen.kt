@@ -111,6 +111,7 @@ fun chatRoom(chatRoom: DomainChatRoomWithUser, onChatRoomClick: (DomainChatRoomW
     }
 
     val destUserName = if(chatRoom.destUser == null) "탈퇴한 사용자" else chatRoom.destUser!!.name
+    val artworkName = if(chatRoom.artwork.name == null) "삭제된 작품" else chatRoom.artwork.name!!
 
 
     Row(
@@ -133,7 +134,7 @@ fun chatRoom(chatRoom: DomainChatRoomWithUser, onChatRoomClick: (DomainChatRoomW
         }
         Column(modifier = Modifier.padding(start = 10.dp, top = 5.dp)) {
             Row(modifier = Modifier.padding(bottom = 5.dp)) {
-                Text(text = destUserName, color = Color.Black, fontSize = 15.sp,
+                Text(text = artworkName, color = Color.Black, fontSize = 15.sp,
                     fontWeight = FontWeight.SemiBold,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
