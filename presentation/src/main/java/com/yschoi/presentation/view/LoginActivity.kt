@@ -266,7 +266,7 @@ fun HandleAuthState(
             val message = authState.message
         }
         is AuthState.Loading -> {
-
+            CircularProgressIndicator()
         }
         else -> {
 
