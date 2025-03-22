@@ -37,7 +37,6 @@ import com.yschoi.presentation.model.ArtworkSort
 import com.yschoi.presentation.viewModel.MainViewModel
 import com.google.gson.Gson
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ArtworkScreen(viewModel: MainViewModel) {
     //val refreshing by viewModel.isRefreshing.collectAsState()
@@ -50,7 +49,7 @@ fun ArtworkScreen(viewModel: MainViewModel) {
     val list = arrayListOf("전체", "한국화", "수채화", "아크릴화", "도자기")
 
     LaunchedEffect(sortedBy) {
-        viewModel.sortArtworks(sortedBy, list[selectedIndex])
+        viewModel.sortArtworks(sortedBy, category = list[selectedIndex])
     }
 
     Box(modifier = Modifier
@@ -97,7 +96,6 @@ fun artworkCategoryRow(list: List<String>, selectedIndex: Int, onClick: (Int, St
 
 @Composable
 fun artworkGridLayout(artworkList: List<DomainArtwork>, artworkOnClick: (DomainArtwork) -> Unit){
-    val context = LocalContext.current
     LazyVerticalStaggeredGrid(
         columns = StaggeredGridCells.Fixed(2),
         content = {
