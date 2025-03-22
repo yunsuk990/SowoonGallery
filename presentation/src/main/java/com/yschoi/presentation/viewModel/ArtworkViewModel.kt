@@ -31,7 +31,6 @@ class ArtworkViewModel @Inject constructor(
     private val getCurrentUserUidUseCase: GetCurrentUserUidUseCase,
     private val getArtworksUseCase: GetArtworksUseCase,
     private val setArtistProfileUseCase: SetArtistProfileUseCase,
-    private val setArtworkStateUseCase: SetArtworkStateUseCase
 ): ViewModel() {
 
     private val _artworkFavoriteState = MutableLiveData<Boolean>()
