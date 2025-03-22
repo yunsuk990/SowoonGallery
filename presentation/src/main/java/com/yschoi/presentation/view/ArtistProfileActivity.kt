@@ -536,7 +536,7 @@ fun artworkDropDownMenu(artworks: List<DomainArtwork>, artworkFilterChange: (Art
 
 @Composable
 fun DropDownMenu(dropDownMenuExpanded: Boolean, onDismissRequest: () -> Unit, onClick: (ArtworkSort) -> Unit){
-    var list = mutableListOf(ArtworkSort.LIKE, ArtworkSort.BOOKMARK, ArtworkSort.DATE)
+    var list = mutableListOf(ArtworkSort.DATE, ArtworkSort.LIKE, ArtworkSort.BOOKMARK, ArtworkSort.PRICE)
     Box(){
         DropdownMenu(
             expanded = dropDownMenuExpanded,
