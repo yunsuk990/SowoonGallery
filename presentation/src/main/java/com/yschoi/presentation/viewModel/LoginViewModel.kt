@@ -32,7 +32,6 @@ import javax.inject.Inject
 @HiltViewModel
 class LoginViewModel @Inject constructor(
     private val saveUserInfoUseCase: SaveUserInfoUseCase,
-    private val checkUserRtdbUseCase: CheckUserRtdbUseCase,
     private val signInWithPhoneUseCase: SignInWithPhoneUseCase
 ): ViewModel() {
 
