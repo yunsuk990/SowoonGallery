@@ -17,17 +17,14 @@ import javax.inject.Inject
 @HiltViewModel
 class MainViewModel @Inject constructor(
     private val getArtworksUseCase: GetArtworksUseCase,
-    private val deleteAccountUseCase: DeleteAccountUseCase,
     private val favoriteArtworksUseCase: GetFavoriteArtworksUseCase,
     private val likeArtworksUseCase: GetLikedArtworksUseCase,
     private val getUserInfoUseCase: GetUserInfoUseCase,
-    private val saveUserProfileImageUseCase: SaveUserProfileImageUseCase,
     private val getAdvertiseImagesUseCase: GetAdvertiseImagesUseCase,
     private val getUserChatListsUseCase: GetUserChatListsUseCase,
     private val getAuthStateUseCase: GetAuthStateUseCase,
     private val logOutUseCase: LogOutUseCase,
     private val getRecentArtworksUseCase: GetRecentArtworksUseCase,
-    private val getCurrentUserUidUseCase: GetCurrentUserUidUseCase,
     private val getArtworkById: GetArtworkByIdUseCase,
     private val getArtistSoldArtworkUseCase: GetArtistSoldArtworkUseCase,
     private val saveMessagingToken: SaveMessagingToken,
@@ -184,7 +181,7 @@ class MainViewModel @Inject constructor(
 
     //작품 카테고리 분류
     fun sortCategoryArtworks(category: String){
-        if(category.equals("전체")) _artworkLiveData.value = _artworkAllLiveData.value
+        if(category == "전체") _artworkLiveData.value = _artworkAllLiveData.value
         else  _artworkLiveData.value = _artworkAllLiveData.value.filter { it.category == category }
     }
 
