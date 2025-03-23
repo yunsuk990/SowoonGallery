@@ -27,7 +27,7 @@ class ArtworkRepositoryImpl @Inject constructor(
 
     override suspend fun getRecentArtworks(limit: Int): List<DomainArtwork> = artworkDataSource.getRecentArtworks(limit)
 
-    override suspend fun getArtistArtworks(artistId: String): List<DomainArtwork> = artworkDataSource.getArtistArtworks(artistId)
+    override suspend fun getArtistArtworks(artistId: String): Flow<List<DomainArtwork>> = artworkDataSource.getArtistArtworks(artistId)
 
     override suspend fun getArtworkById(artworkId: String): DomainArtwork = artworkDataSource.getArtworkById(artworkId)
 
@@ -35,13 +35,7 @@ class ArtworkRepositoryImpl @Inject constructor(
 
     override fun setFavoriteArtwork(uid: String, artworkUid: String, isFavorite: Boolean): Task<Void> = artworkDataSource.setFavoriteArtwork(uid, artworkUid, isFavorite)
 
-    override fun getFavoriteArtwork(uid: String, artworkUid: String): Task<DataSnapshot> = artworkDataSource.getFavoriteArtwork(uid, artworkUid)
-
     override fun setLikedArtwork(uid: String, artworkUid: String, isLiked: Boolean): Task<Void> = artworkDataSource.setLikedArtwork(uid, artworkUid, isLiked)
-
-    override fun getLikedArtwork(uid: String, artworkUid: String): Task<DataSnapshot> = artworkDataSource.getLikedArtwork(uid,artworkUid)
-
-    override fun getLikedCountArtwork(artworkUid: String, listener: ValueEventListener) = artworkDataSource.getLikedCountArtwork(artworkUid, listener)
 
     override suspend fun uploadNewArtwork(artworkList: List<Pair<Uri, DomainArtwork>>): Response<Boolean>{
         return try {
@@ -72,5 +66,7 @@ class ArtworkRepositoryImpl @Inject constructor(
         var response = artworkDataSource.getArtistSoldArtworks(artworksUid)
         return response
     }
+
+    override suspend fun fetchArtwork(artworkId: String): Flow<DomainArtwork> = artworkDataSource.fetchArtwork(artworkId)
 
 }
