@@ -159,9 +159,23 @@ class AuthDataSourceImpl @Inject constructor(
         }
     }
 
-    override suspend fun getUserInfoOnce(uid: String): DomainUser {
-        val snapshot = usersRef.child(uid).get().await()
-        return snapshot.getValue(DomainUser::class.java)!!
+    override suspend fun getUserInfoOnce(uid: String)= callbackFlow<DomainUser> {
+        val valueEventListener = object: ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                val domainUser = snapshot.getValue(DomainUser::class.java)!!
+                trySend(domainUser)
+            }
+            override fun onCancelled(error: DatabaseError) {
+                close()
+            }
+
+
+        }
+
+        usersRef.child(uid).addListenerForSingleValueEvent(valueEventListener)
+        awaitClose{
+            usersRef.removeEventListener(valueEventListener)
+        }
     }
 
     override fun getUserInfo(uid: String): Flow<DomainUser?> = callbackFlow {
