@@ -18,15 +18,9 @@ interface ArtworkDataSource {
 
     suspend fun getArtworkById(artworkUid: String): DomainArtwork
 
-    fun getFavoriteArtwork(uid: String, artworkUid: String): Task<DataSnapshot>
-
     fun setFavoriteArtwork(uid: String, artworkUid: String, isFavorite: Boolean): Task<Void>
 
     fun setLikedArtwork(uid: String, artworkUid: String, isLiked: Boolean): Task<Void>
-
-    fun getLikedArtwork(uid: String, artworkUid: String): Task<DataSnapshot>
-
-    fun getLikedCountArtwork(artworkUid: String, listener: ValueEventListener)
 
     suspend fun getRecentArtworks(limit: Int ): List<DomainArtwork>
 
@@ -42,9 +36,11 @@ interface ArtworkDataSource {
 
     suspend fun getLikedArtworks(uid: String): Flow<List<DomainArtwork>>
 
-    suspend fun getArtistArtworks(artistUid: String): List<DomainArtwork>
+    suspend fun getArtistArtworks(artistUid: String): Flow<List<DomainArtwork>>
 
     fun updateArtworkSoldState(artistUid: String, artworkId: String, sold: Boolean, destUid: String?)
 
     suspend fun getArtistSoldArtworks(artworksUid: Map<String, Boolean>): List<DomainArtwork>
+
+    suspend fun fetchArtwork(artworkId: String): Flow<DomainArtwork>
 }
