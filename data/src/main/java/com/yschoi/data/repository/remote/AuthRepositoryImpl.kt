@@ -31,10 +31,14 @@ class AuthRepositoryImpl @Inject constructor(
     override fun saveRecentCategory(category: String) = authDataSource.saveRecentCategory(category)
 
     override fun registerMessagingToken(uid: String) = authDataSource.registerMessagingToken(uid)
-    override fun registerMessagingNewToken(uid: String, token: String) = authDataSource.registerMessagingNewToken(uid = uid, token = token)
+    override fun registerMessagingNewToken(token: String) {
+        getUid()?.let {
+            authDataSource.registerMessagingNewToken(uid = getUid()!!, token = token)
+        }
+    }
 
     override fun getUserInfo(uid: String): Flow<DomainUser?> = authDataSource.getUserInfo(uid)
-    override suspend fun getUserInfoOnce(uid: String): DomainUser = authDataSource.getUserInfoOnce(uid)
+    override suspend fun getUserInfoOnce(uid: String): Flow<DomainUser> = authDataSource.getUserInfoOnce(uid)
 
     override suspend fun deleteUserAccount(user: DomainUser): Boolean {
 
