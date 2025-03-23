@@ -7,8 +7,5 @@ data class ArtworkUseCases @Inject constructor(
     val setLikedArtworkUseCase: SetLikedArtworkUseCase,
     val getArtworkUseCase: GetArtworksUseCase,
     val getFavoriteArtworksUseCase: GetFavoriteArtworksUseCase,
-    val getFavoriteArtworkUseCase: GetFavoriteArtworkUseCase,
     val getLikedArtworksUseCase: GetLikedArtworksUseCase,
-    val getLikedArtworkUseCase: GetLikedArtworkUseCase,
-    val getLikedCountArtworkUseCase: GetLikedCountArtworkUseCase,
 )
