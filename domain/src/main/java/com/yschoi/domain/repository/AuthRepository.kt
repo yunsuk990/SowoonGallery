@@ -14,7 +14,7 @@ interface AuthRepository {
     suspend fun saveUserInfo(user: DomainUser): Response<Boolean>
     //사용자 정보 가져오기
     fun getUserInfo(uid: String): Flow<DomainUser?>
-    suspend fun getUserInfoOnce(uid: String): DomainUser
+    suspend fun getUserInfoOnce(uid: String): Flow<DomainUser>
     //사용자 가입 여부 확인
     suspend fun checkUserRtdbUseCase(uid: String): Boolean
     //sms 인증처리
@@ -28,7 +28,7 @@ interface AuthRepository {
     fun saveRecentCategory(category: String)
 
     fun registerMessagingToken(uid: String)
-    fun registerMessagingNewToken(uid: String = getUid()!!, token: String)
+    fun registerMessagingNewToken(token: String)
 
     suspend fun updateProfileInfo(
         uri: Uri?,
