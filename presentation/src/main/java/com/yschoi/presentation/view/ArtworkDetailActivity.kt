@@ -75,8 +75,8 @@ class ArtworkDetailActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        val argument = intent.getStringExtra("artwork")
-        val artwork: DomainArtwork = Gson().fromJson(argument, DomainArtwork::class.java)
+        val artworkId = intent.getStringExtra("artworkId") ?: ""
+        val artistUid = intent.getStringExtra("artistUid") ?: ""
 
         setContent {
             val systemUiController = rememberSystemUiController()
@@ -86,23 +86,25 @@ class ArtworkDetailActivity : ComponentActivity() {
             )
 
             LaunchedEffect(Unit) {
-                // artwork.key가 변경될 때마다 실행됩니다.
-                viewModel.getFavoriteArtwork(artworkUid = artwork.key!!)
-                viewModel.getLikedArtwork(artworkUid = artwork.key!!)
-                viewModel.getLikedCountArtwork(artwork.key!!)
-                viewModel.getArtistInfo(artwork.artistUid!!)
-                viewModel.getArtistArtworks(artwork.artistUid!!)
+                viewModel.fetchArtwork(artworkId = artworkId)
+
+                viewModel.getArtistInfo(artistUid)
+                viewModel.getArtistArtworks(artistUid)
             }
 
             SowoonTheme {
+                val artwork by viewModel.artwork.collectAsState()
                 val artistInfo by viewModel.artistInfo.collectAsState()
+
                 val artworkFavoriteState by viewModel.artworkFavoriteState.observeAsState(initial = false)
                 val artworkLikedState by viewModel.artworkLikedState.observeAsState(initial = false)
-                val artistArtworks by viewModel.artistArtworks.collectAsState()
-                val userInfo by viewModel.userInfo.collectAsState()
-                val isLoadingArtistArtworks by viewModel.isLoadingArtistArtworks.collectAsState()
                 val artworkLikedCountState by viewModel.artworkLikedCountState.observeAsState(0)
+
+                val artistArtworks by viewModel.artistArtworks.collectAsState()
+                val isLoadingArtistArtworks by viewModel.isLoadingArtistArtworks.collectAsState()
+
                 var requestLogin by remember { mutableStateOf(false) }
+
                 val loginActivityLauncher = rememberLauncherForActivityResult( ActivityResultContracts.StartActivityForResult()) { result ->
                     finish()
                 }
@@ -117,10 +119,10 @@ class ArtworkDetailActivity : ComponentActivity() {
                         artistInfo = artistInfo,
                         favoriteState = artworkFavoriteState,
                         likedState = artworkLikedState,
-                        userInfo = userInfo,
                         artistArtworks = artistArtworks,
                         isLoadingArtistArtworks = isLoadingArtistArtworks,
                         artworkLikedCount = artworkLikedCountState,
+                        userUid = viewModel.userUid,
                         likedBtnOnClick = {
                             if (viewModel.userUid != null) {
                                 viewModel.setLikedArtwork(artworkLikedState, artwork.key!!)
@@ -147,7 +149,7 @@ class ArtworkDetailActivity : ComponentActivity() {
                             if(viewModel.userUid == null){
                                 requestLogin = true
                             }else{
-                                if(userInfo.uid == artwork.artistUid){
+                                if(viewModel.userUid == artwork.artistUid){
                                     viewModel.setArtworkState(
                                         artistUid = artwork.artistUid!!,
                                         sold = !artwork.sold,
@@ -190,8 +192,8 @@ fun ArtworkDetailScreen(
     artistInfo: DomainUser,
     favoriteState: Boolean,
     likedState: Boolean,
-    userInfo: DomainUser,
     artworkLikedCount: Int,
+    userUid: String?,
     artistArtworks: List<DomainArtwork>,
     isLoadingArtistArtworks: Boolean,
     likedBtnOnClick: () -> Unit,
@@ -254,7 +256,6 @@ fun ArtworkDetailScreen(
                     modifier = Modifier.padding(start = 15.dp, end = 15.dp),
                     name = artistInfo.name,
                     artistArtworks = artistArtworks,
-                    userInfo = userInfo,
                     isLoadingArtistArtworks = isLoadingArtistArtworks
                 )
             }
@@ -271,7 +272,7 @@ fun ArtworkDetailScreen(
                 .fillMaxWidth()
                 .align(Alignment.BottomCenter),
             artwork,
-            userInfo = userInfo,
+            userUid = userUid,
             actionBtnOnClick = actionBtnOnClick
         )
 
@@ -292,7 +293,6 @@ fun artistOtherArtworks(
     modifier: Modifier,
     name: String,
     artistArtworks: List<DomainArtwork>,
-    userInfo: DomainUser,
     isLoadingArtistArtworks: Boolean
 ){
     val context = LocalContext.current
@@ -329,8 +329,8 @@ fun artistOtherArtworks(
                 items(artistArtworks.size){ index ->
                     artworkCard(artwork = artistArtworks[index], onClick = {
                         context.startActivity(Intent(context, ArtworkDetailActivity::class.java).apply {
-                            putExtra("artwork", Gson().toJson(artistArtworks[index]))
-                            putExtra("userInfo", Gson().toJson(userInfo))
+                            putExtra("artworkId", artistArtworks[index].key)
+                            putExtra("artistUid", artistArtworks[index].artistUid)
                         })
                     })
                 }
@@ -420,7 +420,7 @@ fun artistProfile(modifier: Modifier, artist: DomainUser, artistInfoBtnOnClick: 
 fun userActionButton(
     modifier: Modifier,
     artwork: DomainArtwork,
-    userInfo: DomainUser,
+    userUid: String?,
     actionBtnOnClick: () -> Unit,
 ) {
     Card(
@@ -457,7 +457,7 @@ fun userActionButton(
                     colors = ButtonDefaults.buttonColors(containerColor = Color.Black),
                     contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 15.dp, bottom = 15.dp)
                 ) {
-                    if(userInfo.uid == artwork.artistUid){
+                    if(userUid == artwork.artistUid){
                         AutoResizedText(
                             text = "판매 확정하기",
                             style = TextStyle(fontSize = 14.sp),
@@ -554,30 +554,6 @@ fun artworkInfo(
     }
 }
 
-@Composable
-fun artworkLikeBtn(likedState: Boolean, likedBtnOnClick: () -> Unit, ){
-
-    IconButton(
-        onClick = { likedBtnOnClick() }
-    ) {
-        if (!likedState) {
-            Icon(
-                Icons.Filled.FavoriteBorder,
-                contentDescription = "좋아요",
-                modifier = Modifier.size(30.dp)
-            )
-        } else {
-            Icon(
-                Icons.Filled.Favorite,
-                contentDescription = "좋아요",
-                modifier = Modifier.size(30.dp),
-                tint = Color.Red
-
-            )
-        }
-    }
-}
-
 @Preview(showSystemUi = true)
 @Composable
 fun artworkActivityTest(){
@@ -596,7 +572,7 @@ fun artworkActivityTest(){
             artistInfo = DomainUser(name = "정은숙"),
             favoriteState = true,
             likedState = true,
-            userInfo = DomainUser(),
+            userUid = "",
             artworkLikedCount = 1,
             artistArtworks = listOf(artwork, artwork,artwork),
             isLoadingArtistArtworks = true,

@@ -49,7 +49,7 @@ class MyFirebaseMessagingService: FirebaseMessagingService() {
 
     override fun onNewToken(p0: String) {
         super.onNewToken(p0)
-        sendTokenUseCase.execute(token = p0)
+        sendTokenUseCase.execute(p0)
     }
 
     private fun sendNotification(title: String, body: String, data: Map<String, String>) {

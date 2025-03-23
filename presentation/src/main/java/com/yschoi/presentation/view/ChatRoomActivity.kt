@@ -42,7 +42,6 @@ import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
 import com.yschoi.domain.model.DomainArtwork
 import com.yschoi.domain.model.DomainChatRoom
-import com.yschoi.domain.model.DomainChatRoomWithUser
 import com.yschoi.domain.model.DomainMessage
 import com.yschoi.domain.model.DomainUser
 import com.yschoi.presentation.R
@@ -51,6 +50,7 @@ import com.yschoi.presentation.view.ui.theme.SowoonTheme
 import com.yschoi.presentation.viewModel.ChatRoomViewModel
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.google.gson.Gson
+import com.yschoi.presentation.utils.ExitChatRoomToastMessage
 import dagger.hilt.android.AndroidEntryPoint
 import java.text.SimpleDateFormat
 import java.util.*
@@ -167,7 +167,8 @@ class ChatRoomActivity : ComponentActivity() {
                             cardOnClick = {
                                 startActivity(
                                     Intent(this, ArtworkDetailActivity::class.java)
-                                        .putExtra("artwork", Gson().toJson(artwork))
+                                        .putExtra("artworkId", artwork.key)
+                                        .putExtra("artistUid", artwork.artistUid)
                                 )
                             },
                             currentUser = currentUser,
@@ -208,6 +209,7 @@ fun ArtworkInfo(
     currentUser: DomainUser?,
     chatExitBtnOnClick: () -> Unit
 ){
+    var dialogState by remember { mutableStateOf(false) }
     val destUserName = destUser?.name ?: "탈퇴한 사용자"
     val destUserMode = destUser?.mode ?: 0
     val destUserProfileImage = destUser?.profileImage ?: ""
@@ -285,7 +287,7 @@ fun ArtworkInfo(
             Column(modifier = Modifier.fillMaxWidth().padding(vertical = 20.dp, horizontal = 15.dp)) {
                 Button(
                     onClick = {
-                        chatExitBtnOnClick()
+                        dialogState = true
                     },
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Color.Black
@@ -293,13 +295,23 @@ fun ArtworkInfo(
                 ) {
                     Text("채팅방 나가기", fontSize = 16.sp, color = Color.White)
                 }
+
+                if(dialogState){
+                    ExitChatRoomToastMessage(
+                        dismissOnClick = { dialogState = false },
+                        confirmOnClick = {
+                            dialogState = false
+                            chatExitBtnOnClick()
+                        }
+                    )
+                }
             }
         }
     }
 
 }
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterialApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @SuppressLint("SuspiciousIndentation")
 @Composable
 fun chatRoomRoot(
@@ -328,7 +340,10 @@ fun chatRoomRoot(
             Row(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp, horizontal = 10.dp), verticalAlignment = Alignment.CenterVertically){
                 Box(
                     modifier = Modifier.size(48.dp).clip(RoundedCornerShape(8.dp)).noRippleClickable {
-                        context.startActivity(Intent(context, ArtworkDetailActivity::class.java).putExtra("artwork", Gson().toJson(artwork)))
+                        context.startActivity(Intent(context, ArtworkDetailActivity::class.java)
+                            .putExtra("artworkId", artwork.key)
+                            .putExtra("artistUid", artwork.artistUid)
+                        )
                     }
                 ){
                     AsyncImage(
@@ -617,6 +632,19 @@ fun ChatRoomActivityTopBar(name: String, details: Boolean, detailsOnChange: (Boo
         Divider(thickness = 0.5.dp, color = Color.LightGray)
     }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 @Preview(showBackground = true)
 @Composable

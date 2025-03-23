@@ -306,17 +306,16 @@ fun ArtworkUploadScreen(
                     var artworkMinimalPrice by remember(currentUri) { mutableStateOf(artwork.minimalPrice ?: "") }
                     var artworkCategory by remember(currentUri) { mutableStateOf(artwork.category) }
 
-
                     Column(
                         modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 15.dp, bottom = 150.dp)
                     ) {
-                        outLinedTextField("작품 설명", artworkReview) { newText ->
-                            artworkReview = newText
-                            artworkDataMap[uri] = artwork.copy(review = newText)
-                        }
                         outLinedTextField("작품 이름", artworkName) { newText ->
                             artworkName = newText
                             artworkDataMap[uri] = artwork.copy(name = newText)
+                        }
+                        outLinedTextField("작품 설명", artworkReview) { newText ->
+                            artworkReview = newText
+                            artworkDataMap[uri] = artwork.copy(review = newText)
                         }
                         outLinedTextField("크기", artworkSize) { newText ->
                             artworkSize = newText

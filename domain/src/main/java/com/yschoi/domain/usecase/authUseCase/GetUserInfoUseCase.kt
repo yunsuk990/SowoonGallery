@@ -10,5 +10,5 @@ class GetUserInfoUseCase @Inject constructor(
 ) {
     fun execute(uid: String): Flow<DomainUser?> = authRepository.getUserInfo(uid)
 
-    suspend fun excuteOnce(uid: String): DomainUser = authRepository.getUserInfoOnce(uid)
+    suspend fun excuteOnce(uid: String): Flow<DomainUser> = authRepository.getUserInfoOnce(uid)
 }

@@ -171,6 +171,62 @@ fun SignOutToastMessage(dismissOnClick: () -> Unit, confirmOnClick: () -> Unit){
     }
 }
 
+
+@Composable
+fun ExitChatRoomToastMessage(dismissOnClick: () -> Unit, confirmOnClick: () -> Unit){
+    Dialog(
+        onDismissRequest = { dismissOnClick() },
+    ){
+        Card(
+            colors = CardDefaults.cardColors(
+                containerColor = Color.White
+            )
+        ) {
+            Column(
+                modifier = Modifier.padding(15.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text("채팅방 나가기",
+                    color = Color.Black,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 16.sp,
+                    modifier = Modifier.padding(top = 15.dp)
+                )
+                Spacer(modifier = Modifier.padding(top = 10.dp))
+                Text("나가기 버튼 선택 시 채팅방 기록이 삭제되며\n복구되지 않습니다.", color = Color.Gray, fontSize = 14.sp, textAlign = TextAlign.Center)
+
+                Row(
+                    modifier = Modifier.padding(top = 25.dp)
+                ) {
+                    Button(
+                        modifier = Modifier.weight(1f),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color.LightGray
+                        ),
+                        shape = RoundedCornerShape(10.dp),
+                        contentPadding = PaddingValues(vertical = 12.dp),
+                        onClick = { dismissOnClick() }
+                    ) {
+                        Text("취소", color = Color.Black, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                    }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Button(
+                        modifier = Modifier.weight(1f),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color.Black
+                        ),
+                        contentPadding = PaddingValues(vertical = 12.dp),
+                        shape = RoundedCornerShape(10.dp),
+                        onClick = { confirmOnClick() }
+                    ) {
+                        Text("나가기", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                    }
+                }
+            }
+        }
+    }
+}
+
 @Composable
 fun chatRoomExitToastMessage(dismissOnClick: () -> Unit, confirmOnClick: () -> Unit){
     Dialog(
@@ -276,6 +332,11 @@ fun NotificationToastMessage(dismissOnClick: () -> Unit, confirmOnClick: () -> U
     }
 }
 
+@Preview()
+@Composable
+fun ExitChatRoomToastMessage(){
+    ExitChatRoomToastMessage({}, {})
+}
 
 @Preview()
 @Composable

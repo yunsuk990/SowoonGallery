@@ -213,7 +213,6 @@ class MainViewModel @Inject constructor(
         if(!isLoggedInState.value) return
         viewModelScope.launch {
             likeArtworksUseCase.execute(userInfoStateFlow.value.uid)
-                .catch { exception ->  }
                 .collect { artworkList ->
                     _artworkLikedLiveData.value = artworkList
                 }

@@ -85,14 +85,12 @@ class ArtistProfileActivity : ComponentActivity() {
                 viewModel.setData(artistArtwork)
             }
 
-
-            val userInfo by viewModel.userInfo.collectAsState()
             val artistArtworks by viewModel.artistArtworks.collectAsState()
 
             SowoonTheme {
                 ArtistProfileScreen(
                     artistInfo = artistInfo,
-                    userInfo = userInfo,
+                    userUid = viewModel.userUid,
                     artistArtwork = artistArtworks,
                     bestArtwork = bestArtwork,
                     artworkFilterChange = { artworkSort ->
@@ -115,7 +113,7 @@ fun ArtistProfileScreen(
     artistInfo: DomainUser,
     artistArtwork: List<DomainArtwork>,
     bestArtwork: DomainArtwork,
-    userInfo: DomainUser,
+    userUid: String?,
     artworkFilterChange: (ArtworkSort) -> Unit,
     artistIntroduce: (String) -> Unit,
     artistCareerOnChange: (Career) -> Unit
@@ -158,10 +156,10 @@ fun ArtistProfileScreen(
             .nestedScroll(nestedConnection)
     ) {
         ArtistProfileTopBar()
-        ArtistInfo(bestArtwork = bestArtwork, scrollOffset = scrollOffset, artistInfo = artistInfo, userInfo = userInfo, artistIntroduceUpdate = artistIntroduce)
+        ArtistInfo(bestArtwork = bestArtwork, scrollOffset = scrollOffset, artistInfo = artistInfo, userUid = userUid, artistIntroduceUpdate = artistIntroduce)
         ArtistProfileMenu(
             artistInfo = artistInfo,
-            userInfo = userInfo,
+            userUid = userUid,
             artistArtwork = artistArtwork,
             lazyListState = lazyListState,
             artistCareerOnChange = artistCareerOnChange,
@@ -172,7 +170,7 @@ fun ArtistProfileScreen(
 
 
 @Composable
-fun ArtistInfo(bestArtwork: DomainArtwork, scrollOffset: Float = 0f, artistInfo: DomainUser, userInfo: DomainUser, artistIntroduceUpdate: (String) -> Unit) {
+fun ArtistInfo(bestArtwork: DomainArtwork, scrollOffset: Float = 0f, artistInfo: DomainUser, userUid: String?, artistIntroduceUpdate: (String) -> Unit) {
     val year = SimpleDateFormat("yyyy").format(Date()).toInt()
     val birth = artistInfo.birth.split("/").first().toInt()
     var artistIntroduce by remember { mutableStateOf(artistInfo.artistProfile.introduce) }
@@ -202,7 +200,7 @@ fun ArtistInfo(bestArtwork: DomainArtwork, scrollOffset: Float = 0f, artistInfo:
                         Text(text = "${birth}, ${year-birth}세", color = Color.Gray, modifier = Modifier.padding(top=3.dp), fontFamily = FontFamily.Serif, fontSize = 16.sp, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleSmall)
                     }
                     Spacer(modifier = Modifier.weight(1f))
-                    if(userInfo.mode == 1 ){
+                    if(userUid == artistInfo.uid ){
                         Button(
                             onClick = {
                                 if(isEditing){
@@ -235,7 +233,7 @@ fun ArtistInfo(bestArtwork: DomainArtwork, scrollOffset: Float = 0f, artistInfo:
 @Composable
 fun ArtistProfileMenu(
     artistInfo: DomainUser,
-    userInfo: DomainUser,
+    userUid: String?,
     artistCareerOnChange: (Career) -> Unit,
     artistArtwork: List<DomainArtwork>,
     lazyListState: LazyStaggeredGridState,
@@ -288,7 +286,7 @@ fun ArtistProfileMenu(
             userScrollEnabled = true
         ) { page ->
             when(page){
-                0 -> artistIntroduceScreen(artistInfo, userInfo = userInfo, artistCareerOnChange = artistCareerOnChange)
+                0 -> artistIntroduceScreen(artistInfo, userUid = userUid, artistCareerOnChange = artistCareerOnChange)
                 1 -> artistArtworksScreen(artworks = artistArtwork, lazyListState = lazyListState, artworkFilterChange = artworkFilterChange)
                 2 -> artistSoldArtworksScreen(artistSoldArtworks = artistArtwork.filter { it.sold == true })
             }
@@ -339,7 +337,7 @@ fun EditableArtistIntroduce(
 }
 
 @Composable
-fun artistIntroduceScreen(artistInfo: DomainUser, userInfo: DomainUser, artistCareerOnChange: (Career) -> Unit) {
+fun artistIntroduceScreen(artistInfo: DomainUser, userUid: String?, artistCareerOnChange: (Career) -> Unit) {
     var artistProfile = artistInfo.artistProfile.career
     var isEditing by remember { mutableStateOf(false) }
 
@@ -400,7 +398,7 @@ fun artistIntroduceScreen(artistInfo: DomainUser, userInfo: DomainUser, artistCa
                placeHolder = "주요 전시"
            )
 
-           if(userInfo.mode == 1){
+           if(userUid == artistInfo.uid){
                Spacer(modifier = Modifier.height(20.dp))
                Button(
                    onClick = {
@@ -459,7 +457,10 @@ fun artistArtworksGridLayout(artworks: List<DomainArtwork>, lazyListState: LazyS
             artistArtworkCard(
                 artwork = artworks[index],
                 onClick = {
-                    context.startActivity(Intent(context, ArtworkDetailActivity::class.java).putExtra("artwork", Gson().toJson(artworks[index])))
+                    context.startActivity(Intent(context, ArtworkDetailActivity::class.java)
+                        .putExtra("artworkId", artworks[index].key)
+                        .putExtra("artistUid", artworks[index].artistUid)
+                    )
                 }
             )
         }
@@ -572,7 +573,10 @@ fun artistSoldArtworksScreen(artistSoldArtworks: List<DomainArtwork>){
                 artistArtworkCard(
                     artwork = artistSoldArtworks[index],
                     onClick = {
-                        context.startActivity(Intent(context, ArtworkDetailActivity::class.java).putExtra("artwork", Gson().toJson(artistSoldArtworks[index])))
+                        context.startActivity(Intent(context, ArtworkDetailActivity::class.java)
+                                .putExtra("artworkId", artistSoldArtworks[index].key)
+                                .putExtra("artistUid", artistSoldArtworks[index].artistUid)
+                        )
                     }
                 )
             }
@@ -612,7 +616,7 @@ fun GreetingPreview2() {
             DomainArtwork(name = "SWAIN", sold = false, minimalPrice = "15"),
             DomainArtwork(name = "COLD", sold = false, minimalPrice = "10")),
         bestArtwork = DomainArtwork(),
-        userInfo = DomainUser(mode = 1),
+        userUid = "",
         artistIntroduce = { value -> },
         artistCareerOnChange = {value ->},
         artworkFilterChange = { value ->}

@@ -58,7 +58,9 @@ class ChatRoomViewModel @Inject constructor(
         }
 
         viewModelScope.launch {
-            _currentUserInfo.value = getUserInfoUseCase.excuteOnce(_currentUserUid.value)
+            getUserInfoUseCase.excuteOnce(_currentUserUid.value).collect { domainUser ->
+                _currentUserInfo.value = domainUser
+            }
         }
 
     }

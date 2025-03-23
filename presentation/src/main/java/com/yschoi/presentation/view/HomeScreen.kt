@@ -65,8 +65,9 @@ fun HomeScreen(viewModel: MainViewModel, navController: NavHostController) {
         isLoadingRecentArtworks = isLoadingRecentArtworks,
         isLoadingAdvertiseImages = isLoadingAdvertiseImages,
         navigateToArworkDetailScreen = { index ->
-            var intent = Intent(context, ArtworkDetailActivity::class.java).putExtra("artwork", Gson().toJson(artistRecentArtworks[index]))
-            intent.putExtra("userInfo", Gson().toJson(userInfo))
+            val intent = Intent(context, ArtworkDetailActivity::class.java)
+            intent.putExtra("artworkId", artistRecentArtworks[index].key)
+            intent.putExtra("artistUid", artistRecentArtworks[index].artistUid)
             context.startActivity(intent)
         }
     )
@@ -106,9 +107,9 @@ fun HomeRoot(
         )
 
         //Admob 광고
-        AdView(
-            modifier = Modifier.fillMaxWidth()
-        )
+//        AdView(
+//            modifier = Modifier.fillMaxWidth()
+//        )
         
 
         Text("체험", fontSize = 18.sp, color = Color.Black, modifier = Modifier.padding(start = 15.dp, end = 15.dp, top = 20.dp), fontWeight = FontWeight.Bold)

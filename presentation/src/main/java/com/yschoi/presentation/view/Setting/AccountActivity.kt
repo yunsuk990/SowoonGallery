@@ -5,7 +5,9 @@ import android.os.Bundle
 import android.telephony.PhoneNumberUtils
 import android.widget.Toast
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -60,6 +62,7 @@ class AccountActivity : ComponentActivity() {
 
     private val viewModel: AccountViewModel by viewModels()
 
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -68,6 +71,9 @@ class AccountActivity : ComponentActivity() {
         viewModel.userInfo(userInfo)
 
         setContent {
+            val loginActivityLauncher = rememberLauncherForActivityResult( ActivityResultContracts.StartActivityForResult()) { result ->
+                finish()
+            }
             SowoonTheme {
                 val uploadState by viewModel.uploadState.collectAsState()
                 AccountScreen(

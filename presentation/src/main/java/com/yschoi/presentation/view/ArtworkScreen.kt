@@ -66,7 +66,8 @@ fun ArtworkScreen(viewModel: MainViewModel) {
                 artworkOnClick = { artwork ->
                     viewModel.saveRecentCategory(artwork.category!!)
                     var intent = Intent(context, ArtworkDetailActivity::class.java)
-                    intent.putExtra("artwork", Gson().toJson(artwork))
+                    intent.putExtra("artworkId", artwork.key)
+                    intent.putExtra("artistUid", artwork.artistUid)
                     context.startActivity(intent)
                 }
             )

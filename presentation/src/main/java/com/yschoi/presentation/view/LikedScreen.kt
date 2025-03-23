@@ -45,7 +45,10 @@ fun LikedScreen(viewModel: MainViewModel, navController: NavController) {
         navController = navController,
         likedItem = likedItem,
         artworkOnClick = { artwork ->
-            context.startActivity(Intent(context, ArtworkDetailActivity::class.java).putExtra("artwork", Gson().toJson(artwork)))
+            context.startActivity(Intent(context, ArtworkDetailActivity::class.java)
+                .putExtra("artworkId", artwork.key)
+                .putExtra("artistUid", artwork.artistUid)
+            )
         }
     )
 }

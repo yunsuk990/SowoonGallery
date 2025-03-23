@@ -348,7 +348,10 @@ fun MostViewedArtworksScreen(artworkList: List<DomainArtwork>){
             artistArtworkCard(
                 artwork = artworkList[index],
                 onClick = {
-                    context.startActivity(Intent(context, ArtworkDetailActivity::class.java).putExtra("artwork", Gson().toJson(artworkList[index])))
+                    context.startActivity(Intent(context, ArtworkDetailActivity::class.java)
+                        .putExtra("artworkId", artworkList[index].key)
+                        .putExtra("artistUid", artworkList[index].artistUid)
+                    )
                 }
             )
         }
@@ -381,7 +384,10 @@ fun DifferentArtworks(artistSoldArtworks: List<DomainArtwork>) {
                 artistArtworkCard(
                     artwork = artistSoldArtworks[index],
                     onClick = {
-                        context.startActivity(Intent(context, ArtworkDetailActivity::class.java).putExtra("artwork", Gson().toJson(artistSoldArtworks[index])))
+                        context.startActivity(Intent(context, ArtworkDetailActivity::class.java)
+                            .putExtra("artworkId", artistSoldArtworks[index].key)
+                            .putExtra("artistUid", artistSoldArtworks[index].artistUid)
+                        )
                     }
                 )
             }

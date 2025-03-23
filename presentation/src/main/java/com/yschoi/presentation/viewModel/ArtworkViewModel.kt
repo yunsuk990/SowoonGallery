@@ -1,5 +1,6 @@
 package com.yschoi.presentation.viewModel
 
+import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
@@ -11,7 +12,6 @@ import com.yschoi.domain.model.Response
 import com.yschoi.domain.usecase.authUseCase.GetUserInfoUseCase
 import com.yschoi.domain.usecase.artworkUseCase.*
 import com.yschoi.domain.usecase.authUseCase.GetCurrentUserUidUseCase
-import com.yschoi.domain.usecase.chatUseCase.SetArtworkStateUseCase
 import com.yschoi.presentation.model.ArtworkSort
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -22,16 +22,19 @@ import javax.inject.Inject
 
 @HiltViewModel
 class ArtworkViewModel @Inject constructor(
-    private val getFavoriteArtworkUseCase: GetFavoriteArtworkUseCase,
     private val setFavoriteArtworkUseCase: SetFavoriteArtworkUseCase,
-    private val getLikedArtworkUseCase: GetLikedArtworkUseCase,
     private val setLikedArtworkUseCase: SetLikedArtworkUseCase,
-    private val getLikedCountArtworkUsecase: GetLikedCountArtworkUseCase,
     private val getUserInfoUseCase: GetUserInfoUseCase,
     private val getCurrentUserUidUseCase: GetCurrentUserUidUseCase,
     private val getArtworksUseCase: GetArtworksUseCase,
     private val setArtistProfileUseCase: SetArtistProfileUseCase,
+    private val fetchArtworkUseCase: FetchArtworkUseCase
 ): ViewModel() {
+
+    var userUid: String? = getCurrentUserUidUseCase.execute()
+
+    private val _artwork = MutableStateFlow<DomainArtwork>(DomainArtwork())
+    var artwork: StateFlow<DomainArtwork> = _artwork
 
     private val _artworkFavoriteState = MutableLiveData<Boolean>()
     var artworkFavoriteState: LiveData<Boolean> = _artworkFavoriteState
@@ -42,21 +45,23 @@ class ArtworkViewModel @Inject constructor(
     private val _artworkLikedCountState = MutableLiveData<Int>()
     var artworkLikedCountState: LiveData<Int> = _artworkLikedCountState
 
-    var userUid: String? = getCurrentUserUidUseCase.execute()
-
     private val _artistInfo =  MutableStateFlow(DomainUser())
     val artistInfo: StateFlow<DomainUser> = _artistInfo.asStateFlow()
 
     private val _artistArtworks =  MutableStateFlow<List<DomainArtwork>>(emptyList())
     val artistArtworks: StateFlow<List<DomainArtwork>> = _artistArtworks.asStateFlow()
+
     private val _isLoadingArtistArtworks = MutableStateFlow<Boolean>(true)
     val isLoadingArtistArtworks: StateFlow<Boolean> = _isLoadingArtistArtworks
 
-    private val _userInfo = MutableStateFlow(DomainUser())
-    val userInfo: StateFlow<DomainUser> = _userInfo
-
-    init {
-        getUserInfo(userUid)
+    fun fetchArtwork(artworkId: String) = viewModelScope.launch {
+        fetchArtworkUseCase.fetchArtwork(artworkId).collect { artwork ->
+            _artwork.value = artwork
+            _artworkFavoriteState.value = artwork.favoriteUser.containsKey(userUid)
+            _artworkLikedState.value = artwork.likedArtworks.containsKey(userUid)
+            _artworkLikedCountState.value = artwork.likedArtworks.size
+            Log.d("fetchArtwork_viewModel" ,artwork.toString())
+        }
     }
 
     fun setData(artistArtwork: List<DomainArtwork>){
@@ -90,38 +95,16 @@ class ArtworkViewModel @Inject constructor(
         }
     }
 
-    fun getUserInfo(uid: String? = userUid){
-        uid?.let {
-            viewModelScope.launch {
-               _userInfo.value = getUserInfoUseCase.excuteOnce(uid)
-            }
-        }
-    }
-
-    fun getFavoriteArtwork(artworkUid: String){
-        userUid?.let {
-            getFavoriteArtworkUseCase.execute(it, artworkUid) { isFavorite ->
-                _artworkFavoriteState.value = isFavorite
-            }
-        }
-    }
-
     fun getArtistInfo(uid: String) = viewModelScope.launch {
-        _artistInfo.value = getUserInfoUseCase.excuteOnce(uid)
+        getUserInfoUseCase.excuteOnce(uid).collect{ domainUser ->
+            _artistInfo.value = domainUser
+        }
     }
 
     fun setFavoriteArtwork(isFavorite: Boolean, artworkUid: String,) {
         userUid?.let {
             setFavoriteArtworkUseCase.execute(it, artworkUid, !isFavorite){ isFavorite ->
                 _artworkFavoriteState.value = isFavorite
-            }
-        }
-    }
-
-    fun getLikedArtwork(artworkUid: String){
-        userUid?.let {
-            getLikedArtworkUseCase.execute(it, artworkUid){ isLiked ->
-                _artworkLikedState.value = isLiked
             }
         }
     }
@@ -134,17 +117,10 @@ class ArtworkViewModel @Inject constructor(
         }
     }
 
-    fun getLikedCountArtwork(artworkUid: String){
-        getLikedCountArtworkUsecase.execute(artworkUid){ countVal ->
-            _artworkLikedCountState.value = countVal
-        }
-    }
-
-    fun getArtistArtworks(artistUid: String) {
-        viewModelScope.launch {
-            _isLoadingArtistArtworks.value = true
-            var result = getArtworksUseCase.executeByUid(artistUid)
-            _artistArtworks.value = result
+    fun getArtistArtworks(artistUid: String) = viewModelScope.launch {
+        _isLoadingArtistArtworks.value = true
+        getArtworksUseCase.executeByUid(artistUid).collect { artworkList ->
+            _artistArtworks.value = artworkList
             _isLoadingArtistArtworks.value = false
         }
     }
