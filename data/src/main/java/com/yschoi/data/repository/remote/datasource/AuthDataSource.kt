@@ -57,7 +57,7 @@ interface AuthDataSource{
 
     fun registerMessagingNewToken(uid: String = getUid()!!, token: String)
 
-    suspend fun getUserInfoOnce(uid: String): DomainUser
+    suspend fun getUserInfoOnce(uid: String): Flow<DomainUser>
 
     //프로필 이미지 url Realtime Database에 저장하기
     suspend fun updateUserProfile(uid: String, updateUserProfile: Map<String, Any>): Response<Boolean>
