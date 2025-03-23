@@ -13,13 +13,7 @@ interface ArtworkRepository {
 
     fun setFavoriteArtwork(uid: String, artworkUid: String, isFavorite: Boolean): Task<Void>
 
-    fun getFavoriteArtwork(uid: String, artworkUid: String): Task<DataSnapshot>
-
     fun setLikedArtwork(uid: String, artworkUid: String, isLiked: Boolean): Task<Void>
-
-    fun getLikedArtwork(uid: String, artworkUid: String): Task<DataSnapshot>
-
-    fun getLikedCountArtwork(artworkUid: String, listener: ValueEventListener)
 
     suspend fun uploadNewArtwork(artworkList: List<Pair<Uri, DomainArtwork>>): Response<Boolean>
 
@@ -31,10 +25,13 @@ interface ArtworkRepository {
 
     suspend fun getRecentArtworks(limit: Int): List<DomainArtwork>
 
-    suspend fun getArtistArtworks(artistId: String): List<DomainArtwork>
+    suspend fun getArtistArtworks(artistId: String): Flow<List<DomainArtwork>>
 
     suspend fun getArtworkById(artworkId: String): DomainArtwork
 
     suspend fun getArtistSoldArtworks(artworksUid: Map<String, Boolean>): List<DomainArtwork>
+
+    suspend fun fetchArtwork(artworkId: String): Flow<DomainArtwork>
+
 
 }
