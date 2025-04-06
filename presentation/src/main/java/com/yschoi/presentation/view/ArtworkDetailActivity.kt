@@ -24,12 +24,16 @@ import androidx.compose.material.IconButton
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.Divider
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -87,7 +91,6 @@ class ArtworkDetailActivity : ComponentActivity() {
 
             LaunchedEffect(Unit) {
                 viewModel.fetchArtwork(artworkId = artworkId)
-
                 viewModel.getArtistInfo(artistUid)
                 viewModel.getArtistArtworks(artistUid)
             }
@@ -163,6 +166,16 @@ class ArtworkDetailActivity : ComponentActivity() {
                                     )
                                 }
                             }
+                        },
+                        deleteBtnOnClick = {
+                            artwork.let {
+                                viewModel.deleteArtwork(
+                                    artworkId = artworkId,
+                                    uid = artwork.artistUid!!,
+                                    category = artwork.category!!,
+                                    imageUrl = artwork.url!!
+                                )
+                            }
                         }
                     )
 
@@ -200,6 +213,7 @@ fun ArtworkDetailScreen(
     bookmarkBtnOnClick: () -> Unit,
     artistInfoBtnOnClick: () -> Unit,
     actionBtnOnClick: () -> Unit,
+    deleteBtnOnClick: () -> Unit
 ) {
     var isZoomDialogOpen by remember { mutableStateOf(false) }
     Box {
@@ -207,7 +221,7 @@ fun ArtworkDetailScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .background(Color.White),
-            contentPadding = PaddingValues(bottom = 100.dp) // 아래에 여유 공간 추가 (버튼 영역 때문)
+            contentPadding = PaddingValues(bottom = 60.dp) // 아래에 여유 공간 추가 (버튼 영역 때문)
         ) {
             /** 상단 앱 바 */
             item {
@@ -273,7 +287,8 @@ fun ArtworkDetailScreen(
                 .align(Alignment.BottomCenter),
             artwork,
             userUid = userUid,
-            actionBtnOnClick = actionBtnOnClick
+            actionBtnOnClick = actionBtnOnClick,
+            deleteBtnOnClick = deleteBtnOnClick
         )
 
         /** 이미지 확대 Dialog */
@@ -422,6 +437,7 @@ fun userActionButton(
     artwork: DomainArtwork,
     userUid: String?,
     actionBtnOnClick: () -> Unit,
+    deleteBtnOnClick: () -> Unit
 ) {
     Card(
         modifier = modifier,
@@ -431,7 +447,7 @@ fun userActionButton(
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 10.dp)
     ) {
-        val price = if(artwork.minimalPrice.isEmpty()) 0 else artwork.minimalPrice.toInt()
+        val price = if(artwork.minimalPrice.isEmpty()) 0.0 else artwork.minimalPrice.toDouble()
 
         Row(
             modifier = Modifier.padding(20.dp),
@@ -448,23 +464,19 @@ fun userActionButton(
                 Spacer(modifier = Modifier.height(3.dp))
                 Text(text = DecimalFormat("#,###").format(price * 10000)+ "원", fontSize = 20.sp, fontWeight = FontWeight.Medium, color = Color.Black, overflow = TextOverflow.Visible)
             }
-            if(!artwork.sold){
-                TextButton(
-                    onClick = { actionBtnOnClick() },
-                    shape = RoundedCornerShape(5.dp),
-                    border = BorderStroke(0.5.dp,color = Color.Black),
-                    modifier = Modifier.wrapContentSize(),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color.Black),
-                    contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 15.dp, bottom = 15.dp)
-                ) {
-                    if(userUid == artwork.artistUid){
-                        AutoResizedText(
-                            text = "판매 확정하기",
-                            style = TextStyle(fontSize = 14.sp),
-                            modifier = Modifier,
-                            color = Color.White
-                        )
-                    }else{
+
+            if(userUid == artwork.artistUid) {
+                exposedDropDownMenuBtn(deleteBtnOnClick = deleteBtnOnClick)
+            } else {
+                if(!artwork.sold){
+                    TextButton(
+                        onClick = { actionBtnOnClick() },
+                        shape = RoundedCornerShape(5.dp),
+                        border = BorderStroke(0.5.dp,color = Color.Black),
+                        modifier = Modifier.wrapContentSize(),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color.Black),
+                        contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 15.dp, bottom = 15.dp)
+                    ) {
                         AutoResizedText(
                             text = "메세지로 거래하기", style = TextStyle(fontSize = 14.sp),
                             modifier = Modifier,
@@ -472,6 +484,73 @@ fun userActionButton(
                         )
                     }
                 }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun exposedDropDownMenuBtn(deleteBtnOnClick: () -> Unit){
+    var expanded by remember { mutableStateOf(false) }
+    var selectedState by remember { mutableStateOf("삭제하기") }
+    //var artworkState = listOf("삭제하기","편집하기")
+    var artworkState = listOf("삭제하기")
+    ExposedDropdownMenuBox(
+        expanded = expanded,
+        onExpandedChange = {
+            expanded = it
+        },
+        modifier = Modifier.wrapContentSize()
+    ) {
+
+        TextButton(
+            onClick = {  },
+            shape = RoundedCornerShape(5.dp),
+            border = BorderStroke(0.5.dp,color = Color.Black),
+            modifier = Modifier.wrapContentSize().menuAnchor(),
+            colors = ButtonDefaults.buttonColors(containerColor = Color.Black),
+            contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 15.dp, bottom = 15.dp)
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                AutoResizedText(
+                    text = selectedState,
+                    style = TextStyle(fontSize = 14.sp),
+                    modifier = Modifier,
+                    color = Color.White
+                )
+                Icon(Icons.Filled.KeyboardArrowDown, contentDescription = null, modifier = Modifier.size(18.dp), tint = Color.White)
+            }
+        }
+
+//        Button(
+//            onClick = {},
+//            colors = ButtonDefaults.buttonColors(containerColor = colorResource(R.color.soldOut)),
+//            contentPadding = PaddingValues(horizontal = 8.dp),
+//            shape = RoundedCornerShape(5.dp),
+//            modifier = Modifier.menuAnchor()
+//        ) {
+//            Row(verticalAlignment = Alignment.CenterVertically) {
+//                Text(selectedState, color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+//                Icon(Icons.Filled.KeyboardArrowDown, contentDescription = null, modifier = Modifier.size(18.dp))
+//            }
+//        }
+
+        ExposedDropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false},
+            containerColor = Color.White,
+            matchTextFieldWidth = false
+        ) {
+            artworkState.forEachIndexed { index, s ->
+                DropdownMenuItem(
+                    onClick = {
+                        selectedState = s
+                        deleteBtnOnClick()
+                        expanded = !expanded
+                    },
+                    text = { Text(text = s, textAlign = TextAlign.Center) }
+                )
             }
         }
     }
@@ -569,16 +648,18 @@ fun artworkActivityTest(){
     Surface(modifier = Modifier.fillMaxSize()) {
         ArtworkDetailScreen(
             artwork = DomainArtwork(artistUid = "123", name = "하울의 움직이는 섬하울의 움직이는 섬dlasdf", madeIn = "2025"),
-            artistInfo = DomainUser(name = "정은숙"),
+            artistInfo = DomainUser(uid = "123", name = "정은숙"),
             favoriteState = true,
             likedState = true,
-            userUid = "",
+            userUid = "123",
             artworkLikedCount = 1,
             artistArtworks = listOf(artwork, artwork,artwork),
             isLoadingArtistArtworks = true,
             likedBtnOnClick = {},
             bookmarkBtnOnClick = {},
-            artistInfoBtnOnClick = {}
-        ) { }
+            artistInfoBtnOnClick = {},
+            actionBtnOnClick = {},
+            deleteBtnOnClick = {}
+        )
     }
 }
