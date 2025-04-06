@@ -1,6 +1,7 @@
 package com.yschoi.data.repository.remote.datasourceimpl
 
 import android.net.Uri
+import android.util.Log
 import com.yschoi.data.repository.remote.datasource.ArtworkDataSource
 import com.yschoi.domain.model.*
 import com.google.android.gms.tasks.Task
@@ -34,7 +35,7 @@ class ArtworkDataSourceImpl @Inject constructor(
     //작품 전체 가져오기
     override suspend fun getAllArtworks(): List<DomainArtwork> {
         val itemList = mutableListOf<DomainArtwork>()
-        val snapshot = imagesRef.get().await()
+        val snapshot = imagesRef.orderByChild("madeIn").get().await()
         snapshot?.children?.forEach{ artworkSnapshot ->
             val artwork = artworkSnapshot.getValue(DomainArtwork::class.java)
             itemList.add(artwork!!)
@@ -87,17 +88,31 @@ class ArtworkDataSourceImpl @Inject constructor(
         }
     }
 
-    override suspend fun getRecentArtworks(limit: Int): List<DomainArtwork> {
-        return try {
-            val artworksSnapshot = imagesRef.orderByChild("upload_at").limitToLast(limit).get().await()
-            var artworkList = mutableListOf<DomainArtwork>()
-            for(artwork in artworksSnapshot.children){
-                val artworkData = artwork.getValue(DomainArtwork::class.java)
-                artworkData?.let { artworkList.add(it) }
+    override suspend fun getRecentArtworks(limit: Int) = callbackFlow<List<DomainArtwork>> {
+        val ref = imagesRef.orderByChild("upload_at").limitToLast(limit)
+        val listener = object: ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                val artworkList = mutableListOf<DomainArtwork>()
+                for(artwork in snapshot.children){
+                    val artworkData = artwork.getValue(DomainArtwork::class.java)
+                    Log.d("getRecentArtworks", artworkData.toString())
+                    if( artworkData != null && artworkData.category != "도자기"){
+                        artworkList.add(artworkData)
+                    }
+                }
+                trySend(artworkList.reversed())
             }
-            artworkList
-        }catch (e: Exception){
-            emptyList()
+
+            override fun onCancelled(error: DatabaseError) {
+                trySend(emptyList())
+            }
+
+        }
+
+        ref.addListenerForSingleValueEvent(listener)
+
+        awaitClose {
+            ref.removeEventListener(listener)
         }
     }
 
@@ -179,7 +194,7 @@ class ArtworkDataSourceImpl @Inject constructor(
     }.flowOn(Dispatchers.IO)
 
     override suspend fun getArtistArtworks(artistUid: String): Flow<List<DomainArtwork>> = flow {
-        val artworks = usersRef.child(artistUid).child("artworksUid").get().await()
+        val artworks = usersRef.child(artistUid).child("artworksUid").limitToLast(20).get().await()
         val artworkData = mutableListOf<DomainArtwork>()
         for( snapshot in artworks.children ){
             var artworkId = snapshot.key
@@ -246,5 +261,12 @@ class ArtworkDataSourceImpl @Inject constructor(
         awaitClose {
             imagesRef.child(artworkId).removeEventListener(listener)
         }
+    }
+
+    override suspend fun deleteArtwork(artworkId: String, uid: String, category: String, imageUrl: String) {
+        imagesRef.child(artworkId).removeValue()
+        usersRef.child(uid).child("artworksUid").child(artworkId).removeValue()
+        artworkIdRef.child(category).child(artworkId).removeValue()
+        imageStorageRef.storage.getReferenceFromUrl(imageUrl).delete().await()
     }
 }
