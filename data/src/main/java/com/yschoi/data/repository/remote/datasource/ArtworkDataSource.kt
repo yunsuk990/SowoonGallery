@@ -22,7 +22,7 @@ interface ArtworkDataSource {
 
     fun setLikedArtwork(uid: String, artworkUid: String, isLiked: Boolean): Task<Void>
 
-    suspend fun getRecentArtworks(limit: Int ): List<DomainArtwork>
+    suspend fun getRecentArtworks(limit: Int ): Flow<List<DomainArtwork>>
 
     suspend fun uploadImageToStorage(name: String, imageUri: Uri, mode: Int): String
 
@@ -43,4 +43,6 @@ interface ArtworkDataSource {
     suspend fun getArtistSoldArtworks(artworksUid: Map<String, Boolean>): List<DomainArtwork>
 
     suspend fun fetchArtwork(artworkId: String): Flow<DomainArtwork>
+
+    suspend fun deleteArtwork(artworkId: String, uid: String, category: String, imageUrl: String)
 }
