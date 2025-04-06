@@ -1,5 +1,6 @@
 package com.yschoi.presentation.viewModel
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.yschoi.domain.model.*
@@ -85,8 +86,6 @@ class MainViewModel @Inject constructor(
     private val _recommendArtworks = MutableStateFlow<List<DomainArtwork>>(emptyList())
     val recommendArtworks: StateFlow<List<DomainArtwork>> = _recommendArtworks
 
-    val job: Job? = null
-
     init {
         viewModelScope.launch {
             getAuthStateUseCase.execute()
@@ -109,6 +108,14 @@ class MainViewModel @Inject constructor(
                         saveMessagingToken.execute(userInfo.uid)
                         loadChatLists(userInfo.uid)
                     }
+
+                    loadRecentArtworks(30)
+
+                    loadArtworks()
+
+
+
+
                 }
         }
         //소개 사진 가져오기
@@ -116,11 +123,15 @@ class MainViewModel @Inject constructor(
     }
 
     //최근 작품들 가져오기
-    fun loadRecentArtworks(limit : Int = 10){
+    fun loadRecentArtworks(limit : Int) {
         viewModelScope.launch {
             _isLoadingRecentArtworks.value = true
-            _artistRecentArtworks.value = getRecentArtworksUseCase.execute(limit).reversed()
-            _isLoadingRecentArtworks.value = false
+            getRecentArtworksUseCase.execute(limit)
+                .collect { it ->
+                    _artistRecentArtworks.value = it.take(20)
+                    Log.d("loadRecentArtworks", it.toString())
+                    _isLoadingRecentArtworks.value = false
+                }
         }
     }
 
@@ -158,7 +169,7 @@ class MainViewModel @Inject constructor(
 
     // 카테고리 작품들 가져오기
     fun loadArtworks() = viewModelScope.launch {
-        _artworkAllLiveData.value = getArtworksUseCase.execute()
+        _artworkAllLiveData.value = getArtworksUseCase.execute().reversed()
         _artworkLiveData.value = _artworkAllLiveData.value
     }
 
@@ -189,11 +200,11 @@ class MainViewModel @Inject constructor(
     //작품 정렬
     fun sortArtworks(sortBy: ArtworkSort, category: String){
         when(sortBy){
-            ArtworkSort.NONE -> loadArtworks()
-            ArtworkSort.BOOKMARK -> _artworkLiveData.value = _artworkLiveData.value.sortedByDescending { it.favoriteUser.size }
-            ArtworkSort.DATE -> _artworkLiveData.value = _artworkLiveData.value.sortedBy { it.upload_at }
-            ArtworkSort.LIKE -> _artworkLiveData.value = _artworkLiveData.value.sortedByDescending { it.likedArtworks.size }
-            ArtworkSort.PRICE -> _artworkLiveData.value = _artworkLiveData.value.sortedByDescending { it.minimalPrice }
+            ArtworkSort.NONE -> _artworkLiveData.value = _artworkAllLiveData.value
+            ArtworkSort.BOOKMARK -> _artworkLiveData.value = _artworkAllLiveData.value.sortedByDescending { it.favoriteUser.size }
+            ArtworkSort.DATE -> _artworkLiveData.value = _artworkAllLiveData.value.sortedBy { it.upload_at }
+            ArtworkSort.LIKE -> _artworkLiveData.value = _artworkAllLiveData.value.sortedByDescending { it.likedArtworks.size }
+            ArtworkSort.PRICE -> _artworkLiveData.value = _artworkAllLiveData.value.sortedByDescending { it.minimalPrice }
         }
     }
 
