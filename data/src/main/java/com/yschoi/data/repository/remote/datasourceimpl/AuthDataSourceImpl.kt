@@ -252,7 +252,7 @@ class AuthDataSourceImpl @Inject constructor(
 
     override suspend fun removeUserProfileImage(imageUrl: String): Response<Boolean> {
         return try {
-            val response = profileStorageRef.storage.getReferenceFromUrl(imageUrl).delete().await()
+            profileStorageRef.storage.getReferenceFromUrl(imageUrl).delete().await()
             Response.Success(true)
         }catch (e: Exception){
             Response.Error(exception = e, message = e.message.toString())
