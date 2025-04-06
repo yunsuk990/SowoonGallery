@@ -31,7 +31,7 @@ class AuthRepositoryImpl @Inject constructor(
     override fun saveRecentCategory(category: String) = authDataSource.saveRecentCategory(category)
 
     override fun registerMessagingToken(uid: String) = authDataSource.registerMessagingToken(uid)
-    override fun registerMessagingNewToken(token: String) {
+    override fun  registerMessagingNewToken(token: String) {
         getUid()?.let {
             authDataSource.registerMessagingNewToken(uid = getUid()!!, token = token)
         }
