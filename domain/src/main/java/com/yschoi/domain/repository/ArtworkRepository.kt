@@ -23,7 +23,7 @@ interface ArtworkRepository {
 
     suspend fun getLikedArtworks(uid: String): Flow<List<DomainArtwork>>
 
-    suspend fun getRecentArtworks(limit: Int): List<DomainArtwork>
+    suspend fun getRecentArtworks(limit: Int): Flow<List<DomainArtwork>>
 
     suspend fun getArtistArtworks(artistId: String): Flow<List<DomainArtwork>>
 
@@ -32,6 +32,8 @@ interface ArtworkRepository {
     suspend fun getArtistSoldArtworks(artworksUid: Map<String, Boolean>): List<DomainArtwork>
 
     suspend fun fetchArtwork(artworkId: String): Flow<DomainArtwork>
+
+    suspend fun deleteArtwork(artworkId: String, uid: String, category: String, imageUrl: String)
 
 
 }
