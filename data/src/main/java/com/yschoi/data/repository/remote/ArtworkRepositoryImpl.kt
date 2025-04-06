@@ -6,8 +6,6 @@ import com.yschoi.domain.model.DomainArtwork
 import com.yschoi.domain.model.Response
 import com.yschoi.domain.repository.ArtworkRepository
 import com.google.android.gms.tasks.Task
-import com.google.firebase.database.DataSnapshot
-import com.google.firebase.database.ValueEventListener
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
@@ -25,7 +23,7 @@ class ArtworkRepositoryImpl @Inject constructor(
         return artworkDataSource.getFavoritesArtwork(uid)
     }
 
-    override suspend fun getRecentArtworks(limit: Int): List<DomainArtwork> = artworkDataSource.getRecentArtworks(limit)
+    override suspend fun getRecentArtworks(limit: Int): Flow<List<DomainArtwork>> = artworkDataSource.getRecentArtworks(limit)
 
     override suspend fun getArtistArtworks(artistId: String): Flow<List<DomainArtwork>> = artworkDataSource.getArtistArtworks(artistId)
 
@@ -68,5 +66,7 @@ class ArtworkRepositoryImpl @Inject constructor(
     }
 
     override suspend fun fetchArtwork(artworkId: String): Flow<DomainArtwork> = artworkDataSource.fetchArtwork(artworkId)
+
+    override suspend fun deleteArtwork(artworkId: String, uid: String, category: String, imageUrl: String) = artworkDataSource.deleteArtwork(artworkId, uid, category, imageUrl)
 
 }
