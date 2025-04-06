@@ -28,7 +28,8 @@ class ArtworkViewModel @Inject constructor(
     private val getCurrentUserUidUseCase: GetCurrentUserUidUseCase,
     private val getArtworksUseCase: GetArtworksUseCase,
     private val setArtistProfileUseCase: SetArtistProfileUseCase,
-    private val fetchArtworkUseCase: FetchArtworkUseCase
+    private val fetchArtworkUseCase: FetchArtworkUseCase,
+    private val deleteArtworkUseCase: DeleteArtworkUseCase
 ): ViewModel() {
 
     var userUid: String? = getCurrentUserUidUseCase.execute()
@@ -77,6 +78,10 @@ class ArtworkViewModel @Inject constructor(
             ArtworkSort.PRICE -> _artistArtworks.value = _artistArtworks.value.sortedByDescending { it.minimalPrice }
         }
 
+    }
+
+    fun deleteArtwork(artworkId: String, uid: String, category: String, imageUrl: String) = viewModelScope.launch {
+        deleteArtworkUseCase.execute(artworkId, uid, category, imageUrl)
     }
 
     fun updateArtistProfile(artistIntroduce: String) = viewModelScope.launch {
