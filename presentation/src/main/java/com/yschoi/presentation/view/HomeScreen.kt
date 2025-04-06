@@ -53,9 +53,9 @@ fun HomeScreen(viewModel: MainViewModel, navController: NavHostController) {
     val userInfo by viewModel.userInfoStateFlow.collectAsState()
     val context = LocalContext.current
 
-    LaunchedEffect(key1 = true) {
-        viewModel.loadRecentArtworks(10)
-    }
+//    LaunchedEffect(key1 = true) {
+//        viewModel.loadRecentArtworks(30)
+//    }
 
     HomeRoot(
         navController = navController,
@@ -107,9 +107,9 @@ fun HomeRoot(
         )
 
         //Admob 광고
-//        AdView(
-//            modifier = Modifier.fillMaxWidth()
-//        )
+        AdView(
+            modifier = Modifier.fillMaxWidth()
+        )
         
 
         Text("체험", fontSize = 18.sp, color = Color.Black, modifier = Modifier.padding(start = 15.dp, end = 15.dp, top = 20.dp), fontWeight = FontWeight.Bold)
