@@ -488,7 +488,7 @@ fun artistArtworkCard(artwork: DomainArtwork, onClick: () -> Unit){
             if(artwork.sold){
                 Text("판매완료", color = Color.Gray, fontSize = 12.sp, lineHeight = 10.sp)
             }else{
-                Text( text = DecimalFormat("#,###").format(artwork.minimalPrice.toInt() * 10000)+ "원", color = Color.Gray, fontSize = 12.sp, lineHeight = 10.sp)
+                Text( text = DecimalFormat("#,###").format(artwork.minimalPrice.toDouble() * 10000)+ "원", color = Color.Gray, fontSize = 12.sp, lineHeight = 10.sp)
             }
         }
     }
